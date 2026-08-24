@@ -13,6 +13,7 @@
 | OQ-GOV-001 | DECIDED | M-1 治理基线正式验收通过；M0 需单独下发 | 用户 2026-08-23 明确验收通过 |
 | OQ-GOV-002 | DECIDED | 进入正式 M0，不执行 M0-Lite；完成后停止在 M0 边界 | 用户 2026-08-23 明确下发“请进入M0” |
 | OQ-GOV-003 | DECIDED | M0 正式验收通过；已披露的外部 CI、容器供应链与 RustFS SPK-004 风险作为 P1 继续跟踪，M1 必须另行明确下发 | 用户 2026-08-24 明确“同意M0验收”；M0 执行报告 |
+| OQ-GOV-004 | DECIDED | 上述 M0 P1 已通过远程 main CI、双架构 SBOM/CVE/Cosign 与 SPK-004 实测闭环；RustFS RC 的 HA/DR/升级规模风险转入既定 M7/M12 门禁，不再是 M0 阻塞 | 用户 2026-08-24 要求解决剩余问题；ADR-0018；GitHub Actions run 32702688049 |
 
 ## M0 已冻结决策
 

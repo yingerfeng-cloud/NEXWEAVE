@@ -67,4 +67,4 @@ M0 通过条件：
 
 生产或承载 Raw/Release 前的附加门禁：SPK-004 形成可复现的 S3 能力、故障恢复、备份恢复、安全扫描和多架构验证报告。
 
-2026-08-24 验证更新：`scripts/verify_rustfs_spk004.py` 在固定镜像上通过单节点 S3/恢复矩阵；对象 key、状态、补偿、受控下载和内部签名镜像规则由 ADR-0018 冻结。双架构 SBOM/CVE/签名的权威外部回执以 GitHub main CI 为准。
+2026-08-24 验证更新：`scripts/verify_rustfs_spk004.py` 在固定镜像上通过单节点 S3/恢复矩阵；对象 key、状态、补偿、受控下载和内部签名镜像规则由 ADR-0018 冻结。GitHub Actions run `32702688049` 已完成双架构 SBOM/CVE/签名权威外部回执。

@@ -12,18 +12,22 @@ All notable changes to NEXWEAVE will be documented in this file.
 - Executable Python/TypeScript Monorepo with API, Web status shell, Temporal health Worker, base migration, Compose and CI quality gates.
 - Exact dependency locks, secret bootstrap/scan, dependency audit, architecture/contract/unit/UI verification and M0 operator runbook.
 - ADR-0017 and the RustFS 1.0.0-rc.3 S3-compatible M0 runtime, replacing the prior object-storage provider without a runtime fallback.
+- ADR-0018, the reproducible RustFS SPK-004 harness/report, and GitHub container gates for dual-architecture CycloneDX SBOMs, fixable HIGH/CRITICAL CVEs and keyless Cosign signatures.
 
 ### Accepted
 
 - M-1 governance baseline formally accepted by the user on 2026-08-23.
 - Formal M0 execution dispatched by the user on 2026-08-23 and formally accepted by the user on 2026-08-24 with the documented P1 follow-ups retained.
 - RustFS replacement explicitly approved by the user on 2026-08-24; production promotion remains gated by SPK-004 compatibility, recovery and supply-chain evidence.
+- M0 P1 closure backed by GitHub Actions run 32702688049: all six quality, Compose, application-image and RustFS approval jobs passed.
 
 ### Fixed
 
 - Updated Temporal 1.29.6 to use its shipped dynamic configuration path.
 - Installed the Web runtime configuration as a complete non-root Nginx main configuration and made its health probe use the actual IPv4 loopback listener.
 - Replaced an unsupported Alembic CLI flag with an explicit unique-head/database-revision comparison compatible with the locked Alembic 1.16.4.
+- Upgraded Temporal SDK 1.17.0 to 1.31.0 and Nginx 1.29.1/Alpine 3.22 to 1.31.4/Alpine 3.24 after container scans found fixed HIGH/CRITICAL advisories; rescans are clean under the approved policy.
+- Corrected the CI installer compatibility boundary by using cosign-installer v4.1.2 for Cosign v3.0.2.
 
 ### Not implemented
 

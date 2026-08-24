@@ -55,7 +55,7 @@
 | NXW-NFR-AVL-003 | Raw/Release 备份恢复 | PRD 12.2 | M7,M12 | 备份/恢复/索引重建 | BASELINED |
 | NXW-NFR-SEC-001 | HTTPS、OIDC、RBAC+ABAC、密级/空间隔离 | PRD 12.3/13 | M1 | 越权矩阵/传输安全 | BASELINED |
 | NXW-NFR-SEC-002 | 模型调用脱敏，高密资料禁止第三方模型 | PRD 12.3 | M1,M5 | 数据流/策略/泄漏测试 | BASELINED；四级密级已在 M0 冻结，执行策略未实现 |
-| NXW-NFR-SEC-003 | API 密钥加密/引用，完整审计，SBOM/依赖扫描 | PRD 12.3 | M0,M1 | secret scan/SCA/审计测试 | PARTIAL；M0 有配置禁明文约束、审计基础表、secret/dependency gate，业务审计与 SBOM 待后续 |
+| NXW-NFR-SEC-003 | API 密钥加密/引用，完整审计，SBOM/依赖扫描 | PRD 12.3 | M0,M1 | secret scan/SCA/审计测试 | PARTIAL；M0 的配置禁明文、审计基础表、secret/SCA、双架构 SBOM/CVE/Cosign 已由 run 32702688049 验证，M1 仍需实现业务鉴权/审计和 Secret Provider |
 | NXW-NFR-AUD-001 | 知识、模型/Prompt、审核、发布、问答版本可追溯 | PRD 12.4 | M1-M7 | 固定 Release 复现 E2E | BASELINED |
 | NXW-NFR-COMPAT-001 | Chromium、国产浏览器、离线内网 | PRD 12.5 | R1 基线、M12 正式验收 | 浏览器矩阵/离线安装 | BASELINED |
 | NXW-ARCH-001 | domain/contracts 不依赖框架、数据库、Temporal、厂商 SDK | 总纲 6.2 | M0 起持续 | `tests/architecture/test_dependency_boundaries.py` | VERIFIED（M0） |
@@ -68,14 +68,14 @@
 
 | M0 要求 | 实现/证据 | 自动验证 | 状态 |
 |---|---|---|---|
-| C4/ADR/终局技术栈冻结 | `ARCHITECTURE_BASELINE.md`、C4 baseline、ADR-0001—0017 | 文档/状态检查 | IMPLEMENTED |
+| C4/ADR/终局技术栈冻结 | `ARCHITECTURE_BASELINE.md`、C4 baseline、ADR-0001—0018 | 文档/状态检查 | IMPLEMENTED |
 | ID/状态/权限/错误/SourceAnchor/Release | pure domain、contract schemas、state/permission/error baseline | unit + JSON Schema + snapshot | VERIFIED |
 | API/事件/幂等/投影契约 | API/event baselines、ADR-0015/0016、OpenAPI/event schema | contract tests | VERIFIED |
 | Python/TypeScript Monorepo | `apps/`, `packages/`, `workers/`, root commands | lint/typecheck/unit/build | VERIFIED |
 | 最小 API/Web/Worker | health/version/diagnostics、status Web、Temporal health Workflow | unit/UI + Temporal test server + Compose E2E | VERIFIED；真实 Web/API/依赖探测与 Compose Worker Workflow 全链路通过 |
 | 基础迁移 | `0001_m0_platform_foundation` | real PostgreSQL upgrade/down/up | VERIFIED；真实 PostgreSQL downgrade/upgrade/downgrade/upgrade 通过并回到唯一 head |
 | 可复现本地环境 | `compose.yaml`、Dockerfiles、runbook；RustFS 选型见 ADR-0017 | `make dev-up`, `make verify` | VERIFIED；官方 Docker Hub/Quay 镜像已拉齐，七个 M0 服务一键启动，完整真实 E2E 通过 |
-| CI/安全/依赖治理 | CI workflow、secret scan、exact locks、dependency baseline | local gates/audits + GitHub CI | PARTIAL；本地门禁、Secret scan、Python/JS 生产依赖审计通过，待干净 GitHub CI 与容器扫描 |
+| CI/安全/依赖治理 | CI workflow、secret scan、exact locks、dependency baseline | local gates/audits + GitHub CI | VERIFIED（M0）；run 32702688049 六个 job 全绿，四类镜像双架构 SBOM/CVE/Cosign 证据已上传 |
 
 ## 5. 覆盖结论
 

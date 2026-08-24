@@ -2,9 +2,9 @@
 
 ## 1. 总体结论
 
-- 阶段：**通过（用户正式验收）**。M0 架构、契约与工程骨架已实际交付；Docker Hub、Temporal、Web/Nginx、完整 Compose、真实 E2E 和 PostgreSQL 迁移回滚的本地 P0 均已闭环。用户于 2026-08-24 在已知干净 GitHub CI 与容器供应链回执尚未闭环的前提下正式验收通过 M0，这些事项继续作为 P1 跟踪。
+- 阶段：**通过（用户正式验收，P1 收尾完成）**。M0 架构、契约与工程骨架已实际交付；Docker Hub、Temporal、Web/Nginx、完整 Compose、真实 E2E、PostgreSQL 迁移回滚、RustFS SPK-004、干净 GitHub CI 与容器供应链回执均已闭环。
 - 是否满足进入下一阶段条件：**是，但不得自动进入**。M0 已正式验收；M1 仍须用户另行明确下发。
-- Git 基线：**未提交**。仓库没有已配置的真实 `user.name` / `user.email`，本阶段未伪造身份、提交或远程回执。
+- Git 基线：**已提交并推送**。使用用户确认的 `yingerfeng-cloud <yingerfeng@gmail.com>`；`d3737be` 建立 M0 基线，`272dff2` 在不强推的前提下保留远程初始历史，`e03efd9` 修复 Cosign installer 兼容性并取得干净 CI 回执。
 - 业务能力：**未开始**。未实现 Source、Schema、Compile、Wiki、Review、Release、Query、GridCrew 或 RCA 功能。
 
 ## 2. 实际完成范围
@@ -14,6 +14,7 @@
 - ADR-0001—ADR-0012 已逐项评审为 Accepted，并记录选择、替代、后果和迁移/验证策略；
 - 新增 ADR-0013—ADR-0016，冻结 UUIDv7/租户元数据、SourceAnchor/Evidence、公共错误/权限/密级、Release/幂等/事件/投影语义；
 - 新增 ADR-0017；用户于 2026-08-24 明确批准以 RustFS 完整替换原对象存储实现，活动运行时不保留旧 Provider 回退；
+- 新增 ADR-0018，冻结 SourceVersion Raw key、条件写、checksum、幂等、状态/补偿、重新授权下载、逻辑备份和容器供应链门禁；
 - 输出 C4 Context/Container/Component，冻结 Python 3.12/FastAPI 模块化单体、独立 Temporal Worker、React/TypeScript Web、PostgreSQL/pgvector、RustFS/S3、Redis；
 - 明确 Temporal 是长任务执行权威，数据库保存业务事实和查询投影，二者不构成双推进引擎。
 
@@ -23,7 +24,7 @@
 - 实现仅含健康、版本、脱敏诊断端点的 API；实现深色、响应式、可访问的基础设施状态 Web；
 - 实现独立 health Worker 和无 I/O 的确定性 `PlatformHealthWorkflow`；
 - 建立固定版本 Compose、非 root API/Worker/Web/RustFS 镜像、随机本地凭据引导、健康依赖和一条真实纵向验证脚本；
-- 建立 GitHub CI，覆盖本地门禁、依赖审计、Compose、迁移回滚、诊断收集和环境销毁。
+- 建立 GitHub CI，覆盖本地门禁、依赖审计、Compose、迁移回滚、诊断收集、环境销毁、应用镜像双架构构建、RustFS 精确镜像复制、CycloneDX、CVE 阻断和 Cosign OIDC 签名/验证。
 
 ### 契约与数据
 
@@ -64,7 +65,7 @@
 ### 架构、治理与开发文档
 
 - `ARCHITECTURE_BASELINE.md`、`OPEN_QUESTIONS.md`、`PROJECT_STATUS.md`、`CHANGELOG.md`；
-- `docs/architecture/adr/ADR-0001`—`ADR-0017`、`docs/architecture/C4_COMPONENT_BASELINE.md`、`docs/architecture/STATE_PERMISSION_ERROR_BASELINE.md`；
+- `docs/architecture/adr/ADR-0001`—`ADR-0018`、`docs/architecture/C4_COMPONENT_BASELINE.md`、`docs/architecture/STATE_PERMISSION_ERROR_BASELINE.md`；
 - `docs/governance/DEPENDENCY_BASELINE.md`、`docs/governance/MIGRATION_FIXTURE_STRATEGY.md`、`docs/governance/REQUIREMENTS_TRACEABILITY_MATRIX.md`、`docs/governance/REPOSITORY_STRUCTURE.md`；
 - `docs/development/tasks/` 受治理副本、`manifest.json` 与 `docs/governance/SOURCE_MANIFEST.md`：记录 ADR-0017 修订并保持原始交付包 SHA-256 证据不变；
 - `docs/development/M0_RUNBOOK.md` 和本报告。
@@ -76,7 +77,7 @@
 - 事件：冻结 `event_id/type/schema_version/tenant_id/space_id/actor/correlation_id/causation_id/occurred_at/payload`；M0 不发布业务事件；
 - Workflow：只新增 `nexweave.platform.health.v1`，不执行网络、数据库、模型或文件 I/O；
 - 兼容性影响：对象存储健康组件改为厂商无关的 `object_storage`，配置统一为 `NEXWEAVE_OBJECT_STORE_*`，活动实现固定 RustFS/S3；尚无业务对象、历史 API 或数据库迁移需要转换；
-- ADR：ADR-0001—ADR-0017 均为 Accepted；RustFS 生产推广受 ADR-0017/SPK-004 门禁，解析失败、Pack UI、GridCrew 映射、审核策略等仍按 `OPEN_QUESTIONS.md` 在后续 Milestone 决策。
+- ADR：ADR-0001—ADR-0018 均为 Accepted；RustFS 的 M0 SPK/供应链门禁已通过，分布式/HA/DR/规模生产仍受后续门禁约束；解析失败、Pack UI、GridCrew 映射、审核策略等仍按 `OPEN_QUESTIONS.md` 在后续 Milestone 决策。
 
 ## 5. 测试与验证
 
@@ -101,11 +102,14 @@
 - `make PYTHON=.venv/bin/python check`：格式、Ruff、mypy、TypeScript、ESLint、Prettier、Python 非集成测试 **13 passed / 1 deselected**、契约测试 **6 passed**、Web **1 passed** 和生产构建全部通过；
 - `.venv/bin/python scripts/secret_scan.py`：通过；
 - 当前七个 M0 服务均保持运行，具备 healthcheck 的 PostgreSQL、Redis、RustFS、Temporal、API、Web 均为 `healthy`，Worker 进程运行且真实 Workflow 已通过；不存在临时 Temporal 探针容器。
+- `make PYTHON=.venv/bin/python rustfs-spike`：PUT/GET/HEAD/list、checksum、Range、条件写、版本、匿名/错误凭据拒绝、预签名过期、multipart 重试/abort、生命周期、RustFS 重启恢复和逻辑备份恢复全部通过，临时桶已清理；
+- Trivy 0.74.0 本地复扫：API、Worker、升级后的 Web 与 RustFS 固定镜像可修复 HIGH/CRITICAL 均为 **0**；
+- GitHub Actions run `32702688049`（commit `e03efd9`）：quality、Compose integration、API/Worker/Web 双架构 image、RustFS approval image 六个 job 全部成功；上传四份 container evidence artifact，并验证四类不可变 digest 的 GitHub OIDC/Cosign 身份签名。
 
-### 未执行/未通过
+### 后续门禁（不计入 M0 已完成）
 
-- GitHub Actions：工作流文件已建立，但仓库未提交/未配置远程，不能伪报干净 CI 通过；
-- 容器镜像漏洞/SBOM/签名扫描：运行镜像已拉齐，但完整扫描与签名/SBOM 内容回执仍未执行。
+- RustFS 分布式/HA、滚动升级回滚、节点丢失、规模吞吐和正式 RPO/RTO 仍由 M7/M12 实际环境验证；
+- SourceVersion 业务 Adapter、恶意文件扫描 Activity 和真实授权下载仍按 M1/M3 实现，不以 SPK 脚本冒充业务功能。
 
 ## 6. 数据库与迁移
 
@@ -122,7 +126,7 @@
 - 配置表通过约束禁止内联 Secret，后续只保存 Secret Provider 引用；
 - 复合租户外键阻止跨 tenant 的 organization/space 关联；append-only trigger 阻止 audit update/delete；
 - API 没有业务写接口，因此 M0 不虚构 RBAC/ABAC 完成；具体鉴权在 M1；
-- 应用生产依赖审计和 Secret scan 通过；RustFS 固定多架构 digest、非 root 用户与 attestation manifest 已核实，签名/SBOM 内容和镜像漏洞扫描仍待执行；
+- 应用生产依赖审计和 Secret scan 通过；RustFS 固定多架构 digest、非 root 用户、双架构 SBOM/CVE 与 NEXWEAVE 内部签名已核实。上游 Quay index 没有 Cosign 可发现的签名/SBOM，因此内部签名只表示 NEXWEAVE 对精确字节的准入，不伪称上游 provenance；
 - 原始总纲与 M-1 任务书 SHA-256 于 2026-08-24 复核一致；RustFS 修订只进入受治理执行副本并由 ADR-0017/任务 manifest 追踪，没有改写原始交付包；
 - M0 无 Claim/Relation/Release 业务数据；Evidence/SourceAnchor/Release 语义已通过 ADR 和 contract 冻结，没有用静态数据冒充证据链。
 
@@ -134,9 +138,8 @@
 
 ### P1
 
-- Git 无真实身份/基线提交/远程 CI 结果；
-- RustFS 仍为 RC，上游将分布式模式和生命周期管理标记为测试中；SPK-004 的 S3 子集、故障/备份恢复、升级回滚和供应链验证完成前不得承载生产 Raw/Release；
-- 容器镜像的签名、SBOM 内容和漏洞扫描未完成；RustFS 多架构 index/per-architecture digest 已核实；
+- M0 原 Git/CI、容器供应链与 SPK-004 P1 已关闭；
+- RustFS 仍为 RC；分布式、升级回滚、规模性能和 HA/DR 不在本次单节点 SPK 证明范围内，按既定 M7/M12 门禁执行；
 - `OQ-SEC-CONTACT-001`、`OQ-LICENSE-001` 仍开放，公开/分发前必须决定；
 
 ### P2
@@ -147,10 +150,10 @@
 
 ## 9. 需求追踪更新
 
-- 已完成：M0 的架构/ADR 冻结、公共对象/状态/版本/权限/错误/事件/Workflow 契约、Monorepo、架构测试、精确依赖锁、API/Web/Worker 骨架、fixture 规范、本地代码门禁、七服务 Compose、真实 E2E 和迁移回滚；`NXW-ARCH-001` 与 M0 本地环境/迁移追踪项为 VERIFIED；
-- 部分完成：`NXW-ARCH-002`（健康 Workflow 确定性已验证，业务 Workflow 属 M2+）、`NXW-NFR-SEC-003`（Secret/SCA/审计骨架完成，业务审计、容器扫描与 SBOM 后续）、CI（工作流实现完成，待干净 GitHub 回执）；
+- 已完成：M0 的架构/ADR 冻结、公共对象/状态/版本/权限/错误/事件/Workflow 契约、Monorepo、架构测试、精确依赖锁、API/Web/Worker 骨架、fixture 规范、本地代码门禁、七服务 Compose、真实 E2E、迁移回滚、干净 GitHub CI、SPK-004 和双架构容器供应链；`NXW-ARCH-001` 与 M0 CI/本地环境/迁移追踪项为 VERIFIED；
+- 部分完成：`NXW-ARCH-002`（健康 Workflow 确定性已验证，业务 Workflow 属 M2+）、`NXW-NFR-SEC-003`（M0 Secret/SCA/SBOM/CVE/Cosign/审计骨架完成，M1 业务鉴权、Secret Provider 与业务审计尚未实现）；
 - 未覆盖：16 个业务模块与 14 项 MVP 能力保持 `BASELINED`，按矩阵映射至 M1—M9；试点阈值 `NXW-KQ-002` 未伪造。
 
 ## 10. 停止声明
 
-M0 已于 2026-08-24 由用户正式验收通过。当前已停止，未自行进入 M1 或任何后续 Milestone；等待用户另行明确下发下一阶段。外部 CI、容器供应链与 RustFS SPK-004 P1 风险继续保留，不因验收而伪报关闭。
+M0 已于 2026-08-24 由用户正式验收通过，原外部 CI、容器供应链与 RustFS SPK-004 P1 收尾已用真实回执关闭。当前停止在 M0，未自行进入 M1 或任何后续 Milestone；等待用户另行明确下发下一阶段。

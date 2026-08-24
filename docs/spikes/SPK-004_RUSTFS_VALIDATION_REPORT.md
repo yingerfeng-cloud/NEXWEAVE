@@ -3,7 +3,7 @@
 - Date: 2026-08-24
 - Environment: macOS Apple Silicon, Docker Desktop, real RustFS Compose service
 - Image: `quay.io/rustfs/rustfs:1.0.0-rc.3@sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5`
-- Result: S3/provider compatibility and single-node recovery **PASSED**; GitHub dual-architecture supply-chain receipt is recorded separately after the first clean main run
+- Result: M0 S3/provider compatibility, single-node recovery and dual-architecture supply-chain gates **PASSED**
 - Scope boundary: no Source business API, DB aggregate or scanning engine was implemented in M0
 
 ## Reproduction
@@ -41,7 +41,7 @@ The script automatically bypasses a host-wide proxy only for a loopback endpoint
 - Scanner: official `ghcr.io/aquasecurity/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969`, DB `ghcr.io/aquasecurity/trivy-db:2`, policy `HIGH,CRITICAL + ignore-unfixed + exit-code 1`.
 - Upstream signature check: Cosign v3.0.2 found no signature/SBOM artifacts on the fixed RustFS Quay index. NEXWEAVE therefore mirrors the exact digest only after checks and signs it as an internal approval artifact; the result must not be described as upstream provenance.
 
-The full local JSON/SBOM/scan files remain ignored because they are generated artifacts. The GitHub workflow uploads dual-architecture evidence as immutable run artifacts; its run URL and signed GHCR digest are added to the M0 execution report after the first clean run.
+The full local JSON/SBOM/scan files remain ignored because they are generated artifacts. GitHub Actions run `32702688049` for commit `e03efd9949914740761ecca9a1a6380ddee891c1` completed successfully: quality, Compose integration, API/Worker/Web dual-architecture images and the RustFS approval image all passed. Evidence artifacts are `container-evidence-api`, `container-evidence-worker-health`, `container-evidence-web` and `container-evidence-rustfs`; CI also verified every Cosign certificate identity against the main workflow.
 
 ## Object, state and error conclusions
 
@@ -50,5 +50,5 @@ ADR-0018 freezes the recommended Raw key, conditional write, checksum, idempoten
 ## Residual limits
 
 - This run validates single-node RustFS and the approved S3 subset. It does not validate distributed mode, rolling upgrade/downgrade, storage-node loss, RPO/RTO, throughput or large-data lifecycle execution.
-- RustFS remains an RC. R1 pilot promotion requires the signed digest and clean CI receipt; production HA/DR claims remain gated by M7/M12 tests.
+- RustFS remains an RC. R1 pilot promotion must consume the approved signed digest backed by run `32702688049`; production HA/DR claims remain gated by M7/M12 tests.
 - No real customer file, confidential data, SourceVersion row or Release object was created.

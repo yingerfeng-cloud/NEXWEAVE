@@ -3,8 +3,8 @@
 - Current Release: R1（M0—M9）
 - Current Milestone: M0 formally accepted; awaiting separate M1 dispatch
 - Business implementation: Not started
-- Git repository: Initialized locally
-- Git baseline commit: Not created; no configured `user.name` / `user.email`
+- Git repository: `https://github.com/yingerfeng-cloud/NEXWEAVE.git`, local `main` preserves the remote initial commit without force-push
+- Git baseline: `d3737be` M0 baseline + `272dff2` remote-history merge; CI compatibility fix `e03efd9`
 - M0: Explicitly dispatched by the user on 2026-08-23
 
 ## M-1 result
@@ -29,8 +29,10 @@
 - Temporal 1.29.6 动态配置已改用镜像实际提供的 `config/dynamicconfig/docker.yaml`；Compose 健康检查、API 依赖探测和真实 Worker Workflow 均通过；
 - Web 已改用完整非 root Nginx 主配置，健康检查固定到实际 IPv4 回环监听地址；`make dev-up` 已使 PostgreSQL、Redis、RustFS、Temporal、API、Worker、Web 全部启动并通过健康等待；
 - `make verify` 已通过 Web → API → PostgreSQL/Redis/RustFS/Temporal → Worker 的真实链路；`make migration-check` 已通过基础迁移升级、回滚和再次升级；
-- 当前本地 P0 为零。GitHub CI、容器签名/SBOM/漏洞扫描仍无外部或完整回执，继续作为 P1 跟踪，不得因验收而删除或伪报完成；
-- 用户于 2026-08-24 在已知上述 P1 遗留的前提下正式验收通过 M0；M1 仍须用户另行明确下发。
+- RustFS SPK-004 已在固定真实镜像上通过 S3 子集、条件写、版本、鉴权、multipart、生命周期、重启与逻辑备份恢复；对象 key、状态、补偿和供应链规则由 ADR-0018 冻结；
+- API、Worker、Web、RustFS 镜像本地复扫的可修复 HIGH/CRITICAL 均为 0；主分支 CI 对四类镜像构建/验证 amd64 与 arm64、生成 CycloneDX/CVE artifacts 并以 GitHub OIDC/Cosign 签名不可变 digest；
+- GitHub Actions run `32702688049` 对提交 `e03efd9` 的 quality、Compose integration、API/Worker/Web images、RustFS approval image 六个 job 全部成功；外部 CI、容器供应链与 SPK-004 的 M0 P1 收尾已闭环；
+- 当前 M0 P0/P1 阻塞均为零。用户于 2026-08-24 已正式验收通过 M0；M1 仍须用户另行明确下发。
 
 ## Hard boundaries
 

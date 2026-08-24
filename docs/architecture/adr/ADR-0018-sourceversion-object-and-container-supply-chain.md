@@ -52,3 +52,5 @@ ADR-0017 已选择 RustFS/S3，但尚未固定 SourceVersion Raw 对象的不可
 - `make rustfs-spike` 在真实 Compose RustFS 上验证 PUT/GET/HEAD/list、Range、checksum、条件写、版本、预签名、鉴权、multipart 重试/abort、生命周期、重启恢复和逻辑备份恢复；
 - GitHub 主分支 CI 生成并保存四类镜像的双架构 SBOM/CVE 证据，对发布 digest 进行 Cosign 签名与身份验证；
 - M1/M3 实现 SourceVersion/ObjectStorage Adapter 时，须将上述 key、幂等、状态、授权和补偿规则写入契约与真实集成测试，不得在 M0 用 Mock 冒充业务功能。
+
+2026-08-24 外部回执：GitHub Actions run `32702688049` 对提交 `e03efd9949914740761ecca9a1a6380ddee891c1` 的六个 job 全部成功；四类镜像的双架构 SBOM/CVE artifacts 已生成，Cosign GitHub OIDC 身份签名及回读验证通过。

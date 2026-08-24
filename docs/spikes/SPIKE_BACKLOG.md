@@ -28,7 +28,7 @@
 
 ## SPK-004 SourceVersion 与对象存储
 
-- 状态：`PROVIDER_PASS / CI_PENDING`（2026-08-24）；真实 RustFS S3 子集、单节点恢复、逻辑备份和 ARM64 CVE/SBOM 已通过，双架构签名回执等待首次 GitHub main CI，业务扫描 Activity 仍按 M1/M3 边界实现。
+- 状态：`M0_PASS`（2026-08-24）；真实 RustFS S3 子集、单节点恢复、逻辑备份、本地 ARM64 与 GitHub 双架构 SBOM/CVE/Cosign 均通过（run 32702688049）。业务扫描 Activity 仍按 M1/M3 边界实现，不冒充 M0 业务功能。
 - 问题：checksum、对象 key、上传会话、同内容幂等、替代版本、失效和受控下载如何设计？
 - 方法：用真实 RustFS/S3 兼容环境验证上传、下载、Range、multipart、失败重试、checksum、同 key 保护、版本控制、预签名 URL、权限、扫描状态、重启恢复和生命周期。
 - 通过：Raw 不可静默覆盖；数据库/对象一致；失败可恢复；下载始终重新授权。

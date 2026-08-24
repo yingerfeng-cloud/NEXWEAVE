@@ -7,7 +7,7 @@ NEXWEAVE 是面向企业专业知识的 LLM 原生知识编译、审核、发布
 ## 当前状态
 
 - Release 基线：R1 = M0—M9；
-- 最近验收 Milestone：用户于 2026-08-24 正式验收通过 M0；外部 CI、容器供应链与 RustFS SPK-004 风险继续作为 P1 跟踪；
+- 最近验收 Milestone：用户于 2026-08-24 正式验收通过 M0；同日完成远程基线、干净 GitHub CI、容器供应链门禁与 RustFS SPK-004 收尾；
 - 业务代码：未开始；当前代码仅验证工程底座；
 - M0 技术基线：Python 3.12/FastAPI、React/TypeScript、Temporal、PostgreSQL/pgvector、RustFS/S3、Redis；
 - 下一阶段：M1 未开始，必须等待用户单独明确下发。
