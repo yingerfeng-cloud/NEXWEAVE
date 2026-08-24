@@ -137,7 +137,7 @@ jobs:
           name: container-evidence-${{ matrix.name }}
           path: ${{ runner.temp }}/container-evidence/
           if-no-files-found: error
-      - uses: sigstore/cosign-installer@f713795cb21599bc4e5c4b58cbad1da852d7eeb9 # v3
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
           cosign-release: v3.0.2
       - name: Sign and verify the immutable image digest
@@ -215,7 +215,7 @@ jobs:
           name: container-evidence-rustfs
           path: ${{ runner.temp }}/container-evidence/
           if-no-files-found: error
-      - uses: sigstore/cosign-installer@f713795cb21599bc4e5c4b58cbad1da852d7eeb9 # v3
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
           cosign-release: v3.0.2
       - name: Sign, approve and verify the exact RustFS index
