@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+node_modules
+**/node_modules
+**/dist
+**/__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.env
+.DS_Store
+NEXWEAVE_完整分阶段开发任务书_V1.0
+docs
+artifacts
+reports

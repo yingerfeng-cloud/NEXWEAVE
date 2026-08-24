@@ -1,0 +1,38 @@
+[project]
+name = "nexweave"
+version = "0.1.0"
+description = "NEXWEAVE M0 architecture and executable engineering skeleton"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["apps/api/src", "packages/domain/src", "packages/contracts/src", "workers/health/src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "S"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+"migrations/**/*.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+mypy_path = ["apps/api/src", "packages/domain/src", "packages/contracts/src", "workers/health/src"]
+packages = ["nexweave_api", "nexweave_domain", "nexweave_contracts", "nexweave_worker_health"]
+
+[[tool.mypy.overrides]]
+module = ["redis.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "apps/api/tests", "packages/domain/tests", "packages/contracts/tests", "workers/health/tests"]
+pythonpath = ["apps/api/src", "packages/domain/src", "packages/contracts/src", "workers/health/src"]
+asyncio_mode = "auto"
+addopts = "--strict-markers --strict-config"
+markers = [
+  "integration: requires local infrastructure",
+]

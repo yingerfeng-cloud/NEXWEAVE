@@ -1,0 +1,18 @@
+{
+  "name": "nexweave",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NEXWEAVE M0 architecture and executable engineering skeleton",
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "format:check": "pnpm --filter @nexweave/web format:check",
+    "lint": "pnpm --filter @nexweave/web lint",
+    "typecheck": "pnpm --filter @nexweave/web typecheck",
+    "test": "pnpm --filter @nexweave/web test",
+    "build": "pnpm --filter @nexweave/web build",
+    "audit": "pnpm audit --prod --audit-level high"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

@@ -1,0 +1,7 @@
+# Draft only. Replace placeholders with approved teams before branch protection is enabled.
+* @project-owner
+/docs/architecture/ @architecture-owner
+/docs/governance/ @quality-security-owner
+/domain-packs/ @domain-pack-owner
+
+# Ownership handles are placeholders and must not be treated as real accounts or approvals.

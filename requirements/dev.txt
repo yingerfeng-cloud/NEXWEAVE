@@ -1,0 +1,8 @@
+-r runtime.txt
+boto3==1.43.78
+jsonschema==4.25.1
+mypy==1.17.1
+pip-audit==2.9.0
+pytest==8.4.1
+pytest-asyncio==1.1.0
+ruff==0.12.10

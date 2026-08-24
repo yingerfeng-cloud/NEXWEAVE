@@ -1,0 +1,67 @@
+{
+  "version": "1.2",
+  "baseline_version": "1.0",
+  "product": "NEXWEAVE",
+  "files": [
+    "00_NEXWEAVE_完整分阶段开发任务总纲_V1.0.md",
+    "01_NEXWEAVE_M-1_编码前启动准备与治理基线建立任务书.md",
+    "02_NEXWEAVE_M0_终局架构冻结与工程骨架任务书.md",
+    "03_NEXWEAVE_M1_平台基础、身份权限与核心领域模型任务书.md",
+    "04_NEXWEAVE_M2_Temporal可靠知识工作流内核任务书.md",
+    "05_NEXWEAVE_M3_资料中心、版本管理与文档解析任务书.md",
+    "06_NEXWEAVE_M4_Schema Studio与Domain Pack运行时任务书.md",
+    "07_NEXWEAVE_M5_LLM知识编译核心与Wiki工作台任务书.md",
+    "08_NEXWEAVE_M6_主张证据、冲突处理与专家审核闭环任务书.md",
+    "09_NEXWEAVE_M7_知识质量、不可变发布、图谱检索与可信问答任务书.md",
+    "10_NEXWEAVE_M8_连接器生态、Obsidian适配与GridCrew首期集成任务书.md",
+    "11_NEXWEAVE_M9_Equipment RCA领域包、纵向闭环与联合试点验收任务书.md",
+    "12_NEXWEAVE_M10_企业级治理、多空间运营与精细权限任务书.md",
+    "13_NEXWEAVE_M11_高级检索、知识图智能与持续评估任务书.md",
+    "14_NEXWEAVE_M12_高可用、灾备、国产化与规模性能任务书.md",
+    "15_NEXWEAVE_M13_私有Domain Pack生态与供应链治理任务书.md",
+    "16_NEXWEAVE_M14_多应用知识服务与GridCrew深度闭环任务书.md",
+    "17_NEXWEAVE_M15_商业发布、规模试点与运营移交任务书.md",
+    "18_NEXWEAVE_M0-Lite_本地轻量纵向闭环任务书_V1.0.md",
+    "README_执行说明.md"
+  ],
+  "milestones": [
+    "M-1",
+    "M0",
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M6",
+    "M7",
+    "M8",
+    "M9",
+    "M10",
+    "M11",
+    "M12",
+    "M13",
+    "M14",
+    "M15"
+  ],
+  "releases": {
+    "R1": "M0-M9",
+    "R2": "M10-M12",
+    "R3": "M13-M15"
+  },
+  "amendments": [
+    {
+      "date": "2026-08-24",
+      "adr": "ADR-0017",
+      "scope": "M0-M15, roadmap, M0-Lite and execution guidance",
+      "decision": "RustFS/S3 replaces the prior object-storage provider without a runtime fallback"
+    }
+  ],
+  "execution_profiles": {
+    "local_lite": {
+      "task": "M0-Lite",
+      "subphases": "LL-0-LL-5",
+      "replaces_formal_milestones": false,
+      "next_profile": "local_real"
+    }
+  }
+}

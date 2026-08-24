@@ -1,0 +1,17 @@
+* text=auto eol=lf
+*.md text diff=markdown
+*.json text
+*.yaml text
+*.yml text
+*.html text
+*.py text
+*.ts text
+*.tsx text
+*.sh text eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.docx binary
+*.zip binary

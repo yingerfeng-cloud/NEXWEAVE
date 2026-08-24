@@ -1,0 +1,45 @@
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+dist/
+build/
+*.egg-info/
+
+# Node
+node_modules/
+.npm/
+.pnpm-store/
+coverage/
+*.tsbuildinfo
+apps/web/dist/
+
+# IDE and local data
+.idea/
+.vscode/
+.nexweave-data/
+tmp/
+logs/
+
+# Generated artifacts
+artifacts/generated/
+reports/generated/
+artifacts/contracts/
+artifacts/security/
+artifacts/spikes/

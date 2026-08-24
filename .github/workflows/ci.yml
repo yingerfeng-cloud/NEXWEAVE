@@ -1,0 +1,231 @@
+name: M0 quality gates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.13"
+          cache: pip
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "24.19.0"
+      - name: Enable locked pnpm
+        run: corepack enable && corepack prepare pnpm@11.19.0 --activate
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements/dev.txt -c requirements/dev.lock
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Format
+        run: python -m ruff format --check . && pnpm format:check
+      - name: Lint and architecture boundaries
+        run: python -m ruff check . && pnpm lint
+      - name: Typecheck
+        run: python -m mypy && pnpm typecheck
+      - name: Unit and contract tests
+        run: python -m pytest -m "not integration" && pnpm test
+      - name: Frontend production build
+        run: pnpm build
+      - name: Secret scan
+        run: python scripts/secret_scan.py
+      - name: Dependency audit
+        run: python -m pip_audit -r requirements/runtime.txt && pnpm audit --prod --audit-level high
+
+  compose-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12.13"
+      - name: Start real M0 environment
+        run: python scripts/bootstrap_env.py && docker compose up --build --detach --wait
+      - name: Verify migration and real vertical chain
+        run: python scripts/verify_m0.py && docker compose exec -T api python scripts/check_migrations.py
+      - name: Collect diagnostics
+        if: failure()
+        run: docker compose ps && docker compose logs --no-color
+      - name: Stop disposable environment
+        if: always()
+        run: docker compose down --volumes
+
+  application-images:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api
+            dockerfile: apps/api/Dockerfile
+          - name: worker-health
+            dockerfile: workers/health/Dockerfile
+          - name: web
+            dockerfile: apps/web/Dockerfile
+    env:
+      IMAGE: ghcr.io/yingerfeng-cloud/nexweave-${{ matrix.name }}
+      TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: build
+        name: Build and push multi-architecture image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+      - name: Generate CycloneDX SBOMs and block fixable high vulnerabilities
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/container-evidence" "${RUNNER_TEMP}/trivy-cache"
+          for platform in linux/amd64 linux/arm64; do
+            suffix="${platform//\//-}"
+            docker run --rm \
+              --volume "${HOME}/.docker:/root/.docker:ro" \
+              --volume "${RUNNER_TEMP}/container-evidence:/evidence" \
+              --volume "${RUNNER_TEMP}/trivy-cache:/root/.cache/trivy" \
+              "${TRIVY_IMAGE}" image --platform "${platform}" \
+              --format cyclonedx \
+              --output "/evidence/${{ matrix.name }}-${suffix}.cdx.json" \
+              "${IMAGE}@${DIGEST}"
+            docker run --rm \
+              --volume "${HOME}/.docker:/root/.docker:ro" \
+              --volume "${RUNNER_TEMP}/container-evidence:/evidence" \
+              --volume "${RUNNER_TEMP}/trivy-cache:/root/.cache/trivy" \
+              "${TRIVY_IMAGE}" image --platform "${platform}" \
+              --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+              --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+              --format json \
+              --output "/evidence/${{ matrix.name }}-${suffix}-vulnerabilities.json" \
+              "${IMAGE}@${DIGEST}"
+          done
+      - name: Upload image evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: container-evidence-${{ matrix.name }}
+          path: ${{ runner.temp }}/container-evidence/
+          if-no-files-found: error
+      - uses: sigstore/cosign-installer@f713795cb21599bc4e5c4b58cbad1da852d7eeb9 # v3
+        with:
+          cosign-release: v3.0.2
+      - name: Sign and verify the immutable image digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+          cosign verify \
+            --certificate-identity "https://github.com/yingerfeng-cloud/NEXWEAVE/.github/workflows/ci.yml@refs/heads/main" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${IMAGE}@${DIGEST}"
+
+  rustfs-approval-image:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    env:
+      SOURCE: quay.io/rustfs/rustfs:1.0.0-rc.3@sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5
+      TARGET: ghcr.io/yingerfeng-cloud/nexweave-rustfs
+      TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+    steps:
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e # v0.4
+      - id: mirror
+        name: Copy the exact upstream index to a candidate tag
+        run: |
+          crane copy "${SOURCE}" "${TARGET}:candidate-${GITHUB_SHA}"
+          digest="$(crane digest "${TARGET}:candidate-${GITHUB_SHA}")"
+          test "${digest}" = "sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5"
+          echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+      - name: Verify both target architectures exist
+        env:
+          DIGEST: ${{ steps.mirror.outputs.digest }}
+        run: |
+          crane manifest "${TARGET}@${DIGEST}" > "${RUNNER_TEMP}/rustfs-manifest.json"
+          jq -e '[.manifests[].platform | select(.os == "linux") | .architecture] | index("amd64") and index("arm64")' "${RUNNER_TEMP}/rustfs-manifest.json"
+      - name: Generate dual-architecture SBOMs and block fixable high vulnerabilities
+        env:
+          DIGEST: ${{ steps.mirror.outputs.digest }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/container-evidence" "${RUNNER_TEMP}/trivy-cache"
+          for platform in linux/amd64 linux/arm64; do
+            suffix="${platform//\//-}"
+            docker run --rm \
+              --volume "${HOME}/.docker:/root/.docker:ro" \
+              --volume "${RUNNER_TEMP}/container-evidence:/evidence" \
+              --volume "${RUNNER_TEMP}/trivy-cache:/root/.cache/trivy" \
+              "${TRIVY_IMAGE}" image --platform "${platform}" \
+              --format cyclonedx \
+              --output "/evidence/rustfs-${suffix}.cdx.json" \
+              "${TARGET}@${DIGEST}"
+            docker run --rm \
+              --volume "${HOME}/.docker:/root/.docker:ro" \
+              --volume "${RUNNER_TEMP}/container-evidence:/evidence" \
+              --volume "${RUNNER_TEMP}/trivy-cache:/root/.cache/trivy" \
+              "${TRIVY_IMAGE}" image --platform "${platform}" \
+              --db-repository ghcr.io/aquasecurity/trivy-db:2 \
+              --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+              --format json \
+              --output "/evidence/rustfs-${suffix}-vulnerabilities.json" \
+              "${TARGET}@${DIGEST}"
+          done
+      - name: Upload RustFS evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: container-evidence-rustfs
+          path: ${{ runner.temp }}/container-evidence/
+          if-no-files-found: error
+      - uses: sigstore/cosign-installer@f713795cb21599bc4e5c4b58cbad1da852d7eeb9 # v3
+        with:
+          cosign-release: v3.0.2
+      - name: Sign, approve and verify the exact RustFS index
+        env:
+          DIGEST: ${{ steps.mirror.outputs.digest }}
+        run: |
+          cosign sign --yes "${TARGET}@${DIGEST}"
+          crane tag "${TARGET}@${DIGEST}" 1.0.0-rc.3-approved
+          test "$(crane digest "${TARGET}:1.0.0-rc.3-approved")" = "${DIGEST}"
+          cosign verify \
+            --certificate-identity "https://github.com/yingerfeng-cloud/NEXWEAVE/.github/workflows/ci.yml@refs/heads/main" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${TARGET}@${DIGEST}"

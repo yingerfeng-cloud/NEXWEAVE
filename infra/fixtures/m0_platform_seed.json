@@ -1,0 +1,27 @@
+{
+  "fixture_version": "1.0.0",
+  "classification": "PUBLIC",
+  "synthetic": true,
+  "tenant": {
+    "id": "018f1000-0000-7000-8000-000000000001",
+    "slug": "nexweave-local",
+    "display_name": "NEXWEAVE Local Synthetic Tenant"
+  },
+  "organization": {
+    "id": "018f1000-0000-7000-8000-000000000002",
+    "slug": "local-engineering",
+    "display_name": "Local Engineering"
+  },
+  "identity": {
+    "id": "018f1000-0000-7000-8000-000000000003",
+    "issuer": "urn:nexweave:local:m0",
+    "subject": "synthetic-developer",
+    "display_name": "Synthetic Developer"
+  },
+  "space": {
+    "id": "018f1000-0000-7000-8000-000000000004",
+    "slug": "platform-health",
+    "display_name": "Platform Health Fixture",
+    "default_classification": "INTERNAL"
+  }
+}

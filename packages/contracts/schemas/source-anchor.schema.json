@@ -1,0 +1,301 @@
+{
+  "$defs": {
+    "BlockLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Block Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "block",
+          "default": "block",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "block_id"
+      ],
+      "title": "BlockLocator",
+      "type": "object"
+    },
+    "BoundingBoxLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "coordinate_system": {
+          "const": "normalized_top_left",
+          "default": "normalized_top_left",
+          "title": "Coordinate System",
+          "type": "string"
+        },
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Height",
+          "type": "number"
+        },
+        "kind": {
+          "const": "bounding_box",
+          "default": "bounding_box",
+          "title": "Kind",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "page",
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "BoundingBoxLocator",
+      "type": "object"
+    },
+    "CharacterRangeLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "exclusiveMinimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "character_range",
+          "default": "character_range",
+          "title": "Kind",
+          "type": "string"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        },
+        "text_basis": {
+          "enum": [
+            "normalized_utf8",
+            "source_utf8"
+          ],
+          "title": "Text Basis",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "text_basis"
+      ],
+      "title": "CharacterRangeLocator",
+      "type": "object"
+    },
+    "LocatorStatus": {
+      "enum": [
+        "VALID",
+        "STALE",
+        "UNRESOLVED",
+        "REVOKED"
+      ],
+      "title": "LocatorStatus",
+      "type": "string"
+    },
+    "PageLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "page",
+          "default": "page",
+          "title": "Kind",
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "title": "Page",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "page"
+      ],
+      "title": "PageLocator",
+      "type": "object"
+    },
+    "TableCellLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "column_end": {
+          "minimum": 0,
+          "title": "Column End",
+          "type": "integer"
+        },
+        "column_start": {
+          "minimum": 0,
+          "title": "Column Start",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "table_cell",
+          "default": "table_cell",
+          "title": "Kind",
+          "type": "string"
+        },
+        "row_end": {
+          "minimum": 0,
+          "title": "Row End",
+          "type": "integer"
+        },
+        "row_start": {
+          "minimum": 0,
+          "title": "Row Start",
+          "type": "integer"
+        },
+        "table_id": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Table Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "table_id",
+        "row_start",
+        "row_end",
+        "column_start",
+        "column_end"
+      ],
+      "title": "TableCellLocator",
+      "type": "object"
+    },
+    "TimeRangeLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "end_ms": {
+          "exclusiveMinimum": 0,
+          "title": "End Ms",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "time_range",
+          "default": "time_range",
+          "title": "Kind",
+          "type": "string"
+        },
+        "start_ms": {
+          "minimum": 0,
+          "title": "Start Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_ms",
+        "end_ms"
+      ],
+      "title": "TimeRangeLocator",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "excerpt_hash": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Excerpt Hash",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "locator_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Locator Version",
+      "type": "string"
+    },
+    "locators": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "block": "#/$defs/BlockLocator",
+            "bounding_box": "#/$defs/BoundingBoxLocator",
+            "character_range": "#/$defs/CharacterRangeLocator",
+            "page": "#/$defs/PageLocator",
+            "table_cell": "#/$defs/TableCellLocator",
+            "time_range": "#/$defs/TimeRangeLocator"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/PageLocator"
+          },
+          {
+            "$ref": "#/$defs/BlockLocator"
+          },
+          {
+            "$ref": "#/$defs/CharacterRangeLocator"
+          },
+          {
+            "$ref": "#/$defs/TableCellLocator"
+          },
+          {
+            "$ref": "#/$defs/BoundingBoxLocator"
+          },
+          {
+            "$ref": "#/$defs/TimeRangeLocator"
+          }
+        ]
+      },
+      "minItems": 1,
+      "title": "Locators",
+      "type": "array"
+    },
+    "source_checksum": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Source Checksum",
+      "type": "string"
+    },
+    "source_version_id": {
+      "format": "uuid7",
+      "title": "Source Version Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/LocatorStatus"
+    }
+  },
+  "required": [
+    "id",
+    "source_version_id",
+    "source_checksum",
+    "excerpt_hash",
+    "locators",
+    "status"
+  ],
+  "title": "SourceAnchor",
+  "type": "object"
+}

@@ -1,0 +1,170 @@
+name: nexweave
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg17-trixie
+    environment:
+      POSTGRES_DB: ${NEXWEAVE_POSTGRES_DB:?run make env first}
+      POSTGRES_USER: ${NEXWEAVE_POSTGRES_USER:?run make env first}
+      POSTGRES_PASSWORD: ${NEXWEAVE_POSTGRES_PASSWORD:?run make env first}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    networks: [platform]
+
+  redis:
+    image: redis:7.4.11-alpine3.21
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks: [platform]
+
+  rustfs:
+    image: quay.io/rustfs/rustfs:1.0.0-rc.3@sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_ACCESS_KEY: ${NEXWEAVE_OBJECT_STORE_ACCESS_KEY:?run make env first}
+      RUSTFS_SECRET_KEY: ${NEXWEAVE_OBJECT_STORE_SECRET_KEY:?run make env first}
+      RUSTFS_OBS_LOGGER_LEVEL: info
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - rustfs-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+    networks: [platform]
+
+  temporal:
+    image: temporalio/auto-setup:1.29.6
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_SEEDS: postgres
+      POSTGRES_USER: ${NEXWEAVE_POSTGRES_USER:?run make env first}
+      POSTGRES_PWD: ${NEXWEAVE_POSTGRES_PASSWORD:?run make env first}
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/docker.yaml
+      TEMPORAL_ADDRESS: temporal:7233
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "7233:7233"
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+    networks: [platform]
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
+      NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.1.0-m0}
+      NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
+      NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
+      NEXWEAVE_OBJECT_STORE_HEALTH_URL: ${NEXWEAVE_OBJECT_STORE_HEALTH_URL:-http://rustfs:9000/health}
+      NEXWEAVE_OBJECT_STORE_BUCKET: ${NEXWEAVE_OBJECT_STORE_BUCKET:-nexweave-dev}
+      NEXWEAVE_REDIS_URL: ${NEXWEAVE_REDIS_URL:-redis://redis:6379/0}
+      NEXWEAVE_TEMPORAL_ENDPOINT: ${NEXWEAVE_TEMPORAL_ENDPOINT:-temporal:7233}
+      NEXWEAVE_TEMPORAL_NAMESPACE: ${NEXWEAVE_TEMPORAL_NAMESPACE:-default}
+      NEXWEAVE_TEMPORAL_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_TASK_QUEUE:-nexweave-m0-health}
+      NEXWEAVE_SECRET_PROVIDER: ${NEXWEAVE_SECRET_PROVIDER:-local-env-m0-only}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready', timeout=3)",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+    networks: [platform]
+
+  worker-health:
+    build:
+      context: .
+      dockerfile: workers/health/Dockerfile
+    environment:
+      NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
+      NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
+      NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
+      NEXWEAVE_REDIS_URL: ${NEXWEAVE_REDIS_URL:-redis://redis:6379/0}
+      NEXWEAVE_TEMPORAL_ENDPOINT: ${NEXWEAVE_TEMPORAL_ENDPOINT:-temporal:7233}
+      NEXWEAVE_TEMPORAL_NAMESPACE: ${NEXWEAVE_TEMPORAL_NAMESPACE:-default}
+      NEXWEAVE_TEMPORAL_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_TASK_QUEUE:-nexweave-m0-health}
+    depends_on:
+      temporal:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [platform]
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks: [platform]
+
+networks:
+  platform:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  rustfs-data:
