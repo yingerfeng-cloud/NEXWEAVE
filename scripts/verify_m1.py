@@ -16,6 +16,7 @@ from botocore.exceptions import ClientError
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = "http://localhost:8080"
+M1_COMPATIBLE_MILESTONES = {"M1", "M2"}
 
 
 def environment() -> dict[str, str]:
@@ -191,8 +192,9 @@ def main() -> None:
             "temporal",
         }:
             raise RuntimeError("M1 infrastructure readiness is incomplete")
-        if request(client, "GET", "/api/v1/version").json().get("milestone") != "M1":
-            raise RuntimeError("The deployed API is not reporting M1")
+        milestone = request(client, "GET", "/api/v1/version").json().get("milestone")
+        if milestone not in M1_COMPATIBLE_MILESTONES:
+            raise RuntimeError("The deployed API is not reporting an M1-compatible milestone")
         for route in ("/", "/spaces", "/sources", "/admin"):
             page = client.get(route)
             if page.status_code != 200 or "NEXWEAVE" not in page.text:
