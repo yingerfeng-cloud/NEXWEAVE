@@ -2,12 +2,12 @@
 
 NEXWEAVE 是面向企业专业知识的 LLM 原生知识编译、审核、发布与服务平台。
 
-当前仓库的 **M2 Temporal 可靠工作流内核已通过技术门禁**并停止等待用户正式验收：M1 平台、身份、空间、审计与对象基础已验收；M2 新增七类 Temporal Workflow 的通用可靠执行骨架、任务投影、真实任务中心、控制 API、故障恢复与官方时间跳跃验证。M2 Activity 仅形成内核 Stub 事实，不代表 Source、Compile、Review、Release 等后续知识业务已经实现。
+当前仓库的 **M2 Temporal 可靠工作流内核已于 2026-08-25 正式验收并停止**：M1 平台、身份、空间、审计与对象基础已验收；M2 新增七类 Temporal Workflow 的通用可靠执行骨架、任务投影、真实任务中心、控制 API、故障恢复与官方时间跳跃验证。M2 Activity 仅形成内核 Stub 事实，不代表 Source、Compile、Review、Release 等后续知识业务已经实现。
 
 ## 当前状态
 
 - Release 基线：R1 = M0—M9；
-- 最近验收 Milestone：M1 于 2026-08-24 正式验收；M2 同日明确下发，现已通过本地与远程技术门禁并待正式验收；
+- 最近验收 Milestone：M2 于 2026-08-25 正式验收；
 - 已实现业务边界：身份与权限、KnowledgeSpace、治理配置、托管对象，以及 M2 通用 WorkflowTask/Step/Event 查询投影；
 - 技术基线：Python 3.12/FastAPI、React/TypeScript、Temporal、PostgreSQL/pgvector、RustFS/S3、Redis；
 - 下一阶段：M3 未下发，必须等待用户单独明确指令。

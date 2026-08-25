@@ -1,14 +1,15 @@
 # NEXWEAVE Project Status
 
 - Current Release: R1（M0—M9）
-- Current Milestone: M2 implementation complete and stopped; awaiting user acceptance
-- Business implementation: M1 accepted; M2 Temporal workflow kernel and task center implemented within the Stub boundary
+- Current Milestone: M2 formally accepted and stopped; M3 not dispatched
+- Business implementation: M1 and M2 accepted; M2 Temporal workflow kernel and task center remain within the Stub boundary
 - Git repository: `https://github.com/yingerfeng-cloud/NEXWEAVE.git`, local `main` preserves the remote initial commit without force-push
 - Git baseline before the M1/M2 delivery commit: `727811f`; the user authorized and pushed the M1/M2 delivery and CI closeout on 2026-08-25. Functional gate commit `ddbcc6e` is on `origin/main` and GitHub Actions run `32808198635` passed
 - M0: Explicitly dispatched by the user on 2026-08-23
 - M1: Explicitly dispatched by the user on 2026-08-24
 - M1: Formally accepted by the user on 2026-08-24
 - M2: Explicitly dispatched by the user on 2026-08-24
+- M2: Formally accepted by the user on 2026-08-25
 
 ## M2 implementation result
 
@@ -19,7 +20,7 @@
 - Real Compose verification passed all seven Workflow types, transient retry, approval, pause/resume, cancellation compensation, duplicate Update, projection repair, Worker restart and replay; isolated PostgreSQL `base → head → base → head` migration verification passed;
 - The official Temporal SDK time-skipping test now runs as an independent Linux x64 CI gate; local execution passed and the remote `temporal-time-skipping` job passed in run `32808198635`;
 - GitHub Actions run `32808198635` passed all eight quality, time-skipping, Compose integration, four application-image and RustFS approval jobs. Dual-architecture SBOM/CVE evidence and Cosign signature verification were uploaded successfully;
-- M2 is stopped awaiting user acceptance. M3 Source/parse work has not been dispatched or started.
+- M2 was formally accepted by the user on 2026-08-25 and remains stopped. M3 Source/parse work has not been dispatched or started.
 
 ## M-1 result
 
@@ -63,4 +64,4 @@
 - 当前没有 Source/parse、Schema、真实 Compile、Review 业务对象、Release、Query、GridCrew 等后续业务功能实现；M2 同名 Workflow 仅为可靠内核 Stub；
 - 高保真原型仍是静态演示，不是已完成功能；
 - 未提供合规脱敏 RCA 试点资料；
-- M2 已完成并停止；仍不得提前实现 M3 的 Source/解析或 M4+ 的 Schema、真实 Compile、Review、Release、Query、GridCrew、RCA 业务。
+- M2 已正式验收并停止；仍不得提前实现 M3 的 Source/解析或 M4+ 的 Schema、真实 Compile、Review、Release、Query、GridCrew、RCA 业务。

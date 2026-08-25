@@ -3,7 +3,7 @@
 ## 阅读顺序
 
 1. 根目录 `AGENTS.md`
-2. 当前已执行待验收 Milestone：`development/tasks/04_NEXWEAVE_M2_Temporal可靠知识工作流内核任务书.md`
+2. 最近正式验收 Milestone：`development/tasks/04_NEXWEAVE_M2_Temporal可靠知识工作流内核任务书.md`
 3. 根目录 `PRODUCT_BASELINE.md`、`ARCHITECTURE_BASELINE.md`、`OPEN_QUESTIONS.md`
 4. `architecture/` 下的领域、数据、API、事件、Workflow、Pack 与 GridCrew 契约
 5. `governance/` 下的命名、需求追踪、安全、质量和开发流程
@@ -15,9 +15,9 @@
 | 资料 | 版本/状态 | 用途 | 权威级别 |
 |---|---|---|---|
 | 用户当前明确指令 | 当前 | 范围、优先级和明确决策 | 最高 |
-| 当前 Milestone 任务书 | M2 已执行、待用户验收 | 当前完成范围与验收边界 | 高 |
+| 当前 Milestone 任务书 | M2 已正式验收 | 当前完成范围与验收边界 | 高；M3 尚未下发 |
 | `AGENTS.md` 与 Accepted ADR | 当前 | 工作规则与架构决策 | 高 |
-| 根基线与需求追踪矩阵 | M2 增量待验收 | 冻结架构、契约与阶段追踪 | 高；M3 尚未下发 |
+| 根基线与需求追踪矩阵 | M2 增量已验收 | 冻结架构、契约与阶段追踪 | 高；M3 尚未下发 |
 | 完整开发总纲 | V1.0 | Release、Milestone、全局门禁 | 高 |
 | PRD | V1.0 | 产品功能与初始 NFR | 上位产品输入 |
 | 高保真原型 | V1.0 | 信息架构和交互目标 | 视觉/交互参考，非功能实现 |
@@ -46,6 +46,6 @@
 - `NEXWEAVE_Schema预览.png` 缺失；
 - 未提供脱敏 Equipment RCA 报告、设备手册、IOE/LOE 或专家问题集；
 - 原任务包 manifest 未覆盖嵌套 PRD/原型文件，仓库以 `governance/SOURCE_MANIFEST.md` 补充记录；
-- Git 身份未配置，不得伪造提交身份。
+- 仓库已使用用户既有 Git 身份完成获授权的历史提交；后续仍不得伪造或擅自变更提交身份。
 
 原始交付目录 `NEXWEAVE_完整分阶段开发任务书_V1.0/` 未被覆盖或改写。

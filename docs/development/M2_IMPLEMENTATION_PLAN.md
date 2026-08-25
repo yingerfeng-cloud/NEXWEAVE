@@ -1,6 +1,6 @@
 # NEXWEAVE M2 Implementation Plan
 
-> Status: IMPLEMENTED — AWAITING USER ACCEPTANCE. User formally accepted M1 and dispatched M2 on 2026-08-24. Implementation is stopped at the M2 boundary and does not authorize M3 work.
+> Status: ACCEPTED — STOPPED AT M2. The user formally accepted M2 on 2026-08-25. M3 has not been dispatched, and no M3 work is authorized.
 
 | Workstream | M2 outcome | Verification |
 |---|---|---|
@@ -17,6 +17,7 @@
 - The seven Workflow types, dedicated queues/Worker, PostgreSQL projections, authorization, audit/Outbox, reconciliation, OpenAPI/events/SDK and real task center are implemented.
 - Real Temporal E2E covers all seven types, Activity retry, duplicate Update, approval, pause/resume, cancel/compensation, projection repair, Worker restart and event-history replay.
 - The official SDK time-skipping test passed locally and as an independent Linux x64 gate in GitHub Actions run `32808198635`; the former external test-server initialization condition is closed.
+- The user formally accepted M2 on 2026-08-25; this acceptance does not dispatch M3.
 
 ## Explicit exclusions
 
