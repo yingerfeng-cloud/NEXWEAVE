@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import os
 from datetime import timedelta
+from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -12,23 +15,29 @@ from nexweave_worker_kernel.workflows import HumanReviewWorkflow
 
 
 @activity.defn(name="record_projection_transition")
-async def record_projection_transition(payload: dict[str, object]) -> dict[str, object]:
+async def record_projection_transition(payload: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
 @activity.defn(name="execute_m2_kernel_step")
-async def execute_kernel_step(payload: dict[str, object]) -> dict[str, object]:
+async def execute_kernel_step(payload: dict[str, Any]) -> dict[str, Any]:
     return {**payload, "attempt": 1, "kernel_outcome": "STUB_SUCCEEDED"}
 
 
 @activity.defn(name="compensate_m2_kernel_step")
-async def compensate_kernel_step(payload: dict[str, object]) -> dict[str, object]:
+async def compensate_kernel_step(payload: dict[str, Any]) -> dict[str, Any]:
     return {**payload, "kernel_outcome": "STUB_COMPENSATED"}
 
 
 @pytest.mark.integration
 async def test_human_review_timeout_escalates_with_time_skipping() -> None:
-    async with await WorkflowEnvironment.start_time_skipping() as environment:
+    download_dest_dir = os.environ.get("NEXWEAVE_TEMPORAL_TEST_SERVER_CACHE")
+    if download_dest_dir is not None:
+        Path(download_dest_dir).mkdir(parents=True, exist_ok=True)
+
+    async with await WorkflowEnvironment.start_time_skipping(
+        download_dest_dir=download_dest_dir
+    ) as environment:
         task_queue = f"m2-time-skip-{uuid4()}"
         async with Worker(
             environment.client,

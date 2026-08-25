@@ -2,7 +2,7 @@ PYTHON ?= python3
 PNPM ?= pnpm
 DOCKER ?= docker
 
-.PHONY: bootstrap format lint typecheck unit contract sdk-check web-build check env dev-up dev-down dev-logs verify verify-m0 verify-m1 verify-m2 migration-check rustfs-spike
+.PHONY: bootstrap format lint typecheck unit contract time-skipping sdk-check web-build check env dev-up dev-down dev-logs verify verify-m0 verify-m1 verify-m2 migration-check rustfs-spike
 
 bootstrap:
 	$(PYTHON) -m pip install -r requirements/dev.txt -c requirements/dev.lock
@@ -26,6 +26,9 @@ unit:
 
 contract:
 	$(PYTHON) -m pytest packages/contracts/tests tests/contract
+
+time-skipping:
+	$(PYTHON) -m pytest -q workers/kernel/tests/test_time_skipping.py -m integration
 
 sdk-check:
 	$(PNPM) --filter @nexweave/web exec prettier --check ../../packages/sdk/typescript
