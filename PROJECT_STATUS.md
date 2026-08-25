@@ -4,7 +4,7 @@
 - Current Milestone: M2 implementation complete and stopped; awaiting user acceptance
 - Business implementation: M1 accepted; M2 Temporal workflow kernel and task center implemented within the Stub boundary
 - Git repository: `https://github.com/yingerfeng-cloud/NEXWEAVE.git`, local `main` preserves the remote initial commit without force-push
-- Git baseline before the M1/M2 delivery commit: `727811f`; the user authorized a local commit on 2026-08-25 using the repository's existing Git identity; no push was authorized
+- Git baseline before the M1/M2 delivery commit: `727811f`; the user authorized and pushed the M1/M2 delivery and CI closeout on 2026-08-25. Functional gate commit `ddbcc6e` is on `origin/main` and GitHub Actions run `32808198635` passed
 - M0: Explicitly dispatched by the user on 2026-08-23
 - M1: Explicitly dispatched by the user on 2026-08-24
 - M1: Formally accepted by the user on 2026-08-24
@@ -17,7 +17,8 @@
 - PostgreSQL `WorkflowTask`, `WorkflowStep` and append-only `WorkflowTaskEvent` projections, audit/Outbox, lag indication and Temporal reconciliation/repair are exposed through authenticated APIs and typed SDKs;
 - The Web task center is driven by real APIs and supports list/detail/steps/logs/actions, deep links, refresh recovery and truthful M2 Stub boundaries;
 - Real Compose verification passed all seven Workflow types, transient retry, approval, pause/resume, cancellation compensation, duplicate Update, projection repair, Worker restart and replay; isolated PostgreSQL `base → head → base → head` migration verification passed;
-- The official Temporal SDK time-skipping test exists, but initialization of its external test-server binary did not complete and was stopped after 296 seconds. M2 is therefore reported as conditional rather than claiming that test passed;
+- The official Temporal SDK time-skipping test now runs as an independent Linux x64 CI gate; local execution passed and the remote `temporal-time-skipping` job passed in run `32808198635`;
+- GitHub Actions run `32808198635` passed all eight quality, time-skipping, Compose integration, four application-image and RustFS approval jobs. Dual-architecture SBOM/CVE evidence and Cosign signature verification were uploaded successfully;
 - M2 is stopped awaiting user acceptance. M3 Source/parse work has not been dispatched or started.
 
 ## M-1 result
@@ -54,8 +55,8 @@
 - Web 已实现登录态、空间恢复、16 个深链接路由、权限守卫、空间与管理真实页面；后续模块只陈述边界且无 Mock；
 - `0002_m1_platform_services` 真实 PostgreSQL 升级/回滚/再升级通过；最终 Compose 七服务均运行，六个带 healthcheck 的服务为 healthy，Worker Workflow 通过，真实 E2E 两次通过；
 - `make check` 通过 Python 28 项、契约 14 项、Web 5 项及 format/lint/typecheck/SDK/build；Secret/SCA/Compose/diff 门禁通过；
-- 独立 Temporal SDK time-skipping 测试的官方下载持续无响应并于 90 秒中止；真实 Compose Temporal Workflow 已通过，不影响 M1 无长业务 Workflow 的验收边界；
-- M1 无新增 P0。P1 保留生产 OIDC/Secret Provider/HTTPS 部署联调、外部 CI 与镜像供应链重跑；P2 保留 OTel contrib `0.65b0` 兼容观察和后续 RLS 纵深评估。
+- M1 验收时独立 Temporal SDK time-skipping 下载未取得结果；该历史披露已在 M2 收尾中由本地真实通过及远程独立门禁关闭，不改变 M1 无长业务 Workflow 的验收边界；
+- M1 无新增 P0。远程 CI 与镜像供应链重跑已由 run `32808198635` 关闭；P1 保留生产 OIDC/Secret Provider/HTTPS 部署联调，P2 保留 OTel contrib `0.65b0` 兼容观察和后续 RLS 纵深评估。
 
 ## Hard boundaries
 

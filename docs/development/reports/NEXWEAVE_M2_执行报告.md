@@ -2,9 +2,9 @@
 
 ## 1. 总体结论
 
-- 阶段：**有条件通过**。M2 Temporal 可靠知识工作流内核、任务投影、任务中心和真实故障恢复纵向链路已完成；官方 time-skipping test-server binary 初始化未完成，未取得时间跳跃用例通过结果。
-- 是否满足进入下一阶段条件：**否**。M2 尚待用户验收，且时间跳跃与本次变更的远程全局 CI/镜像供应链回执仍是明确条件项；不得自行进入 M3。
-- Git 基线：M1/M2 交付提交前 HEAD 为 `727811f`；用户于 2026-08-25 授权使用仓库既有 Git 身份创建本地提交，未授权 push。
+- 阶段：**通过**。M2 Temporal 可靠知识工作流内核、任务投影、任务中心、真实故障恢复纵向链路与官方时间跳跃门禁均已完成；远程全局 CI 和镜像供应链回执已取得。
+- 是否满足进入下一阶段条件：**是（技术门禁已满足）**。M2 仍待用户正式验收，M3 仍须用户单独明确下发；不得自行进入 M3。
+- Git 基线：M1/M2 交付提交前 HEAD 为 `727811f`；用户于 2026-08-25 授权使用仓库既有 Git 身份提交并 push。功能门禁提交 `ddbcc6e` 已在 `origin/main`，GitHub Actions run `32808198635` 全部通过。
 - 阶段边界：M2 七类 Workflow 只执行可靠内核 Stub，明确返回 `business_features_implemented=false`；未实现 M3 Source/解析或 M4+ Schema、真实 Compile、Review 业务、Release、Query、GridCrew/RCA 功能。
 
 ## 2. 实际完成范围
@@ -22,7 +22,7 @@
 - Activity 具备 start/schedule timeout、heartbeat、指数重试、最大 attempts 和不可重试错误分类；故障注入验证首 attempt 失败、第二 attempt 成功；
 - 取消按已完成步骤逆序补偿；FAILED/TIMED_OUT 提供同 Workflow ID 新 Run 的 retry 路径；
 - 真实演练覆盖七类任务逐类取消、重复创建/命令、关闭 Run 对账失败后以同 Workflow ID 新 Run 重试恢复、Worker 停止/恢复、历史 Replay、投影破坏/对账修复、Event 防篡改与 Audit/Outbox；
-- 官方 SDK time-skipping 测试已编写，但外部 binary 初始化未完成，因此不标记通过。
+- 官方 SDK time-skipping 测试已在本地及 GitHub Actions 独立 Linux x64 job 通过；测试跳过 300 秒 durable timer，并验证升级事实和后续人工批准完成。
 
 ### 任务中心
 
@@ -99,10 +99,10 @@
 - Python 与 JavaScript production dependency audit 均为 `No known vulnerabilities found`；
 - 最终八个 Compose 服务运行，带 healthcheck 的服务均 healthy；kernel Worker 运行中。故障注入 WARNING 为预期首 attempt 失败，任务均按断言恢复。
 
-### 未执行/未取得通过结果
+### 远程闭环与未执行项
 
-- `workers/kernel/tests/test_time_skipping.py` 调用官方 `WorkflowEnvironment.start_time_skipping()` 时，外部 test-server binary 初始化 296 秒未完成并人工中止；**0 tests completed**，不冒充成功；
-- 当前变更已本地提交但未 push，故没有本次 M2 变更对应的远程全局 CI、双架构镜像 SBOM/CVE/Cosign 回执；CI 配置已加入 M2 门禁，但不能把配置存在当成远程通过；
+- `workers/kernel/tests/test_time_skipping.py` 首次初始化外部 test-server binary 296 秒未完成并人工中止；修正测试 Activity 类型并设置显式缓存目录后，本地真实执行 `1 passed`，run `32808198635` 的独立 `temporal-time-skipping` job 通过；
+- run `32808198635` 的 quality、time-skipping、Compose integration、四个 application-image 与 RustFS approval 共八个 job 全部通过；API、Web、worker-health、worker-kernel 与 RustFS 的双架构 CycloneDX SBOM、可修复 HIGH/CRITICAL CVE 阻断、Cosign 签名和验证均成功并上传制品；
 - 未执行生产 Temporal 多集群/HA/DR/升级、生产 OIDC/Secret/HTTPS、容量/性能或国产浏览器专项认证。
 
 ## 6. 数据库与迁移
@@ -131,8 +131,6 @@
 
 ### P1
 
-- Temporal SDK 官方 time-skipping test-server binary 未初始化完成；需在可用 CI runner 缓存官方 binary 并取得真实通过结果；
-- 当前 M2 已本地提交但未 push，尚无对应远程全局 CI、双架构 kernel/API/Web 镜像 SBOM/CVE/Cosign 证据；
 - 本地单节点 Temporal 不关闭生产 Namespace 保留、版本升级兼容、HA/DR、容量与 RPO/RTO 门禁。
 
 ### P2
@@ -150,4 +148,4 @@
 
 ## 10. 停止声明
 
-已停止在 M2，未自行进入下一 Milestone。
+M2 技术门禁已通过并停止，等待用户正式验收；未自行进入 M3 或任何后续 Milestone。

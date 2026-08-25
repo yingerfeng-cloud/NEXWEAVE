@@ -78,7 +78,7 @@ make verify-m2 PYTHON=.venv/bin/python
 .venv/bin/python -m pytest -q workers/kernel/tests/test_time_skipping.py -m integration
 ```
 
-本次环境中该二进制初始化未完成；必须取得真实退出码和结果后才能标记通过。
+首次运行需要下载官方 test-server binary。CI 在 Linux x64 runner 上使用 `NEXWEAVE_TEMPORAL_TEST_SERVER_CACHE` 指定下载目录并以独立 job 执行；2026-08-25 本地与 GitHub Actions run `32808198635` 均已取得真实通过结果。
 
 ## 7. 迁移与回滚
 
@@ -98,7 +98,6 @@ make dev-down
 
 ## 9. 已知条件项
 
-- Temporal SDK time-skipping test-server binary 初始化未完成；
 - 本地 Compose 不构成生产 HA、DR、保留策略、升级或容量认证；
-- M2 已由用户授权本地提交但未 push，因此没有本次变更对应的远程 CI、双架构 SBOM/CVE/Cosign 回执；
+- 远程 CI 与双架构 SBOM/CVE/Cosign 已由 run `32808198635` 验证；生产部署仍须按目标环境重新验证 OIDC、Secret、HTTPS、HA/DR 与容量；
 - M3 Source/解析、M4 Schema、M5 真实 Compile、M6 Review、M7 Release 等业务仍未实现。

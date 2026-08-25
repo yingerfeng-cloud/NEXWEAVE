@@ -55,7 +55,7 @@
 | NXW-NFR-AVL-003 | Raw/Release 备份恢复 | PRD 12.2 | M7,M12 | 备份/恢复/索引重建 | BASELINED |
 | NXW-NFR-SEC-001 | HTTPS、OIDC、RBAC+ABAC、密级/空间隔离 | PRD 12.3/13 | M1 | 越权矩阵/传输安全 | PARTIAL；M1 已验证 OIDC 兼容配置、RBAC+ABAC、跨租户/空间/密级隔离；本地 Compose 不作为 HTTPS 终止验收 |
 | NXW-NFR-SEC-002 | 模型调用脱敏，高密资料禁止第三方模型 | PRD 12.3 | M1,M5 | 数据流/策略/泄漏测试 | PARTIAL；M1 模型配置禁止外部 Profile 接收 `HIGHLY_RESTRICTED`，真实模型数据流待 M5 |
-| NXW-NFR-SEC-003 | API 密钥加密/引用，完整审计，SBOM/依赖扫描 | PRD 12.3 | M0,M1 | secret scan/SCA/审计测试 | PARTIAL；M1 业务写入审计/Outbox、配置仅存 Secret 引用并通过本地 secret/SCA；生产 Secret Provider 与本次提交的外部 CI 重跑待部署流程 |
+| NXW-NFR-SEC-003 | API 密钥加密/引用，完整审计，SBOM/依赖扫描 | PRD 12.3 | M0,M1 | secret scan/SCA/审计测试 | PARTIAL；M1 业务写入审计/Outbox、配置仅存 Secret 引用并通过 secret/SCA；run 32808198635 的远程 CI、双架构 SBOM/CVE/Cosign 全部通过，生产 Secret Provider 仍待目标环境联调 |
 | NXW-NFR-AUD-001 | 知识、模型/Prompt、审核、发布、问答版本可追溯 | PRD 12.4 | M1-M7 | 固定 Release 复现 E2E | PARTIAL；M1 ModelProfile/PromptVersion/ConnectorDefinition 版本、审计和事件可追溯，知识链路待 M3—M7 |
 | NXW-NFR-COMPAT-001 | Chromium、国产浏览器、离线内网 | PRD 12.5 | R1 基线、M12 正式验收 | 浏览器矩阵/离线安装 | PARTIAL；M1 Web 响应式、键盘语义和生产静态构建通过，国产浏览器矩阵与离线交付认证待后续环境验收 |
 | NXW-ARCH-001 | domain/contracts 不依赖框架、数据库、Temporal、厂商 SDK | 总纲 6.2 | M0 起持续 | `tests/architecture/test_dependency_boundaries.py` | VERIFIED（M1 持续，application 亦受边界测试） |
@@ -110,6 +110,6 @@
 | Activity 可靠性 | timeout、指数重试、不可重试错误、heartbeat、取消与补偿 | fault injection + cancellation compensation | VERIFIED |
 | 投影与对账 | Task/Step/append-only Event、revision/sync、Temporal reconcile | DB trigger + corruption/repair E2E | VERIFIED |
 | Worker 恢复与确定性 | Worker stop/start、继续执行、历史 Replayer | real Temporal fault/replay drill | VERIFIED |
-| 时间跳跃 | SDK time-skipping test | integration test | CONDITIONAL；外部 test-server 初始化未完成，未取得通过结果 |
+| 时间跳跃 | SDK time-skipping test | integration test | VERIFIED；本地真实执行通过，GitHub Actions run 32808198635 的独立 `temporal-time-skipping` job 通过 |
 | 任务中心/API/SDK | 真实列表/详情/步骤/日志/动作/深链接；typed clients | OpenAPI/contract/UI/build/E2E | VERIFIED |
 | 数据与迁移 | `0003_m2_temporal_kernel` | 隔离真实 PostgreSQL base/down/up | VERIFIED |

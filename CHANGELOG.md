@@ -30,10 +30,12 @@ All notable changes to NEXWEAVE will be documented in this file.
 - RustFS replacement explicitly approved by the user on 2026-08-24; production promotion remains gated by SPK-004 compatibility, recovery and supply-chain evidence.
 - M0 P1 closure backed by GitHub Actions run 32702688049: all six quality, Compose, application-image and RustFS approval jobs passed.
 - M1 formally accepted and M2 formally dispatched by the user on 2026-08-24.
-- Local Git commit of the accepted M1 and completed M2 delivery authorized by the user on 2026-08-25; no push authorized.
+- Git commit and push of the accepted M1 and completed M2 delivery authorized by the user on 2026-08-25; GitHub Actions run 32808198635 passed all eight quality, time-skipping, Compose and image-supply-chain jobs.
 
 ### Fixed
 
+- Added an independent Temporal SDK time-skipping CI gate, fixed test Activity payload annotations and closed the official test-server initialization condition locally and remotely.
+- Scoped the GitHub `runner` context to step-level environment, installed locked Compose verification dependencies and made the M1 regression verifier accept the current M2 deployment.
 - Made duplicate M2 commands return the original business result before stale ETag evaluation, preserving command idempotency across retries.
 - Removed an internal command-record field before public response validation and made Workflow projection updates type-stable for asyncpg.
 - Made Temporal closed execution status override stale Workflow query snapshots during reconciliation, so terminated/failed runs can enter the authorized retry path.

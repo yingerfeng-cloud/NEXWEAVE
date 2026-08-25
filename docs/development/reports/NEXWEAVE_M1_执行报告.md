@@ -4,7 +4,7 @@
 
 - 阶段：**通过（用户于 2026-08-24 正式验收）**。M1 平台基础、身份权限、空间、治理配置、托管对象、审计/Outbox、可观测性与 Web 管理闭环均已形成真实、可测试、可迁移的纵向能力。
 - 是否满足进入下一阶段条件：**是**；用户已于 2026-08-24 明确下发 M2。
-- Git 基线：M1 执行/验收时 HEAD 为 `727811f` 且变更未提交；用户于 2026-08-25 授权使用仓库既有 Git 身份将 M1/M2 交付创建本地提交，未授权 push。
+- Git 基线：M1 执行/验收时 HEAD 为 `727811f` 且变更未提交；用户于 2026-08-25 随后授权使用仓库既有 Git 身份提交并 push 合并 M1/M2 交付，功能门禁提交 `ddbcc6e` 与 run `32808198635` 已取得远程全绿回执。
 - 阶段边界：没有实现 Source、Schema、Compile、Wiki、Claim/Evidence、Graph、Conflict、Review、Quality、Release、Query、Domain Pack、GridCrew、真实 Connector/模型执行或 RCA 功能。
 
 ## 2. 实际完成范围
@@ -102,8 +102,8 @@
 
 ### 未完成/不伪造
 
-- 独立 `.venv/bin/python -m pytest -q -m integration` 需要从 `temporal.download` 下载官方 time-skipping test server；受限网络首次明确失败，获准联网后 90.53 秒仍无输出，人工中止（1 个测试未取得结果）。真实 Compose Temporal server/Worker workflow 已在两次最终 E2E 中通过；本报告不把下载项写成成功。
-- M1 验收时按规则未提交或 push；2026-08-25 用户授权本地提交但仍未 push，因此没有新 M1 GitHub Actions、双架构镜像 SBOM/CVE/Cosign 回执；远程执行仍属于 push 后的外部门禁。
+- M1 验收当时，独立 `.venv/bin/python -m pytest -q -m integration` 需要从 `temporal.download` 下载官方 time-skipping test server；受限网络首次明确失败，获准联网后 90.53 秒仍无输出，人工中止（1 个测试未取得结果）。真实 Compose Temporal server/Worker workflow 已在两次最终 E2E 中通过；当时不把下载项写成成功，后续闭环见本报告 P2 补充。
+- M1 验收时按规则未提交或 push；2026-08-25 用户随后明确授权提交并 push，run `32808198635` 的外部 CI、双架构镜像 SBOM/CVE/Cosign 回执已取得。该补充证据不改写 M1 验收时的历史事实。
 - 未执行生产 OIDC、外部 Secret Provider、HTTPS ingress、国产浏览器矩阵、HA/DR 或性能认证；它们需要实际部署环境，不以本地配置冒充。
 
 ## 6. 数据库与迁移
@@ -135,20 +135,20 @@
 ### P1
 
 - 生产 OIDC claim 映射、外部 Secret Provider 和 HTTPS ingress 需在目标环境联调；本地仅验证严格配置边界；
-- 当前 M1 已随 M2 本地提交但未 push，尚无此次变更的远程 CI、双架构应用镜像 SBOM/CVE/Cosign 回执；push 后必须通过既有全局 CI；
+- M1/M2 合并交付的远程 CI 与双架构应用镜像 SBOM/CVE/Cosign 已由 run `32808198635` 关闭；
 - RustFS `1.0.0-rc.3` 的分布式/HA、升级回滚、规模和生产 RPO/RTO 仍按既定 M7/M12 门禁，不由 M1 单节点 E2E关闭。
 
 ### P2
 
 - OpenTelemetry contrib instrumentation 为精确锁定的 `0.65b0`，保持 adapter 隔离并持续观察兼容性；
 - RLS 仅作为后续纵深选项，需先验证连接池 session context、后台任务 bypass、迁移和恢复运维；
-- Temporal SDK time-skipping server 下载测试未取得结果；已有真实 Compose Workflow 证据，但可在网络稳定并缓存官方二进制后补跑；
+- M1 验收时披露的 Temporal SDK time-skipping 下载未取得结果已在 M2 收尾中由本地与远程独立门禁关闭；
 - 国产浏览器矩阵、离线内网交付与无障碍专项认证仍待目标环境；当前仅通过响应式/语义/组件/production build 门禁。
 
 ## 9. 需求追踪更新
 
 - 已完成需求 ID：`NXW-SPACE-001`, `NXW-SPACE-002`, `NXW-ADMIN-001`, `NXW-ARCH-001`（M1 持续）；
-- 部分完成需求 ID：`NXW-DASH-001`（M1 Space/Audit 概览）、`NXW-NFR-SEC-001`（本地无生产 HTTPS 终止）、`NXW-NFR-SEC-002`（治理策略已实现，真实模型流待 M5）、`NXW-NFR-SEC-003`（业务审计/Secret 引用/SCA 已完成，外部 Secret/新远程供应链回执待部署/提交）、`NXW-NFR-AUD-001`（M1 模型/Prompt/Connector 可追溯）、`NXW-NFR-COMPAT-001`, `NXW-ARCH-002`；
+- 部分完成需求 ID：`NXW-DASH-001`（M1 Space/Audit 概览）、`NXW-NFR-SEC-001`（本地无生产 HTTPS 终止）、`NXW-NFR-SEC-002`（治理策略已实现，真实模型流待 M5）、`NXW-NFR-SEC-003`（业务审计/Secret 引用/SCA 与远程供应链已完成，生产 Secret Provider 待部署）、`NXW-NFR-AUD-001`（M1 模型/Prompt/Connector 可追溯）、`NXW-NFR-COMPAT-001`, `NXW-ARCH-002`；
 - 未覆盖需求 ID：M2+ 的 Source、Schema、Compile、Wiki、Claim/Evidence、Graph、Conflict、Review、Quality、Release、Query、Pack、Integration/GridCrew 与知识质量/性能/HA 正式验收项；它们保持 `BASELINED`，没有提前实现或伪造。
 
 ## 10. 停止声明

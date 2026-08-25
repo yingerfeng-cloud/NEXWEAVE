@@ -1,12 +1,12 @@
 # NEXWEAVE M2 可靠性与故障演练报告
 
-> 日期：2026-08-24
-> 环境：本地 Docker Compose、Temporal Server 1.29.6、Temporal Python SDK 1.31.0、PostgreSQL 17
+> 日期：2026-08-24；条件项闭环：2026-08-25
+> 环境：本地 Docker Compose 与 GitHub Actions Linux x64、Temporal Server 1.29.6、Temporal Python SDK 1.31.0、PostgreSQL 17
 > 数据：仅合成开发身份、空间、业务键与 Stub 引用；无客户或 RCA 资料
 
 ## 1. 结论
 
-M2 的七类可靠 Workflow 内核、Activity 重试、命令幂等、人工等待、暂停/恢复、取消补偿、投影对账、Worker 恢复和历史 Replay 已在真实 Temporal/PostgreSQL 环境通过。官方 SDK 时间跳跃测试代码已实现，但外部 test-server binary 初始化未完成，未取得通过结果；因此可靠性验收为**有条件通过**。
+M2 的七类可靠 Workflow 内核、Activity 重试、命令幂等、人工等待、暂停/恢复、取消补偿、投影对账、Worker 恢复和历史 Replay 已在真实 Temporal/PostgreSQL 环境通过。官方 SDK 时间跳跃测试已在本地及 GitHub Actions 独立 Linux x64 job 通过；可靠性验收为**通过**。
 
 M2 不生成 SourceVersion、知识草稿、ReviewAction、Release、Pack Installation 或 GridCrew intake。所有成功结果均明确包含 `business_features_implemented=false`，不能作为 M3+ 功能证据。
 
@@ -36,7 +36,7 @@ M2 不生成 SourceVersion、知识草稿、ReviewAction、Release、Pack Instal
 | History Replay | 从真实 Temporal 获取已完成 history，使用七类当前定义 Replayer | 无 nondeterminism | 通过 |
 | Event 防篡改 | 尝试 UPDATE 一条 `workflow_task_events` | 数据库 trigger 拒绝 | 通过 |
 | 审计与事件 | 统计 `workflow.*` Audit 与 Outbox | 均存在且非零 | 通过 |
-| 时间跳跃 | 启动官方 `WorkflowEnvironment.start_time_skipping()` | 跳过 durable timer 并验证升级 | **未取得结果**；external binary 初始化 296 秒无完成后中止 |
+| 时间跳跃 | 启动官方 `WorkflowEnvironment.start_time_skipping()`，跳跃 301 秒 | 跳过 300 秒 durable timer、验证升级后人工批准完成 | 通过；本地 `1 passed`，GitHub Actions run `32808198635` 独立 job 通过 |
 
 ## 4. 超时、重试与补偿策略
 
@@ -80,11 +80,9 @@ make check PYTHON=.venv/bin/python
 
 ### P1
 
-- 官方 time-skipping test-server binary 未能初始化；需在可缓存/可联网的 CI runner 取得真实测试通过结果，才能关闭 M2 时间跳跃条件项；
-- 当前变更已由用户授权本地提交但未 push，尚无对应远程全局 CI、双架构镜像 SBOM/CVE/Cosign 回执。
+- 本地单节点演练与 CI 不构成生产 Namespace 保留、Temporal 升级兼容、多集群 HA/DR、容量或 RPO/RTO 认证。
 
 ### P2
 
-- 本地单节点演练不构成生产 Namespace 保留、Temporal 升级兼容、多集群 HA/DR、容量或 RPO/RTO 认证；
 - Continue-As-New 与超大 history 在出现真实长流程/规模数据后验证；
 - M6 人工审核升级策略仍由 `OQ-REVIEW-001` 决定。

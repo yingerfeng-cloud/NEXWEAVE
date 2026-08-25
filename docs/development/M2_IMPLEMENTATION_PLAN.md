@@ -16,7 +16,7 @@
 
 - The seven Workflow types, dedicated queues/Worker, PostgreSQL projections, authorization, audit/Outbox, reconciliation, OpenAPI/events/SDK and real task center are implemented.
 - Real Temporal E2E covers all seven types, Activity retry, duplicate Update, approval, pause/resume, cancel/compensation, projection repair, Worker restart and event-history replay.
-- The official SDK time-skipping test is implemented but its external test-server binary initialization did not complete in the available environment; this is reported as an explicit conditional item, not a pass.
+- The official SDK time-skipping test passed locally and as an independent Linux x64 gate in GitHub Actions run `32808198635`; the former external test-server initialization condition is closed.
 
 ## Explicit exclusions
 
