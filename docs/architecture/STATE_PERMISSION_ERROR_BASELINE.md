@@ -1,6 +1,6 @@
-# M0 State, Permission and Error Contract
+# M2 State, Permission and Error Contract
 
-> Status: Accepted. This document freezes names and cross-cutting semantics; later Milestones implement and test the corresponding business transitions.
+> Status: M1 platform states are accepted; M2 WorkflowTask/Step states, permissions and errors are implemented. Later knowledge states remain frozen vocabulary for their assigned Milestones.
 
 ## State vocabulary
 
@@ -12,6 +12,13 @@
 | Release | `DRAFT`, `VALIDATING`, `READY_FOR_APPROVAL`, `APPROVED`, `PUBLISHING`, `PUBLISHED`, `FAILED`, `DEPRECATED` | `PUBLISHED` manifest is immutable; deprecation is a new fact |
 | SourceAnchor | `VALID`, `STALE`, `UNRESOLVED`, `REVOKED` | historical locator is not rewritten |
 | Evidence role | `SUPPORTS`, `OPPOSES`, `CONTEXT` | role is distinct from confidence/similarity |
+| KnowledgeSpace | `ACTIVE`, `ARCHIVED` | archive is soft and M1 exposes no restore or physical delete |
+| SpaceMember | `ACTIVE`, `REVOKED` | revoke retains the policy fact and denies subsequent access |
+| UploadSession | `INITIATED`, `UPLOADING`, `COMPLETED`, `ABORTED`, `EXPIRED` | terminal sessions cannot accept new bytes |
+| Object scan | `PENDING`, `CLEAN`, `INFECTED`, `FAILED` | only `CLEAN` bytes can be downloaded |
+| Governance | `DRAFT`, `ACTIVE`, `DISABLED`, `DEPRECATED` | PromptVersion is append-only; M1 does not execute models/connectors |
+| WorkflowTask | `CREATED`, `STARTING`, `RUNNING`, `PAUSED`, `WAITING`, `WAITING_INPUT`, `CANCELLING`, `COMPENSATING`, `CANCELLED`, `SUCCEEDED`, `FAILED`, `TIMED_OUT`, `REJECTED` | Temporal advances execution; terminal tasks do not accept control except FAILED/TIMED_OUT retry |
+| WorkflowStep | `PENDING`, `RUNNING`, `RETRYING`, `PAUSED`, `WAITING`, `SUCCEEDED`, `FAILED`, `CANCELLED`, `COMPENSATED` | projection is repairable; Event history is append-only |
 
 Transitions occur only through application commands or authorized Temporal Update/Signal handlers. Database jobs, UI state and projection repair cannot advance the authoritative state independently. Illegal transitions return `STATE_TRANSITION_NOT_ALLOWED` and write an audit outcome.
 
@@ -31,6 +38,10 @@ Transitions occur only through application commands or authorized Temporal Updat
 
 The permission decision is `role actions ∩ tenant/space membership ∩ object state ∩ classification clearance ∩ separation-of-duty policy`. Missing facts mean deny. Hiding a button is not authorization.
 
+M1 concretely grants only the actions declared in `packages/domain/src/nexweave_domain/access.py`. Service identities receive no action from the tenant `service` role alone: they require `nexweave-api` audience and explicit active space membership/space role. Platform/tenant admins can inspect tenant facts, but classification clearance and archived-resource rules still constrain the result. Every denied tenant/space decision is appended to AuditLog with the request trace ID.
+
+M2 adds `workflow.create`, `workflow.read`, `workflow.control`, `workflow.review` and `workflow.reconcile`. The API intersects these role actions with active membership and the authoritative Workflow status before returning `allowed_actions`; `If-Match` and command idempotency are mandatory for mutation. A Web button, database projection value or client-supplied actor never grants a command.
+
 ## Stable error codes
 
 All public HTTP errors use `application/problem+json` and the JSON Schema at `packages/contracts/schemas/problem.schema.json`.
@@ -45,9 +56,13 @@ All public HTTP errors use `application/problem+json` and the JSON Schema at `pa
 | `PRECONDITION_FAILED` | 412 | ETag/If-Match failed; reread resource |
 | `STATE_TRANSITION_NOT_ALLOWED` | 409 | command invalid for current state |
 | `IDEMPOTENCY_KEY_REUSED` | 409 | same key used with different request hash |
+| `INVALID_CURSOR` | 400 | opaque cursor is malformed or its continuation anchor is unavailable |
 | `SEMANTIC_POLICY_FAILED` | 422 | Schema/Evidence/Release gate failed |
 | `RATE_LIMITED` | 429 | retry only after server guidance |
 | `DEPENDENCY_UNAVAILABLE` | 503 | transient provider/workflow failure; retry policy applies |
+| `BUSINESS_KEY_CONFLICT` | 409 | stable workflow business key already exists with a different creation payload |
+| `WORKFLOW_COMMAND_REJECTED` | 409 | command is not valid for the current Workflow type/status |
+| `WORKFLOW_DEPENDENCY_UNAVAILABLE` | 503 | Temporal operation unavailable; retry only with the same idempotency key |
 | `INTERNAL_ERROR` | 500 | opaque detail and trace ID; never expose stack/secrets |
 
 `detail` is safe human-readable context and may change; integrations branch only on `code` and HTTP status. Field issues use JSON Pointer locations.

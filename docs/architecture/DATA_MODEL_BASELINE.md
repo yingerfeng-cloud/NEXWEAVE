@@ -1,6 +1,6 @@
 # Data Model Baseline
 
-> M0 冻结逻辑数据边界并建立 `0001_m0_platform_foundation` Alembic 迁移。该迁移只含通用租户/组织/身份/空间/审计/Outbox/配置/平台版本；下列知识业务表均未建立。
+> M0 冻结逻辑数据边界，M1 以 `0002_m1_platform_services` 实现平台基础；M2 以追加迁移 `0003_m2_temporal_kernel` 实现通用任务查询投影。Source 及后续知识业务表仍未建立。
 
 ## 1. 核心表域
 
@@ -11,6 +11,7 @@
 | Schema | `schema_definition`, `schema_version`, `entity_type`, `relation_type`, `page_template`, `lint_rule` |
 | 知识 | `wiki_page`, `wiki_page_version`, `entity`, `entity_alias`, `relation`, `claim`, `evidence`, `conflict` |
 | 编译/审核 | `compile_job`, `compile_step`, `review_task`, `review_action`, `approval` |
+| 通用工作流投影 | `workflow_task`, `workflow_step`, `workflow_task_event` |
 | 质量/发布 | `evaluation_suite`, `evaluation_run`, `release_candidate`, `release`, `release_item`, `release_pointer` |
 | 查询 | `query_session`, `query_answer`, `citation` |
 | Pack/集成 | `domain_pack`, `domain_pack_version`, `installation`, `connector`, `connector_sync_run`, `model_profile`, `prompt_version` |
@@ -30,9 +31,32 @@
 - `correlation_id`：关键异步/集成链路；
 - `classification`：保存 Raw 或敏感知识的对象。
 
-租户隔离必须同时存在应用授权、查询过滤和数据库级验证策略；M0 以复合外键/约束打底，RLS 是否作为纵深防御在 M1 权限实现时以真实查询和运维证据决策。
+租户隔离同时存在应用授权、强制查询过滤和数据库复合外键/约束。ADR-0019 决定 M1 不启用 RLS：连接池事务级上下文、后台任务 bypass 和恢复运维证据尚未冻结；RLS 可在后续作为纵深防御，但不得替代当前三层控制或被表述为已实现。
 
-## 3. Raw 与对象存储
+## 3. M1 物理表增量
+
+| 能力 | 表/增量 | M1 语义 |
+|---|---|---|
+| 服务受众与租户角色 | `service_identity_audiences`, `tenant_role_assignments` | user/service 主体分离，活动角色唯一，服务 audience 显式化 |
+| 空间授权 | `space_members`, `space_member_roles` | USER/SERVICE 成员、策略版本、密级、撤销保留 |
+| 幂等 | `idempotency_records` | operation + key + request hash；相同请求回放，不同负载冲突 |
+| 治理配置 | `model_profiles`, `prompt_versions`, `connector_definitions` | Secret 引用、Prompt 追加版本、Connector 仅定义不执行 |
+| 对象基础 | `object_upload_sessions`, `managed_objects` | 会话过期、对象 key/version/checksum/size/type/classification/scan 状态 |
+| M0 表扩展 | identity/space/audit/outbox 约束与字段 | clearance、version、audit actor/trace、业务事件 payload |
+
+`PromptVersion`、`AuditLog`、`OutboxEvent` 为追加事实；`KnowledgeSpace` 采用软归档；M1 API 不提供任何物理删除核心业务事实的路径。关联表和幂等基础设施按其结构语义保存范围/时间字段，不冒充独立业务聚合。
+
+## 3.1 M2 物理表增量
+
+| 表 | M2 语义 | 权威/不可变规则 |
+|---|---|---|
+| `workflow_tasks` | tenant/space 范围的业务任务、稳定 Workflow ID、Run ID、状态/进度、version、projection revision/sync | 查询投影；Temporal 执行事实为权威，不可由 DB 轮询推进 |
+| `workflow_steps` | 固定步骤计划、attempt、状态、消息与时间 | 可从 Temporal/Activity 事实修复；不代表 CompileStep 等后续业务结果 |
+| `workflow_task_events` | 命令、步骤、补偿、对账的稳定 event key 日志 | append-only trigger 禁止 update/delete；重复 Activity 用 event key 幂等 |
+
+M2 Task/Step/Event 均包含稳定 UUIDv7 与 tenant/space 范围；Task 写入复用 M1 Audit/Outbox/Idempotency。`input_refs` 仅为有界引用 JSON，不承载 Raw、Secret 或业务正文。
+
+## 4. Raw 与对象存储
 
 - `SourceDocument` 是逻辑资料；每次内容变化创建不可变 `SourceVersion`。
 - `SourceVersion` 保存 SHA-256、大小、MIME、来源、密级、对象 key、上传者和替代关系。
@@ -40,7 +64,7 @@
 - 原始字节权威在对象存储；数据库保存元数据、checksum 和状态。
 - checksum 去重与业务重复提示分离：相同字节可幂等，元数据相似只提示，不自动合并。
 
-## 4. 版本与不可变约束
+## 5. 版本与不可变约束
 
 - `SchemaVersion`、`WikiPageVersion`、`PromptVersion`、`DomainPackVersion`、`Release` 和 `ReleaseItem` 追加式，不原地覆盖。
 - Wiki 稳定 ID 与内容版本分离；人工保护区在重编译中必须保持。
@@ -49,7 +73,7 @@
 - AI 对象保存 `compile_job_id`、`compile_step_id`、`model_profile_id`、`prompt_version_id` 和输入 SourceVersion 集合。
 - 人工修改保存 actor、时间、diff、理由和所基于的旧版本。
 
-## 5. Claim / Evidence / Citation 约束
+## 6. Claim / Evidence / Citation 约束
 
 - 进入正式审核的 Claim 至少一个有效 Evidence；正式因果 Relation 同样要求 Evidence。
 - Evidence 必须绑定不可变 SourceVersion 和可验证 SourceAnchor，并声明支持/反对方向。
@@ -57,13 +81,13 @@
 - Citation 必须绑定固定 Release、QueryAnswer、Evidence/ReleaseItem，且返回前校验 Anchor。
 - 证据不足、冲突未决或权限不足必须产生明确结果，不生成伪引用。
 
-## 6. Outbox 与事件日志
+## 7. Outbox 与事件日志
 
 `outbox_event` 与业务事务同库提交，候选字段：`event_id`, `event_type`, `schema_version`, `aggregate_type`, `aggregate_id`, `tenant_id`, `space_id`, `actor`, `correlation_id`, `causation_id`, `occurred_at`, `payload`, `status`, `attempt_count`, `published_at`。
 
 事件发布者只负责投递和重试，不重新解释业务状态。消费者以 `event_id + consumer` 幂等。长期事件保留、分区、死信和清理策略由 M0/M8 冻结。
 
-## 7. 逻辑 ER 草图
+## 8. 逻辑 ER 草图
 
 ```mermaid
 erDiagram
@@ -91,20 +115,20 @@ erDiagram
   DOMAIN_PACK_VERSION ||--o{ INSTALLATION : installed_as
 ```
 
-## 8. PostgreSQL、pgvector 与图边界
+## 9. PostgreSQL、pgvector 与图边界
 
 - PostgreSQL 是 R1 业务事实候选权威数据库。
 - pgvector 存储可重建 embedding 投影；向量相似度不是事实可信度。
 - Relation 表保存类型化关系业务事实；图遍历服务可基于 Relation 和固定 Release 运行。
 - OpenSearch/Milvus/Neo4j/NebulaGraph 均为可替换投影 Provider，不得改变 Release 语义或成为唯一事实源。
 
-## 9. PostgreSQL / 达梦适配风险
+## 10. PostgreSQL / 达梦适配风险
 
 - JSON/JSONB、UUID、数组、全文检索、向量、部分索引、RLS、时间类型和 `ON CONFLICT` 语义存在差异；
 - Alembic/SQLAlchemy 方言、事务隔离、锁、批量写入和分页需契约测试；
 - 不得在 domain/application 中写 PostgreSQL 专用 SQL；
 - 达梦/CUD4.0 适配当前建议置于 Provider/交付壳，R2 再做正式认证。
 
-## 10. 待 M0 冻结
+## 11. 后续冻结项
 
-主 ID、表名单复数策略、RLS、删除/归档、版本表结构、事件保留、Anchor 表示、Release manifest 存储、密钥引用、索引版本和数据迁移回滚策略。
+Broker 事件保留、Source/Anchor 物理表示、Release manifest 存储、知识投影索引版本、生产 RLS 运维模型及知识大数据迁移/回滚策略仍按对应 Milestone 冻结。M2 通用任务投影由 ADR-0020 与 `0003` 实现；生产 Temporal history retention/升级与大规模投影分区仍需部署证据。

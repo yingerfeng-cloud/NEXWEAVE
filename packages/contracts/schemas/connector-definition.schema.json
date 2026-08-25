@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "ConnectorDefinitionStatus": {
+      "enum": [
+        "DRAFT",
+        "ACTIVE",
+        "DISABLED"
+      ],
+      "title": "ConnectorDefinitionStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "config_schema": {
+      "additionalProperties": true,
+      "title": "Config Schema",
+      "type": "object"
+    },
+    "connector_type": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Connector Type",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "space_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Space Id"
+    },
+    "status": {
+      "$ref": "#/$defs/ConnectorDefinitionStatus"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "updated_by": {
+      "format": "uuid7",
+      "title": "Updated By",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "connector_type",
+    "id",
+    "tenant_id",
+    "status",
+    "version",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "title": "ConnectorDefinitionResponse",
+  "type": "object"
+}

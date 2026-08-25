@@ -2,7 +2,7 @@
   "name": "nexweave",
   "version": "0.1.0",
   "private": true,
-  "description": "NEXWEAVE M0 architecture and executable engineering skeleton",
+  "description": "NEXWEAVE M1 identity, workspace and platform foundation",
   "packageManager": "pnpm@11.19.0",
   "scripts": {
     "format:check": "pnpm --filter @nexweave/web format:check",

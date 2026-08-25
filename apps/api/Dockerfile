@@ -2,7 +2,7 @@ FROM python:3.12.13-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e2631
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/apps/api/src:/app/packages/domain/src:/app/packages/contracts/src
+    PYTHONPATH=/app/apps/api/src:/app/packages/domain/src:/app/packages/application/src:/app/packages/contracts/src
 
 WORKDIR /app
 
@@ -14,10 +14,12 @@ RUN pip install --no-cache-dir --requirement requirements/runtime.txt --constrai
 
 COPY apps/api apps/api
 COPY packages/domain packages/domain
+COPY packages/application packages/application
 COPY packages/contracts packages/contracts
 COPY migrations migrations
 COPY alembic.ini alembic.ini
 COPY scripts/check_migrations.py scripts/check_migrations.py
+COPY scripts/provision_m1_e2e_tenant.py scripts/provision_m1_e2e_tenant.py
 
 USER nexweave
 EXPOSE 8000

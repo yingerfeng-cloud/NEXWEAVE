@@ -7,14 +7,18 @@
 - Schema changes, backfills and destructive cleanup are separate revisions. Large backfills are resumable/idempotent application jobs, not an unbounded migration transaction.
 - Upgrade supports the declared previous release window; rollback compatibility, traffic order and data preservation are documented per change.
 - M0 `0001_m0_platform_foundation` creates only tenant, organization, identity, knowledge-space, audit, outbox, configuration and platform-version structures.
-- M0 testing exercises `base → head → base → head` against a disposable real PostgreSQL instance. The rollback target is forbidden against shared/production data.
+- M1 `0002_m1_platform_services` adds service audiences, tenant/space roles, idempotency, governance configuration, upload sessions and managed-object metadata without modifying `0001`.
+- M2 `0003_m2_temporal_kernel` adds WorkflowTask/Step/append-only Event projections and their tenant/space/run/idempotency indexes without modifying `0001` or `0002`.
+- M2 testing exercises `base → head → base → head` against a dedicated disposable real PostgreSQL database. The rollback target is forbidden against the active development, shared or production database.
+- The `0002` downgrade uses `DROP INDEX IF EXISTS` for its two connector partial indexes so a local pre-acceptance database that briefly carried the same development revision identifier can be recovered. This is compatibility hardening, not permission to rewrite an accepted historical migration.
 
 ## Tenant and safety rules
 
 - App-generated UUIDv7 IDs have no database sequence fallback.
 - Cross-scope foreign keys include tenant context where a child can reference a space/organization.
-- Inline secrets are forbidden from configuration rows; only Secret Provider references are allowed in later stages.
+- Inline secrets are forbidden from configuration rows; M1 `ModelProfile` and `ServiceIdentity` persist only Secret Provider references.
 - Audit/outbox are append-oriented facts. Retention, sealing, legal hold and partitioning are later governance migrations, never client-side deletion.
+- `workflow_task_events` is append-only by database trigger; reconcile repairs mutable task/step projections by adding a reconciliation event, never rewriting history.
 
 ## Fixture rules
 
@@ -25,10 +29,11 @@
 - E2E environments create isolated tenant/space IDs and delete the disposable environment, not individual facts that might hide cleanup defects.
 - Golden parser/evaluation corpora are versioned, licensed and classified before use; the missing RCA pilot corpus remains an open M9 input.
 
-M0 does not automatically insert the manifest into PostgreSQL. Automatic seed loading must go through the M1 application/repository boundary with audit semantics; bypassing that boundary in M0 would freeze an implementation that is outside this Milestone. Migration tests therefore validate schema mechanics independently of future business seed loading.
+M1 local startup provisions a synthetic development tenant only through the repository bootstrap boundary; M2 E2E creates synthetic tasks and reference strings in that local scope. Migration tests validate schema mechanics in a disposable database independently and never ingest customer or production rows.
 
 ## Verification commands
 
 - `alembic upgrade head`: normal forward migration.
 - `make migration-check`: destructive rollback/re-upgrade check in local Compose only.
-- `make verify`: confirms migration head plus the Web/API/infrastructure/Temporal Worker chain.
+- `make verify`: confirms the M1 foundation and then the M2 real Temporal task chain.
+- `make verify-m2`: confirms all seven Workflow types, controls, retries, compensation, projection repair, Worker restart and replay against the running Compose stack.

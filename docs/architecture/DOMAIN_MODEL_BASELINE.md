@@ -1,6 +1,6 @@
 # Domain Model Baseline
 
-> 状态：M-1 概念基线；对象字段、状态机和 ID 方案须在 M0 通过 ADR/契约冻结。  
+> 状态：M1 平台增量已验收；M2 通用 WorkflowTask/Step/Event 已由 ADR-0020、domain/contracts 和 `0003` 实现。后续知识对象仍是已冻结的概念/契约基线，随对应 Milestone 实现。
 > 通用字段：除明确的全局配置外，业务对象预留 `id`、`tenant_id`、`space_id`、`status`、`version/etag`、`created_by`、`updated_by`、`created_at`、`updated_at`。
 
 ## 1. 身份与空间
@@ -9,10 +9,20 @@
 |---|---|---|---|---|---|---|
 | Tenant | 安全与数据隔离顶层，`tenant_id` | 平台级；配置版本 | ACTIVE/SUSPENDED/ARCHIVED | Organization、User、Space | DB | AI 禁止；管理员批准 |
 | Organization | 租户内组织树，`organization_id` | tenant；乐观锁 | ACTIVE/ARCHIVED | User、SpaceMember | DB | AI 禁止；管理员维护 |
-| User | 人员身份映射，`user_id` | tenant；外部 subject 可变映射 | INVITED/ACTIVE/SUSPENDED/ARCHIVED | Membership、ReviewAction、Approval | DB + IdP 身份事实 | AI 禁止；管理员维护 |
-| ServiceIdentity | 系统/应用调用身份，`service_identity_id` | tenant；凭据只存引用且轮换 | ACTIVE/SUSPENDED/REVOKED | Connector、GridCrew 调用 | DB + Secret Provider | AI 禁止；安全审批 |
-| KnowledgeSpace | 知识治理与隔离单元，`space_id` | tenant；配置不可静默覆盖 | INITIALIZING/BUILDING/PUBLISHED/FROZEN/ARCHIVED | 所有空间知识对象 | DB | AI 禁止创建正式空间；管理员批准 |
+| User | 人员身份映射，`user_id` | tenant；外部 issuer/subject 唯一映射 | ACTIVE/DISABLED | Membership、ReviewAction、Approval | DB + IdP 身份事实 | AI 禁止；管理员维护 |
+| ServiceIdentity | 系统/应用调用身份，`service_identity_id` | tenant；凭据只存引用且轮换 | ACTIVE/DISABLED | Connector、GridCrew 调用 | DB + Secret Provider | AI 禁止；安全审批 |
+| KnowledgeSpace | 知识治理与隔离单元，`space_id` | tenant；强 ETag/配置版本 | ACTIVE/ARCHIVED | 所有空间知识对象 | DB | AI 禁止；管理员授权创建/归档 |
 | SpaceMember | 用户/服务身份与空间授权关系，`space_member_id` | tenant/space；策略版本 | ACTIVE/REVOKED | User/ServiceIdentity、Role/Policy | DB | AI 禁止；管理员批准 |
+
+## 1.1 M2 通用工作流内核
+
+| 对象 | 含义 / ID | 归属与版本 | 生命周期 | 权威源 | 业务边界 |
+|---|---|---|---|---|---|
+| WorkflowTask | 七类长任务的通用业务句柄，`workflow_task_id` 与稳定 Workflow ID 分离 | tenant/space；ETag/version；每次 retry 可产生新 Run ID | CREATED/STARTING/RUNNING/PAUSED/WAITING/WAITING_INPUT/CANCELLING/COMPENSATING/CANCELLED/SUCCEEDED/FAILED/TIMED_OUT/REJECTED | Temporal 执行 + DB 查询投影 | M2 不替代 Source/CompileJob/ReviewTask/Release 等业务聚合 |
+| WorkflowStep | M2 内核步骤投影，`workflow_step_id` | task；固定 sequence；记录 attempt | PENDING/RUNNING/RETRYING/PAUSED/WAITING/SUCCEEDED/FAILED/CANCELLED/COMPENSATED | Activity 事实 + DB 投影 | Stub 结果不是知识对象或 Evidence |
+| WorkflowTaskEvent | 命令、步骤、补偿与对账事实，`workflow_task_event_id`/稳定 event key | task/run；append-only | RECORDED | DB append-only log；Temporal history 为执行历史 | 客户端不得修改或伪造 |
+
+七类 WorkflowType 只是可靠执行模板：SourceIngestion、KnowledgeCompile、HumanReview、QualityEvaluation、KnowledgeRelease、DomainPackInstall、GridCrewFeedbackIngestion。同名 M3+ 业务对象未因此实现。
 
 ## 2. 原始资料与解析
 
@@ -85,6 +95,7 @@
 | PromptVersion | 不可覆盖 Prompt/结构化输出契约，`prompt_version_id` | tenant/space/Pack；版本化 | DRAFT/TESTING/ACTIVE/DEPRECATED | CompileJob、QueryAnswer、Evaluation | DB/Object storage | AI 可生成草稿；启用需评测/批准 |
 | AuditLog | 关键安全与业务动作事实，`audit_log_id` | tenant/space；append-only | RECORDED/SEALED | actor、target、correlation | DB/审计存储 | AI 禁止伪造或修改；系统记录 |
 | OutboxEvent | 待发布业务事件事实，`outbox_event_id` | tenant/space；append-only | PENDING/PUBLISHED/FAILED/DEAD_LETTER | aggregate、Event envelope | DB | 系统生成；不可由客户端伪造 |
+| ManagedObject | M1 对象存储基础设施验证对象，`managed_object_id` | tenant/space；对象 key/version/checksum 不可静默覆盖 | scan: PENDING/CLEAN/INFECTED/FAILED | UploadSession、ObjectStoragePort | DB 元数据 + RustFS 字节 | 非 Source/Evidence；只有 CLEAN 可下载 |
 
 ## 8. 语义边界
 

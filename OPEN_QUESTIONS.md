@@ -1,7 +1,7 @@
 # NEXWEAVE Open Questions
 
 > 状态值：`OPEN`、`PROPOSED`、`DECIDED`、`DEFERRED`。  
-> M0 只冻结任务书授权范围内的架构与契约；任何仍未决事项不得被编码静默固化。
+> M2 只实现任务书与 Accepted ADR 授权范围；任何仍未决事项不得被编码静默固化。M2 执行完成不等于用户已验收或已授权 M3。
 
 ## 已明确
 
@@ -14,6 +14,8 @@
 | OQ-GOV-002 | DECIDED | 进入正式 M0，不执行 M0-Lite；完成后停止在 M0 边界 | 用户 2026-08-23 明确下发“请进入M0” |
 | OQ-GOV-003 | DECIDED | M0 正式验收通过；已披露的外部 CI、容器供应链与 RustFS SPK-004 风险作为 P1 继续跟踪，M1 必须另行明确下发 | 用户 2026-08-24 明确“同意M0验收”；M0 执行报告 |
 | OQ-GOV-004 | DECIDED | 上述 M0 P1 已通过远程 main CI、双架构 SBOM/CVE/Cosign 与 SPK-004 实测闭环；RustFS RC 的 HA/DR/升级规模风险转入既定 M7/M12 门禁，不再是 M0 阻塞 | 用户 2026-08-24 要求解决剩余问题；ADR-0018；GitHub Actions run 32702688049 |
+| OQ-GOV-005 | DECIDED | 正式进入 M1，以 `03_NEXWEAVE_M1_平台基础、身份权限与核心领域模型任务书.md` 为边界，完成后停止 | 用户 2026-08-24 明确下发“进入 M1” |
+| OQ-GOV-006 | DECIDED | M1 正式验收通过并进入 M2，以 `04_NEXWEAVE_M2_Temporal可靠知识工作流内核任务书.md` 为边界，完成后停止 | 用户 2026-08-24 明确“同意 M1 验收，进入 M2” |
 
 ## M0 已冻结决策
 

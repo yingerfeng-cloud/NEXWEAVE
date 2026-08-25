@@ -1,8 +1,117 @@
 """Versioned public contract models for API, events and SDK generation."""
 
 from nexweave_contracts.events import EventEnvelope
+from nexweave_contracts.governance import (
+    AuditLogListResponse,
+    AuditLogResponse,
+    ConnectorDefinitionCreate,
+    ConnectorDefinitionListResponse,
+    ConnectorDefinitionResponse,
+    ModelProfileCreate,
+    ModelProfileListResponse,
+    ModelProfileResponse,
+    PromptVersionCreate,
+    PromptVersionListResponse,
+    PromptVersionResponse,
+)
+from nexweave_contracts.identity import (
+    DevSessionRequest,
+    DevSessionResponse,
+    OrganizationListResponse,
+    PrincipalResponse,
+    RoleListResponse,
+    ServiceIdentityCreate,
+    ServiceIdentityListResponse,
+    ServiceIdentitySummary,
+    UserCreate,
+    UserListResponse,
+    UserSummary,
+)
+from nexweave_contracts.m1_events import (
+    MembershipChangedEventData,
+    PlatformEntityChangedEventData,
+    SpaceChangedEventData,
+)
+from nexweave_contracts.objects import (
+    ManagedObjectResponse,
+    ObjectDownloadResponse,
+    ObjectUploadCreate,
+    ObjectUploadSessionResponse,
+)
 from nexweave_contracts.problem import ProblemDetails
 from nexweave_contracts.resources import ResourceMetadata
 from nexweave_contracts.source_anchor import SourceAnchor
+from nexweave_contracts.workflow import (
+    WorkflowCommandRequest,
+    WorkflowCommandResponse,
+    WorkflowEventResponse,
+    WorkflowReconcileResponse,
+    WorkflowStepResponse,
+    WorkflowTaskCreate,
+    WorkflowTaskDetailResponse,
+    WorkflowTaskEventData,
+    WorkflowTaskListResponse,
+    WorkflowTaskResponse,
+)
+from nexweave_contracts.workspace import (
+    KnowledgeSpaceResponse,
+    MembershipPolicy,
+    SpaceCreate,
+    SpaceListResponse,
+    SpaceMemberListResponse,
+    SpaceMemberResponse,
+    SpacePatch,
+)
 
-__all__ = ["EventEnvelope", "ProblemDetails", "ResourceMetadata", "SourceAnchor"]
+__all__ = [
+    "AuditLogListResponse",
+    "AuditLogResponse",
+    "ConnectorDefinitionCreate",
+    "ConnectorDefinitionListResponse",
+    "ConnectorDefinitionResponse",
+    "DevSessionRequest",
+    "DevSessionResponse",
+    "EventEnvelope",
+    "KnowledgeSpaceResponse",
+    "ManagedObjectResponse",
+    "MembershipChangedEventData",
+    "PlatformEntityChangedEventData",
+    "MembershipPolicy",
+    "ModelProfileCreate",
+    "ModelProfileListResponse",
+    "ModelProfileResponse",
+    "ObjectDownloadResponse",
+    "ObjectUploadCreate",
+    "ObjectUploadSessionResponse",
+    "PrincipalResponse",
+    "ProblemDetails",
+    "PromptVersionCreate",
+    "PromptVersionListResponse",
+    "PromptVersionResponse",
+    "ResourceMetadata",
+    "RoleListResponse",
+    "OrganizationListResponse",
+    "ServiceIdentityCreate",
+    "ServiceIdentityListResponse",
+    "ServiceIdentitySummary",
+    "SourceAnchor",
+    "SpaceChangedEventData",
+    "SpaceCreate",
+    "SpaceListResponse",
+    "SpaceMemberListResponse",
+    "SpaceMemberResponse",
+    "SpacePatch",
+    "UserListResponse",
+    "UserCreate",
+    "UserSummary",
+    "WorkflowCommandRequest",
+    "WorkflowCommandResponse",
+    "WorkflowEventResponse",
+    "WorkflowReconcileResponse",
+    "WorkflowStepResponse",
+    "WorkflowTaskCreate",
+    "WorkflowTaskDetailResponse",
+    "WorkflowTaskEventData",
+    "WorkflowTaskListResponse",
+    "WorkflowTaskResponse",
+]

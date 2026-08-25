@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "DataClassification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "HIGHLY_RESTRICTED"
+      ],
+      "title": "DataClassification",
+      "type": "string"
+    },
+    "ScanStatus": {
+      "enum": [
+        "PENDING",
+        "CLEAN",
+        "INFECTED",
+        "FAILED"
+      ],
+      "title": "ScanStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "checksum": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Checksum",
+      "type": "string"
+    },
+    "classification": {
+      "$ref": "#/$defs/DataClassification"
+    },
+    "content_type": {
+      "title": "Content Type",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "filename": {
+      "title": "Filename",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "object_key": {
+      "title": "Object Key",
+      "type": "string"
+    },
+    "object_version_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Object Version Id"
+    },
+    "scan_status": {
+      "$ref": "#/$defs/ScanStatus"
+    },
+    "size": {
+      "exclusiveMinimum": 0,
+      "title": "Size",
+      "type": "integer"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "updated_by": {
+      "format": "uuid7",
+      "title": "Updated By",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "space_id",
+    "filename",
+    "object_key",
+    "checksum",
+    "content_type",
+    "size",
+    "classification",
+    "scan_status",
+    "version",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "title": "ManagedObjectResponse",
+  "type": "object"
+}

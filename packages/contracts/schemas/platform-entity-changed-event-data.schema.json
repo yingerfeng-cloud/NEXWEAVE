@@ -1,0 +1,72 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "change": {
+      "enum": [
+        "CREATED",
+        "STORED"
+      ],
+      "title": "Change",
+      "type": "string"
+    },
+    "checksum": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Checksum"
+    },
+    "entity_id": {
+      "format": "uuid7",
+      "title": "Entity Id",
+      "type": "string"
+    },
+    "entity_kind": {
+      "enum": [
+        "USER",
+        "SERVICE_IDENTITY",
+        "MODEL_PROFILE",
+        "PROMPT_VERSION",
+        "CONNECTOR_DEFINITION",
+        "MANAGED_OBJECT"
+      ],
+      "title": "Entity Kind",
+      "type": "string"
+    },
+    "space_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Space Id"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "entity_kind",
+    "entity_id",
+    "version",
+    "status",
+    "change"
+  ],
+  "title": "PlatformEntityChangedEventData",
+  "type": "object"
+}

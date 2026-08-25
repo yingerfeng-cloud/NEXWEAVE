@@ -1,0 +1,44 @@
+{
+  "$defs": {
+    "SpaceStatus": {
+      "enum": [
+        "ACTIVE",
+        "ARCHIVED"
+      ],
+      "title": "SpaceStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "change": {
+      "enum": [
+        "CREATED",
+        "UPDATED",
+        "ARCHIVED"
+      ],
+      "title": "Change",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/SpaceStatus"
+    },
+    "version": {
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "space_id",
+    "status",
+    "version",
+    "change"
+  ],
+  "title": "SpaceChangedEventData",
+  "type": "object"
+}

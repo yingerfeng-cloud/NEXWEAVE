@@ -1,4 +1,4 @@
-# M0 Dependency and Supply-chain Baseline
+# M2 Dependency and Supply-chain Baseline
 
 All direct dependencies are exact-version pinned in `requirements/*.txt`, `package.json`, `pnpm-lock.yaml` and `compose.yaml`. Transitive JavaScript dependencies are integrity-locked by pnpm. Application Dockerfiles pin both the human-readable base-image version and the reviewed OCI index digest; production promotion consumes immutable multi-architecture digests rather than mutable tags.
 
@@ -14,14 +14,22 @@ All direct dependencies are exact-version pinned in `requirements/*.txt`, `packa
 | redis | 6.4.0 | readiness and future cache adapter | MIT | adapter only; removable if cache is not needed |
 | HTTPX | 0.28.1 | object-storage health and future controlled HTTP adapters | BSD-3-Clause | boundary only; aiohttp alternative |
 | Uvicorn | 0.35.0 | ASGI runtime | BSD-3-Clause | deployment adapter; another ASGI server alternative |
+| PyJWT / cryptography | 2.13.0 / 50.0.0 | OIDC-compatible token verification and local development signing | MIT / Apache-2.0 or BSD | identity adapter only; Authlib alternative; production uses an asymmetric algorithm allowlist |
+| boto3 / botocore | 1.43.78 / 1.43.78 | RustFS/S3 `ObjectStoragePort` adapter | Apache-2.0 | adapter only; MinIO SDK or controlled HTTP alternative |
+| OpenTelemetry SDK/exporter | 1.44.0 | trace, metric and log export | Apache-2.0 | bootstrap/adapter only; structured logs and Prometheus/manual instrumentation alternatives |
+| OpenTelemetry FastAPI/SQLAlchemy/logging instrumentation | 0.65b0 | Web/API/DB trace correlation | Apache-2.0 | pre-1.0 contrib family pinned and isolated; manual instrumentation fallback |
+| greenlet | 3.5.5 | SQLAlchemy async bridge | MIT | persistence adapter transitive runtime requirement |
+| protobuf | 7.36.0 | compatible OTel/Temporal wire lock | BSD-3-Clause | transitive version constrained for both dependency families |
 
-Development-only packages are exact-pinned: boto3 1.43.78 (SPK-004 S3 compatibility client, Apache-2.0), jsonschema 4.25.1, mypy 1.17.1, pip-audit 2.9.0, pytest 8.4.1, pytest-asyncio 1.1.0 and Ruff 0.12.10. They do not ship in runtime images. Boto3 remains outside domain/contracts and is not the future `ObjectStoragePort` contract.
+Development-only packages remain exact-pinned: jsonschema 4.25.1, mypy 1.17.1, pip-audit 2.9.0, pytest 8.4.1, pytest-asyncio 1.1.0 and Ruff 0.12.10. Boto3 moved to runtime in M1 because it now implements the real S3 adapter; it remains outside domain/contracts/application, which depend only on `ObjectStoragePort`.
+
+M1 supply-chain controls remain in force: token algorithms are configured rather than inferred from untrusted headers; S3 credentials are runtime configuration and never business-row data; telemetry excludes tokens, credentials and object bodies; externally hosted model profiles store only `credential_ref`. M2 adds no new direct dependency: the already pinned Temporal Python SDK `1.31.0` now powers the dedicated kernel Worker, Workflow Replayer and official time-skipping test API. The SDK remains confined to the API/Worker adapters; `domain`, `contracts` and application Ports stay vendor-neutral. Replacement with another durable execution engine requires ADR and history/compatibility migration rather than a package swap.
 
 ## JavaScript direct dependencies
 
 | Package group | Version | Purpose | License / alternative |
 |---|---:|---|---|
-| React / React DOM | 19.1.1 | M0 status Web shell | MIT; standards-based Web Components are the removal alternative |
+| React / React DOM | 19.1.1 | authenticated platform shell, administration UI and M2 task center | MIT; standards-based Web Components are the removal alternative |
 | Vite / React plugin | 7.3.6 / 5.2.0 | build tool | MIT; Rollup/custom build alternative |
 | TypeScript | 5.9.2 | static typing | Apache-2.0 |
 | Vitest / Testing Library / jsdom | 3.2.4 / 16.3.0 / 26.1.0 | UI tests | MIT; development only |
@@ -32,7 +40,7 @@ pnpm 11 blocks lifecycle scripts by default. M0 explicitly allows only `esbuild`
 
 ## Container dependencies
 
-M0 Compose pins Python 3.12.13, Node 24.19.0, Nginx 1.31.4/Alpine 3.24, pgvector 0.8.6/PostgreSQL 17, Redis 7.4.11, RustFS `1.0.0-rc.3`, and Temporal 1.29.6. Python, Node and Nginx Dockerfiles additionally pin OCI indexes `sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2`, `sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491f4857e25e35a36ba7995` and `sha256:db35bfc6b2951e7f8a72db5db120288c127ffaeeb4a6d4b95a26fead017d5913`. RustFS is Apache-2.0 licensed. The optional Temporal UI is excluded from the M0 acceptance surface. These images process synthetic/local M0 state only.
+M2 Compose retains the accepted pinned Python 3.12.13, Node 24.19.0, Nginx 1.31.4/Alpine 3.24, pgvector 0.8.6/PostgreSQL 17, Redis 7.4.11, RustFS `1.0.0-rc.3`, and Temporal 1.29.6 images. Python, Node and Nginx Dockerfiles additionally pin the accepted OCI indexes `sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2`, `sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491f4857e25e35a36ba7995` and `sha256:db35bfc6b2951e7f8a72db5db120288c127ffaeeb4a6d4b95a26fead017d5913`. RustFS is Apache-2.0 licensed. The optional Temporal UI remains outside the acceptance surface. The M2 kernel Worker uses the same reviewed Python base and locked runtime set; no mutable or unrecorded dependency was introduced. M2 verification uses only synthetic identities, spaces, references and Stub results.
 
 RustFS `1.0.0-rc.3` is tied to official Git tag commit `1aae6803739a5bac67e0d702ac46d43f09fb06dd`. The official Quay OCI index was verified on 2026-08-24: index digest `sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5`, `linux/amd64` digest `sha256:1aba56126e19f6b0791560710251c946ef0674b6a5130ae9889c3b15208dd0fb`, and `linux/arm64` digest `sha256:97801eaeb7d22d9138230b273bff2e1539b81c42fa5be56d94ff0ce8ccfb59b3`. The native ARM64 image was pulled successfully and a disposable container verified non-root UID/GID `10001:10001` can write `/data`. Cosign found no upstream signature or SBOM artifacts on that index; attestation-shaped manifests alone are not treated as provenance. SPK-004 S3 compatibility/recovery passed and the ARM64 Trivy 0.74.0 gate found zero fixable HIGH/CRITICAL vulnerabilities. GitHub CI therefore copies only the exact index into GHCR, validates both architectures, generates per-architecture CycloneDX/CVE evidence and signs the digest as a NEXWEAVE internal approval. RustFS is still an RC; distributed/HA and production DR claims remain gated by later Milestones.
 

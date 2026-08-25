@@ -1,6 +1,6 @@
-# M0 C4 Architecture Baseline
+# M2 C4 Architecture Baseline
 
-> Status: Accepted in M0. Context and container views are also summarized in `ARCHITECTURE_BASELINE.md`; this document freezes the component and deployment responsibilities used by the executable skeleton.
+> Status: M0 context/container boundaries remain Accepted; ADR-0019 adds M1 platform components and ADR-0020 adds the M2 reliable Workflow kernel, task projection and task center without changing the frozen container topology.
 
 ## Level 1 — System context
 
@@ -35,14 +35,28 @@ flowchart TB
   PostgreSQL --> Projections[Rebuildable FTS / vector / relation projections]
 ```
 
-M0 runs these containers through Compose. The M0 API exposes platform health/version/diagnostics only; the Worker registers one deterministic health workflow. The diagram includes future ports to freeze dependency direction, not to claim those adapters are implemented.
+M2 runs eight services through Compose: the M0 health Worker remains isolated and `worker-kernel` registers seven versioned Workflow definitions on a dedicated Workflow queue plus Activities on a dedicated Activity queue. The API exposes authenticated task control and PostgreSQL projection queries; future Model/Parser/Search/Connector ports remain boundaries, not claims of implemented adapters.
 
 ## Level 3 — API components
 
 ```mermaid
 flowchart LR
-  Routes[HTTP adapter] --> Platform[Platform health/version application service]
+  Routes[HTTP adapter] --> Platform[Platform health/version]
+  Routes --> Identity[Identity and authorization application boundary]
+  Routes --> Workspace[Workspace and membership application boundary]
+  Routes --> Governance[Governance configuration boundary]
+  Routes --> Objects[Controlled object application boundary]
+  Routes --> Tasks[Workflow task and reconciliation boundary]
   Routes --> Error[Problem Details mapper]
+  Identity --> IdP[Local / OIDC IdentityProvider adapters]
+  Workspace --> Repo[PostgreSQL Repository]
+  Governance --> Repo
+  Objects --> ObjectPort[ObjectStoragePort / MalwareScannerPort]
+  Tasks --> WorkflowPort[WorkflowGatewayPort]
+  WorkflowPort --> TemporalAdapter[Temporal client adapter]
+  Tasks --> Repo
+  ObjectPort --> S3[RustFS S3 adapter]
+  Repo --> Audit[Audit + Outbox + idempotency transaction facts]
   Platform --> Probe[Infrastructure health port]
   Probe --> PG[PostgreSQL adapter]
   Probe --> R[Redis adapter]
@@ -52,7 +66,7 @@ flowchart LR
   Contracts --> Domain[Pure domain vocabulary / UUIDv7]
 ```
 
-Future business modules must follow `HTTP/Worker adapter → application → domain`. ORM, FastAPI, Temporal and provider SDKs cannot enter `packages/domain` or `packages/contracts`; an automated architecture test enforces the rule.
+Business modules follow `HTTP/Worker adapter → application Port/use-case boundary → domain`. ORM, FastAPI, Temporal and provider SDKs cannot enter `packages/domain`, `packages/contracts` or `packages/application`; an automated architecture test enforces the rule.
 
 ## Level 3 — Worker components
 
@@ -65,19 +79,21 @@ flowchart LR
   Ports --> Adapters[DB / object / model / connector adapters]
 ```
 
-M0 implements only `PlatformHealthWorkflow`, which returns a deterministic marker and performs no I/O. Business workflows and Activities begin in their approved Milestones.
+M0 retains `PlatformHealthWorkflow`. M2 adds seven explicit deterministic kernel Workflows. They use Temporal Update/Signal/query and call only named Activities; projection, step and compensation I/O is isolated in Activities. M2 Activity outcomes are Stubs and do not create M3+ business aggregates.
 
 ## Source tree mapping
 
-| Boundary | Location | M0 content |
+| Boundary | Location | M2 content |
 |---|---|---|
-| Web adapter | `apps/web` | infrastructure readiness shell only |
-| API adapter/application | `apps/api` | health, version, sanitized diagnostics |
-| Pure domain | `packages/domain` | UUIDv7 and frozen vocabulary |
-| Public contracts | `packages/contracts` | Pydantic, JSON Schema and OpenAPI snapshots |
-| Workflow host | `workers/health` | deterministic health workflow |
-| Persistence evolution | `migrations` | platform foundation migration only |
-| Local deployment | `compose.yaml`, Dockerfiles | PostgreSQL/Redis/RustFS/Temporal/API/Worker/Web |
+| Web adapter | `apps/web` | authenticated shell, platform pages and real M2 task center |
+| API adapters | `apps/api` | M1 platform adapters plus Temporal gateway, task repository/routes and reconcile |
+| Application boundary | `packages/application` | M1 ports plus vendor-neutral `WorkflowGatewayPort` |
+| Pure domain | `packages/domain` | platform vocabulary plus Workflow types/states/commands/stable IDs |
+| Public contracts | `packages/contracts` | M1/M2 Pydantic, JSON Schema, event payload and OpenAPI snapshots |
+| Client SDK | `packages/sdk` | typed Python/TypeScript platform and task API clients |
+| Workflow hosts | `workers/health`, `workers/kernel` | deterministic health plus seven M2 kernel Workflows/Activities |
+| Persistence evolution | `migrations` | M0/M1 foundations plus `0003_m2_temporal_kernel` |
+| Local deployment | `compose.yaml`, Dockerfiles | PostgreSQL/Redis/RustFS/Temporal/API/two Workers/Web |
 
 ## Evolution constraints
 

@@ -1,0 +1,207 @@
+{
+  "$defs": {
+    "WorkflowTaskStatus": {
+      "enum": [
+        "CREATED",
+        "STARTING",
+        "RUNNING",
+        "PAUSED",
+        "WAITING",
+        "WAITING_INPUT",
+        "CANCELLING",
+        "COMPENSATING",
+        "CANCELLED",
+        "SUCCEEDED",
+        "FAILED",
+        "TIMED_OUT",
+        "REJECTED"
+      ],
+      "title": "WorkflowTaskStatus",
+      "type": "string"
+    },
+    "WorkflowType": {
+      "enum": [
+        "SOURCE_INGESTION",
+        "KNOWLEDGE_COMPILE",
+        "HUMAN_REVIEW",
+        "QUALITY_EVALUATION",
+        "KNOWLEDGE_RELEASE",
+        "DOMAIN_PACK_INSTALL",
+        "GRIDCREW_FEEDBACK_INGESTION"
+      ],
+      "title": "WorkflowType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "business_key": {
+      "title": "Business Key",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "current_step": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Current Step"
+    },
+    "display_name": {
+      "title": "Display Name",
+      "type": "string"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "error_detail": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Detail"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Input Refs",
+      "type": "object"
+    },
+    "last_reconciled_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Reconciled At"
+    },
+    "progress": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Progress",
+      "type": "integer"
+    },
+    "projection_in_sync": {
+      "title": "Projection In Sync",
+      "type": "boolean"
+    },
+    "projection_revision": {
+      "minimum": 0,
+      "title": "Projection Revision",
+      "type": "integer"
+    },
+    "result_summary": {
+      "additionalProperties": true,
+      "title": "Result Summary",
+      "type": "object"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/WorkflowTaskStatus"
+    },
+    "temporal_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Temporal Run Id"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "updated_by": {
+      "format": "uuid7",
+      "title": "Updated By",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "workflow_id": {
+      "title": "Workflow Id",
+      "type": "string"
+    },
+    "workflow_type": {
+      "$ref": "#/$defs/WorkflowType"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "space_id",
+    "workflow_type",
+    "business_key",
+    "display_name",
+    "workflow_id",
+    "status",
+    "version",
+    "progress",
+    "input_refs",
+    "result_summary",
+    "projection_revision",
+    "projection_in_sync",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "title": "WorkflowTaskResponse",
+  "type": "object"
+}

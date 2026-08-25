@@ -1,6 +1,15 @@
 # Workflow Baseline
 
-> 执行内核：Temporal（Accepted）。M0 实现独立 Worker 主机和一个无 I/O 的确定性健康 Workflow；以下业务 Workflow 仍是后续阶段冻结的契约，不代表已实现。
+> 执行内核：Temporal（Accepted）。M2 已实现下列七类版本化 Workflow 的可靠内核、控制、投影与真实恢复验证；各 Activity 仍是明确的 Kernel Stub，不代表 Source、Compile、Review、Release 等后续业务能力已实现。
+
+## M2 运行拓扑与公共状态
+
+- Namespace：`nexweave-dev`，开发保留期 7 天；生产 Namespace/保留期由部署配置管理；
+- Workflow Task Queue：`nexweave-m2-workflows`；Activity Task Queue：`nexweave-m2-activities`；
+- Worker：`worker-kernel`，非 root 容器，两个队列各自由 Worker poll；
+- 任务状态：`CREATED/STARTING/RUNNING/PAUSED/WAITING/WAITING_INPUT/CANCELLING/COMPENSATING/CANCELLED/SUCCEEDED/FAILED/TIMED_OUT/REJECTED`；
+- 控制命令：`PAUSE/RESUME/CANCEL/CLAIM/REQUEST_INPUT/PROVIDE_INPUT/APPROVE/REJECT/RETRY`，由服务端权限、状态、ETag 与幂等键共同校验；
+- Temporal 是执行权威；PostgreSQL 是 Task/Step/Event 查询投影，带 projection revision、同步标志与对账修复入口。
 
 ## 通用规则
 
@@ -10,6 +19,9 @@
 - Temporal 保存执行事实，DB 保存业务对象、决策、结果和查询投影；
 - 投影可对账/修复，不得反向成为第二套执行状态机；
 - Signal/Update 必须校验调用者权限、业务状态、版本和幂等。
+- Activity 采用 15 秒 start-to-close、45 秒 schedule-to-close、5 秒 heartbeat、最多 3 次指数重试的 M2 内核默认；策略错误标记为不可重试；
+- 需要批准的内核等待 300 秒后记录 `APPROVAL_TIMEOUT_ESCALATED`，但仍等待授权人工决定。该值只验证 durable timer/升级机制，不决定 M6 业务 SLA；
+- 取消按已完成步骤逆序执行补偿并保留审计/日志；重复 Update 返回原命令结果；FAILED/TIMED_OUT 可启动同一稳定 Workflow ID 的新 Run。
 
 ## SourceIngestionWorkflow
 
@@ -87,6 +99,8 @@
 - Release manifest 固化前可取消；固化/发布后通过废止或新 Release 修正。
 - Pack 回滚禁用安装并恢复服务指针/配置，不删除历史知识。
 
-## 待验证
+## M2 验证边界
 
-详见 `docs/spikes/SPIKE_BACKLOG.md`：Replay、时间跳跃、版本升级、Worker 恢复、Signal 权限、投影对账、Continue-As-New、长等待和跨 Namespace 策略。
+- 已验证：七类真实运行、Activity 首次瞬态失败与重试、Update 幂等、人工批准、暂停/继续、取消/逆序补偿、Worker 重启恢复、投影损坏对账修复、历史 Replay；
+- 条件项：官方 Temporal Python SDK time-skipping 测试代码已纳入，但外部 test-server 二进制初始化在本次环境未完成，未取得通过结果；
+- 后续：Continue-As-New、大规模历史、生产 Namespace 保留/升级、多集群灾备与 M6 业务审核 SLA 在对应 Milestone/部署环境验证。

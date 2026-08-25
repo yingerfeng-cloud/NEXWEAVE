@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "WorkflowTaskStatus": {
+      "enum": [
+        "CREATED",
+        "STARTING",
+        "RUNNING",
+        "PAUSED",
+        "WAITING",
+        "WAITING_INPUT",
+        "CANCELLING",
+        "COMPENSATING",
+        "CANCELLED",
+        "SUCCEEDED",
+        "FAILED",
+        "TIMED_OUT",
+        "REJECTED"
+      ],
+      "title": "WorkflowTaskStatus",
+      "type": "string"
+    },
+    "WorkflowType": {
+      "enum": [
+        "SOURCE_INGESTION",
+        "KNOWLEDGE_COMPILE",
+        "HUMAN_REVIEW",
+        "QUALITY_EVALUATION",
+        "KNOWLEDGE_RELEASE",
+        "DOMAIN_PACK_INSTALL",
+        "GRIDCREW_FEEDBACK_INGESTION"
+      ],
+      "title": "WorkflowType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "change": {
+      "title": "Change",
+      "type": "string"
+    },
+    "projection_revision": {
+      "minimum": 0,
+      "title": "Projection Revision",
+      "type": "integer"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "status": {
+      "$ref": "#/$defs/WorkflowTaskStatus"
+    },
+    "task_id": {
+      "format": "uuid7",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "workflow_id": {
+      "title": "Workflow Id",
+      "type": "string"
+    },
+    "workflow_type": {
+      "$ref": "#/$defs/WorkflowType"
+    }
+  },
+  "required": [
+    "task_id",
+    "workflow_id",
+    "workflow_type",
+    "status",
+    "change",
+    "projection_revision"
+  ],
+  "title": "WorkflowTaskEventData",
+  "type": "object"
+}

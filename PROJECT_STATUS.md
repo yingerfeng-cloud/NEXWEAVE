@@ -1,11 +1,24 @@
 # NEXWEAVE Project Status
 
 - Current Release: R1（M0—M9）
-- Current Milestone: M0 formally accepted; awaiting separate M1 dispatch
-- Business implementation: Not started
+- Current Milestone: M2 implementation complete and stopped; awaiting user acceptance
+- Business implementation: M1 accepted; M2 Temporal workflow kernel and task center implemented within the Stub boundary
 - Git repository: `https://github.com/yingerfeng-cloud/NEXWEAVE.git`, local `main` preserves the remote initial commit without force-push
-- Git baseline: `d3737be` M0 baseline + `272dff2` remote-history merge; CI compatibility fix `e03efd9`
+- Git baseline before the M1/M2 delivery commit: `727811f`; the user authorized a local commit on 2026-08-25 using the repository's existing Git identity; no push was authorized
 - M0: Explicitly dispatched by the user on 2026-08-23
+- M1: Explicitly dispatched by the user on 2026-08-24
+- M1: Formally accepted by the user on 2026-08-24
+- M2: Explicitly dispatched by the user on 2026-08-24
+
+## M2 implementation result
+
+- Dedicated `nexweave-dev` Temporal namespace, separate Workflow/Activity task queues and a non-root kernel Worker now run the seven named Workflow definitions;
+- Stable business/Workflow/Run mapping, Update/Signal control, durable approval wait, timeout escalation, Activity timeout/retry/heartbeat, cancellation compensation and duplicate-command handling are implemented without direct Workflow I/O;
+- PostgreSQL `WorkflowTask`, `WorkflowStep` and append-only `WorkflowTaskEvent` projections, audit/Outbox, lag indication and Temporal reconciliation/repair are exposed through authenticated APIs and typed SDKs;
+- The Web task center is driven by real APIs and supports list/detail/steps/logs/actions, deep links, refresh recovery and truthful M2 Stub boundaries;
+- Real Compose verification passed all seven Workflow types, transient retry, approval, pause/resume, cancellation compensation, duplicate Update, projection repair, Worker restart and replay; isolated PostgreSQL `base → head → base → head` migration verification passed;
+- The official Temporal SDK time-skipping test exists, but initialization of its external test-server binary did not complete and was stopped after 296 seconds. M2 is therefore reported as conditional rather than claiming that test passed;
+- M2 is stopped awaiting user acceptance. M3 Source/parse work has not been dispatched or started.
 
 ## M-1 result
 
@@ -32,11 +45,21 @@
 - RustFS SPK-004 已在固定真实镜像上通过 S3 子集、条件写、版本、鉴权、multipart、生命周期、重启与逻辑备份恢复；对象 key、状态、补偿和供应链规则由 ADR-0018 冻结；
 - API、Worker、Web、RustFS 镜像本地复扫的可修复 HIGH/CRITICAL 均为 0；主分支 CI 对四类镜像构建/验证 amd64 与 arm64、生成 CycloneDX/CVE artifacts 并以 GitHub OIDC/Cosign 签名不可变 digest；
 - GitHub Actions run `32702688049` 对提交 `e03efd9` 的 quality、Compose integration、API/Worker/Web images、RustFS approval image 六个 job 全部成功；外部 CI、容器供应链与 SPK-004 的 M0 P1 收尾已闭环；
-- 当前 M0 P0/P1 阻塞均为零。用户于 2026-08-24 已正式验收通过 M0；M1 仍须用户另行明确下发。
+- 当前 M0 P0/P1 阻塞均为零。用户于 2026-08-24 已正式验收通过 M0，并于同日正式下发 M1。
+
+## M1 implementation result
+
+- OIDC-compatible/local development identity、服务身份、audience 校验、默认拒绝 RBAC+ABAC 和 tenant/space/classification 隔离已实现；
+- KnowledgeSpace 创建/编辑/归档、成员授权/撤销、治理配置、审计/Outbox/幂等、OpenTelemetry 和受控 RustFS 对象链路已形成真实 API/DB 闭环；
+- Web 已实现登录态、空间恢复、16 个深链接路由、权限守卫、空间与管理真实页面；后续模块只陈述边界且无 Mock；
+- `0002_m1_platform_services` 真实 PostgreSQL 升级/回滚/再升级通过；最终 Compose 七服务均运行，六个带 healthcheck 的服务为 healthy，Worker Workflow 通过，真实 E2E 两次通过；
+- `make check` 通过 Python 28 项、契约 14 项、Web 5 项及 format/lint/typecheck/SDK/build；Secret/SCA/Compose/diff 门禁通过；
+- 独立 Temporal SDK time-skipping 测试的官方下载持续无响应并于 90 秒中止；真实 Compose Temporal Workflow 已通过，不影响 M1 无长业务 Workflow 的验收边界；
+- M1 无新增 P0。P1 保留生产 OIDC/Secret Provider/HTTPS 部署联调、外部 CI 与镜像供应链重跑；P2 保留 OTel contrib `0.65b0` 兼容观察和后续 RLS 纵深评估。
 
 ## Hard boundaries
 
-- 当前没有 Source、Schema、Compile、Review、Release、Query、GridCrew 等业务功能实现；
+- 当前没有 Source/parse、Schema、真实 Compile、Review 业务对象、Release、Query、GridCrew 等后续业务功能实现；M2 同名 Workflow 仅为可靠内核 Stub；
 - 高保真原型仍是静态演示，不是已完成功能；
 - 未提供合规脱敏 RCA 试点资料；
-- 未进入 M1 或后续 Milestone；M0 已验收，当前停止并等待下一阶段明确指令。
+- M2 已完成并停止；仍不得提前实现 M3 的 Source/解析或 M4+ 的 Schema、真实 Compile、Review、Release、Query、GridCrew、RCA 业务。

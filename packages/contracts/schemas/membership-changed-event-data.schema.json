@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "ActorType": {
+      "enum": [
+        "USER",
+        "SERVICE"
+      ],
+      "title": "ActorType",
+      "type": "string"
+    },
+    "DataClassification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "HIGHLY_RESTRICTED"
+      ],
+      "title": "DataClassification",
+      "type": "string"
+    },
+    "MembershipStatus": {
+      "enum": [
+        "ACTIVE",
+        "REVOKED"
+      ],
+      "title": "MembershipStatus",
+      "type": "string"
+    },
+    "Role": {
+      "enum": [
+        "platform_admin",
+        "tenant_admin",
+        "space_admin",
+        "knowledge_engineer",
+        "reviewer",
+        "publisher",
+        "consumer",
+        "auditor",
+        "service"
+      ],
+      "title": "Role",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "clearance": {
+      "$ref": "#/$defs/DataClassification"
+    },
+    "policy_version": {
+      "title": "Policy Version",
+      "type": "integer"
+    },
+    "roles": {
+      "items": {
+        "$ref": "#/$defs/Role"
+      },
+      "title": "Roles",
+      "type": "array"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/MembershipStatus"
+    },
+    "subject_id": {
+      "format": "uuid7",
+      "title": "Subject Id",
+      "type": "string"
+    },
+    "subject_type": {
+      "$ref": "#/$defs/ActorType"
+    }
+  },
+  "required": [
+    "space_id",
+    "subject_type",
+    "subject_id",
+    "roles",
+    "clearance",
+    "status",
+    "policy_version"
+  ],
+  "title": "MembershipChangedEventData",
+  "type": "object"
+}

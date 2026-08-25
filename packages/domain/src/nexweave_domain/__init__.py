@@ -1,5 +1,20 @@
 """Pure NEXWEAVE domain primitives with no infrastructure dependencies."""
 
+from nexweave_domain.access import (
+    ROLE_ACTIONS,
+    ActorType,
+    AuthorizationDecision,
+    AuthorizationRequest,
+    Principal,
+    Role,
+    authorize,
+)
+from nexweave_domain.governance import (
+    ConnectorDefinitionStatus,
+    GovernanceStatus,
+    ScanStatus,
+    UploadSessionStatus,
+)
 from nexweave_domain.identifiers import new_uuid7
 from nexweave_domain.states import (
     DataClassification,
@@ -10,14 +25,65 @@ from nexweave_domain.states import (
     SourceState,
     SourceVersionState,
 )
+from nexweave_domain.workflow import (
+    APPROVAL_WORKFLOW_TYPES,
+    TERMINAL_WORKFLOW_STATUSES,
+    WORKFLOW_ID_PREFIX,
+    WORKFLOW_STEP_PLAN,
+    WORKFLOW_TEMPORAL_NAME,
+    WorkflowCommand,
+    WorkflowRuleViolation,
+    WorkflowStepStatus,
+    WorkflowTaskStatus,
+    WorkflowType,
+    available_workflow_commands,
+    stable_workflow_id,
+    validate_workflow_command,
+)
+from nexweave_domain.workspace import (
+    DomainRuleViolation,
+    KnowledgeSpace,
+    MembershipStatus,
+    SpaceMember,
+    SpaceStatus,
+)
 
 __all__ = [
+    "ActorType",
+    "AuthorizationDecision",
+    "AuthorizationRequest",
+    "ConnectorDefinitionStatus",
     "DataClassification",
+    "DomainRuleViolation",
     "EvidenceRole",
+    "GovernanceStatus",
+    "KnowledgeSpace",
     "LocatorStatus",
+    "MembershipStatus",
+    "Principal",
+    "ROLE_ACTIONS",
     "ReleaseState",
+    "Role",
     "ReviewState",
+    "ScanStatus",
     "SourceState",
     "SourceVersionState",
+    "SpaceMember",
+    "SpaceStatus",
+    "UploadSessionStatus",
+    "authorize",
+    "APPROVAL_WORKFLOW_TYPES",
+    "available_workflow_commands",
     "new_uuid7",
+    "stable_workflow_id",
+    "validate_workflow_command",
+    "TERMINAL_WORKFLOW_STATUSES",
+    "WORKFLOW_ID_PREFIX",
+    "WORKFLOW_STEP_PLAN",
+    "WORKFLOW_TEMPORAL_NAME",
+    "WorkflowCommand",
+    "WorkflowRuleViolation",
+    "WorkflowStepStatus",
+    "WorkflowTaskStatus",
+    "WorkflowType",
 ]

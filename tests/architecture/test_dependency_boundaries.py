@@ -4,7 +4,11 @@ import ast
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PURE_PACKAGE_ROOTS = [ROOT / "packages/domain/src", ROOT / "packages/contracts/src"]
+PURE_PACKAGE_ROOTS = [
+    ROOT / "packages/domain/src",
+    ROOT / "packages/application/src",
+    ROOT / "packages/contracts/src",
+]
 FORBIDDEN_IMPORT_PREFIXES = (
     "fastapi",
     "starlette",
@@ -32,7 +36,7 @@ def imported_modules(path: Path) -> set[str]:
     return imports
 
 
-def test_domain_and_contracts_do_not_depend_on_infrastructure() -> None:
+def test_domain_application_and_contracts_do_not_depend_on_infrastructure() -> None:
     violations: list[str] = []
     for package_root in PURE_PACKAGE_ROOTS:
         for path in package_root.rglob("*.py"):

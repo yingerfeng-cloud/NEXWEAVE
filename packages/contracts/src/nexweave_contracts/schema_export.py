@@ -7,13 +7,38 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from nexweave_contracts import EventEnvelope, ProblemDetails, ResourceMetadata, SourceAnchor
+from nexweave_contracts import (
+    ConnectorDefinitionResponse,
+    EventEnvelope,
+    KnowledgeSpaceResponse,
+    ManagedObjectResponse,
+    MembershipChangedEventData,
+    ModelProfileResponse,
+    PlatformEntityChangedEventData,
+    ProblemDetails,
+    PromptVersionResponse,
+    ResourceMetadata,
+    SourceAnchor,
+    SpaceChangedEventData,
+    WorkflowTaskEventData,
+    WorkflowTaskResponse,
+)
 
 SCHEMAS: dict[str, type[BaseModel]] = {
     "event-envelope.schema.json": EventEnvelope,
+    "membership-changed-event-data.schema.json": MembershipChangedEventData,
+    "platform-entity-changed-event-data.schema.json": PlatformEntityChangedEventData,
+    "space-changed-event-data.schema.json": SpaceChangedEventData,
     "problem.schema.json": ProblemDetails,
     "resource-metadata.schema.json": ResourceMetadata,
     "source-anchor.schema.json": SourceAnchor,
+    "knowledge-space.schema.json": KnowledgeSpaceResponse,
+    "managed-object.schema.json": ManagedObjectResponse,
+    "model-profile.schema.json": ModelProfileResponse,
+    "prompt-version.schema.json": PromptVersionResponse,
+    "connector-definition.schema.json": ConnectorDefinitionResponse,
+    "workflow-task.schema.json": WorkflowTaskResponse,
+    "workflow-task-event-data.schema.json": WorkflowTaskEventData,
 }
 
 

@@ -76,3 +76,22 @@
 ## 10. M-1 门禁结果要求
 
 M-1 只验收资料、治理、基线、契约草案、追踪、ADR/Spike 和开放问题；不得以任何业务功能或原型交互作为完成证据。
+
+## 11. M1 本地门禁证据（2026-08-24）
+
+- `make check PYTHON=.venv/bin/python`：format、lint、mypy、Web typecheck、Python 28 项非集成测试、Web 5 项测试、契约 14 项、SDK check、生产 Web build 全部通过；
+- `.venv/bin/python scripts/verify_m1.py`：最终镜像与迁移恢复后均通过真实 Web/OIDC-local/API/PostgreSQL/RustFS/Temporal Worker E2E；
+- `docker compose exec -T api python scripts/check_migrations.py`：真实 PostgreSQL `base → head → base → head` 通过；
+- Secret scan、`pip check`、Python/JavaScript 生产依赖 audit、Compose config 和 `git diff --check` 通过；
+- Temporal SDK 的独立 time-skipping 临时测试服务因官方下载持续无响应，在 90 秒后人工中止；真实 Compose Temporal health Workflow 已两次通过，故不以该下载项冒充成功，也不构成 M1 业务 Workflow 缺口。
+
+本节只记录本地合成环境证据。M1 验收时尚未提交；用户于 2026-08-25 授权将 M1/M2 交付进行本地提交，但未授权 push，因此仍不声称取得对应外部 CI、镜像 SBOM/Cosign 或生产 OIDC/Secret Provider 回执。
+
+## 12. M2 本地门禁证据（2026-08-24）
+
+- `make check PYTHON=.venv/bin/python`：format、Ruff、mypy（48 source files）、ESLint、TypeScript、Prettier、SDK 与 production build 通过；Python 39 passed/2 integration deselected，契约子集 17 passed，Web 6 passed；
+- `.venv/bin/python scripts/verify_m2.py`：真实 Temporal 七类 Workflow、首次瞬态 Activity 重试、重复 Update、批准、暂停/继续、取消/补偿、投影损坏/修复、Worker 停止/恢复和历史 Replay；
+- 隔离真实 PostgreSQL 数据库完成 `base → head → base → head` 并回到 `0003_m2`，随后仅删除该一次性数据库，当前开发数据库未执行 destructive downgrade；
+- Workflow 审计/Outbox 事实存在，数据库 trigger 阻止 `workflow_task_events` 更新；OpenAPI/Schema/SDK/UI 使用同一契约；
+- 官方 Temporal SDK time-skipping 测试已实现，但其外部 test-server binary 初始化在 296 秒内未完成并被中止。本门禁保持条件状态，不把“用例存在”记录为“通过”；
+- 用户已授权本地提交但未授权 push，因此不声称 M2 变更已有远程 CI、双架构 SBOM/CVE/Cosign 结果。

@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "GovernanceStatus": {
+      "enum": [
+        "DRAFT",
+        "ACTIVE",
+        "DISABLED",
+        "DEPRECATED"
+      ],
+      "title": "GovernanceStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "checksum": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Checksum",
+      "type": "string"
+    },
+    "content": {
+      "maxLength": 50000,
+      "minLength": 1,
+      "title": "Content",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "output_contract": {
+      "additionalProperties": true,
+      "title": "Output Contract",
+      "type": "object"
+    },
+    "prompt_key": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Prompt Key",
+      "type": "string"
+    },
+    "revision": {
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "space_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Space Id"
+    },
+    "status": {
+      "$ref": "#/$defs/GovernanceStatus"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "prompt_key",
+    "content",
+    "id",
+    "tenant_id",
+    "revision",
+    "checksum",
+    "status",
+    "created_at",
+    "created_by"
+  ],
+  "title": "PromptVersionResponse",
+  "type": "object"
+}

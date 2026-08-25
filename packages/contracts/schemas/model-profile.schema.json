@@ -1,0 +1,138 @@
+{
+  "$defs": {
+    "DataClassification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "HIGHLY_RESTRICTED"
+      ],
+      "title": "DataClassification",
+      "type": "string"
+    },
+    "GovernanceStatus": {
+      "enum": [
+        "DRAFT",
+        "ACTIVE",
+        "DISABLED",
+        "DEPRECATED"
+      ],
+      "title": "GovernanceStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "config": {
+      "additionalProperties": true,
+      "title": "Config",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "credential_ref": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Credential Ref"
+    },
+    "externally_hosted": {
+      "default": false,
+      "title": "Externally Hosted",
+      "type": "boolean"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "maximum_classification": {
+      "$ref": "#/$defs/DataClassification",
+      "default": "INTERNAL"
+    },
+    "model_name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Model Name",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "provider": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "space_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Space Id"
+    },
+    "status": {
+      "$ref": "#/$defs/GovernanceStatus"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "updated_by": {
+      "format": "uuid7",
+      "title": "Updated By",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "provider",
+    "model_name",
+    "id",
+    "tenant_id",
+    "status",
+    "version",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "title": "ModelProfileResponse",
+  "type": "object"
+}

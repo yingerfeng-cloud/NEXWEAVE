@@ -1,6 +1,6 @@
 # NEXWEAVE Architecture Baseline
 
-> 状态：M0 终局架构基线；M0 ADR 在本阶段完成评审并冻结，业务能力仍未开始实现。
+> 状态：M0 终局架构仍冻结；M1 由 ADR-0019 实现平台基础，M2 由 ADR-0020 实现 Temporal 可靠工作流内核、只读任务投影与任务中心，不改变知识可信边界或提前实现 M3+ 业务对象。
 
 ## 1. 不可变原则
 
@@ -135,7 +135,7 @@ Raw (immutable SourceVersion)
 
 ## 7. Port / Gateway 边界
 
-M0 至少冻结：Persistence、ObjectStorage、Workflow、Cache、Parser、OCR、ModelGateway、Embedding、Search、Vector、GraphQuery、Identity、Audit、Connector、Notification。领域和契约包不得依赖这些端口的厂商 Adapter。
+M0 冻结：Persistence、ObjectStorage、Workflow、Cache、Parser、OCR、ModelGateway、Embedding、Search、Vector、GraphQuery、Identity、Audit、Connector、Notification。M1 已实现 `IdentityProviderPort`、`ObjectStoragePort` 和 `MalwareScannerPort`；M2 已实现厂商无关 `WorkflowGatewayPort` 及 Temporal adapter。其余端口仍未实现。领域、契约和应用端口包不得依赖厂商 Adapter。
 
 ## 8. GridCrew 集成位置
 
@@ -171,3 +171,24 @@ domain-pack ✕ platform internals/arbitrary executable code
 ## 11. M0 仍保留的后续决策
 
 完整列表见 `OPEN_QUESTIONS.md`。解析失败语义、Pack UI 扩展、GridCrew 最终租户映射、Obsidian 冲突回写、审核策略、连接器白名单、RCA 试点资料和量化门槛在对应业务 Milestone 前决策；M0 不伪造专家阈值或外部系统回执。
+
+## 12. M1 已实现增量
+
+- 认证：生产兼容 OIDC issuer/JWKS/audience/expiry 校验；独立 local development 签发器；token 自报角色不授予权限；
+- 授权：默认拒绝 RBAC+ABAC，联合 tenant、space membership、对象状态、密级和 service audience；拒绝写入 AuditLog；
+- Workspace：KnowledgeSpace `ACTIVE/ARCHIVED`、强 ETag、幂等、成员授权/撤销；
+- 治理：ModelProfile、追加式 PromptVersion、ConnectorDefinition 仅保存配置和 Secret 引用，不执行模型或外部同步；
+- 对象：受控上传会话、RustFS 条件写、checksum/size/type/classification、扫描门禁和下载重新授权；ManagedObject 不冒充 SourceVersion；
+- 事务与契约：PostgreSQL 业务写入与 Audit/Outbox/Idempotency 同事务，OpenAPI/事件/SDK 版本化，W3C trace 贯穿 Web/API/DB/S3；
+- 隔离：应用授权 + 强制范围查询 + 复合外键为 M1 权威；RLS 因缺少连接池/后台任务/运维实证暂不启用，详见 ADR-0019；
+- Workflow：M1 无长任务，继续只运行确定性的 Temporal health Workflow，不虚构业务 Workflow。
+
+## 13. M2 已实现增量
+
+- 执行权威：Temporal Namespace `nexweave-dev`，Workflow Queue `nexweave-m2-workflows` 与 Activity Queue `nexweave-m2-activities` 分离；数据库不推进执行状态；
+- 七类内核：SourceIngestion、KnowledgeCompile、HumanReview、QualityEvaluation、KnowledgeRelease、DomainPackInstall、GridCrewFeedbackIngestion 均以版本化 Workflow 类型注册，但 Activity 只写 M2 Stub/投影事实；
+- 可靠性：稳定 Workflow ID、Run ID 映射，Update/Signal、幂等命令、暂停/继续/取消、人工等待、超时升级、指数重试、心跳与逆序补偿；
+- 投影：PostgreSQL 保存 WorkflowTask/Step/Event 查询投影、审计与 Outbox；事件追加式，投影带 revision/同步标记，可从 Temporal 查询状态对账修复；
+- 边界：Workflow 模块不调用网络、数据库、文件或模型；I/O 全部在可重试 Activity/API adapter；
+- Web/API：服务端授权的任务创建、查询、控制和对账 API，真实任务中心与 typed SDK。页面状态与数据库投影均不成为第二套执行引擎；
+- 验证：真实 Temporal 覆盖七类运行、重试、重复 Update、人工批准、暂停恢复、取消补偿、Worker 重启、投影修复和历史 replay。官方时间跳跃测试因外部 test-server 初始化未完成，保留为条件项。

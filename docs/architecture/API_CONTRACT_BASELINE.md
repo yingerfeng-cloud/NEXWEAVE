@@ -1,6 +1,6 @@
 # API Contract Baseline
 
-> 公共前缀：`/api/v1`。M0 已冻结跨域语义；资源表是后续 Milestone 的公共契约目录，不代表业务 API 已实现。  
+> 公共前缀：`/api/v1`。M1 已实现平台基础端点；M2 已实现本文件明确列出的通用任务查询/控制端点。七类 Workflow 仍是内核 Stub，不代表同名后续业务 API 已实现。
 > 所有写请求必须包含授权、审计、乐观锁/前置条件和幂等策略；异步请求返回业务对象 ID 与 Workflow ID。
 
 ## M0 已实现的平台端点
@@ -13,6 +13,31 @@
 | `GET /config/diagnostics` | 只返回脱敏配置诊断 | OpenAPI snapshot |
 
 以上是工程健康面，不是知识业务能力。已实现路径由 `packages/contracts/openapi/nexweave-platform-v1.openapi.json` 锁定并在 CI 中防漂移。
+
+## M1 已实现端点
+
+| 资源 | 路径 | 权限/并发语义 |
+|---|---|---|
+| 认证 | `POST /auth/dev/session`, `GET /auth/me` | Bearer；开发签发端点在非 development 环境不可用 |
+| 身份 | `GET /roles`, `GET/POST /users`, `GET /organizations`, `GET/POST /service-identities` | `identity.manage`；创建使用 `Idempotency-Key` |
+| 空间 | `GET/POST /spaces`, `GET/PATCH /spaces/{id}`, `POST /spaces/{id}/archive` | tenant/space RBAC+ABAC；写入使用幂等键，更新/归档使用强 `If-Match` |
+| 成员 | `GET /spaces/{id}/members`, `PUT/DELETE /spaces/{id}/members/{subject_id}` | `member.read/grant/revoke`；撤销保留事实并即时失效 |
+| 治理 | `GET/POST /model-profiles`, `GET/POST /prompt-versions`, `GET/POST /connector-definitions`, `GET /audit-logs` | 管理权限；Secret 仅引用；PromptVersion 追加式 |
+| 对象 | `POST /spaces/{id}/object-uploads`, `PUT /object-uploads/{id}/content`, `GET /objects/{id}`, `GET /objects/{id}/content` | 空间/密级授权、条件创建、服务端 checksum、扫描门禁、下载重新授权 |
+
+所有 M1 列表支持 `limit`（1—100）和 opaque `cursor`，响应包含 `items` 与可空 `next_cursor`；顺序由仓储显式固定。M1 的 `ManagedObject` 是基础设施验证对象，不是 SourceVersion，也不能进入 Evidence/Release。
+
+## M2 已实现端点
+
+| 方法与路径 | 语义 | 权限/并发语义 |
+|---|---|---|
+| `POST /spaces/{space_id}/workflow-tasks` | 以稳定 business key 创建并启动七类内核任务 | `workflow.create`；`Idempotency-Key`；返回业务任务 ID、Workflow ID、Run ID 与 `Location` |
+| `GET /spaces/{space_id}/workflow-tasks` | 查询 PostgreSQL 任务投影 | `workflow.read`；稳定游标，可按类型/状态过滤；标记投影来源 |
+| `GET /workflow-tasks/{task_id}` | 查询任务、步骤、追加日志和当前允许动作 | `workflow.read`；强 ETag；服务端按角色和真实状态过滤动作 |
+| `POST /workflow-tasks/{task_id}/commands` | pause/resume/cancel/claim/request/provide/approve/reject/retry | `workflow.control` 或 `workflow.review`；`Idempotency-Key` + `If-Match`；Temporal Update 为执行权威 |
+| `POST /workflow-tasks/{task_id}/reconcile` | 比对 Temporal 查询状态并修复数据库投影 | `workflow.reconcile`；记录审计/Outbox；不从数据库反向推进 Workflow |
+
+任务创建是通用 M2 内核入口，不替代 M3+ 的 Source/Compile/Review/Release 等业务命令。`input_refs` 只保存有界引用，不能承载文件正文、凭据或领域业务对象。
 
 ## 通用错误语义
 
@@ -92,11 +117,11 @@
 | `GET /integrations/gridcrew/releases/{id}/evidence/{eid}` | GridCrew ServiceIdentity + delegated scope | GET | permitted evidence metadata/content | 同步 | M8 |
 | `POST /integrations/gridcrew/feedback` | GridCrew ServiceIdentity | task/feedback ID | feedback/case draft → intake workflow | 异步；只入草稿 | M8 |
 
-## M0 契约单一来源与兼容规则
+## M1/M2 契约单一来源与兼容规则
 
 - HTTP 路由/Pydantic 模型导出并提交 OpenAPI 3.1 snapshot；CI 比对实现与 snapshot，更新 snapshot 必须作为公共契约变化评审。
 - 跨 HTTP/事件/SDK 的模型以 `packages/contracts` Pydantic 模型为 canonical source，生成并提交 JSON Schema Draft 2020-12；CI 阻断生成物漂移。
-- TypeScript/Python SDK 只从已提交 OpenAPI/JSON Schema 生成，不反向修改契约；SDK 尚未在 M0 生成业务方法。
+- Python/TypeScript SDK 以已提交 OpenAPI/JSON Schema 为权威，M1 提供平台基础，M2 增加任务 create/list/detail/command/reconcile；SDK 不反向修改契约。
 - verified OIDC/service identity 提供 actor/tenant claims；路径/资源 space 与 claims 共同校验。客户端自报 header 不授予租户权限。
 - 产生副作用的命令使用 `Idempotency-Key`；可变资源写入使用 `If-Match`；列表使用 opaque cursor；异步命令返回 operation/business ID + Workflow ID。
 - 同 major 只允许增加可选字段或新路径。删除、改义、收紧枚举和 Release/Evidence/SourceAnchor 语义变化必须 ADR + 新 major/迁移窗口。
