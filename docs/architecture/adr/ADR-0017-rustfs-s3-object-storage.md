@@ -27,7 +27,7 @@ NEXWEAVE 是否继续保留原对象存储实现，还是在 M0 将活动运行�
 
 选择 3：
 
-- M0 Compose 固定 RustFS 官方 Quay 多架构索引 `quay.io/rustfs/rustfs:1.0.0-rc.3@sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5`，不得使用 `latest`；
+- M0 Compose 固定 RustFS 官方 Quay 多架构索引 `quay.io/rustfs/rustfs:1.0.0-rc.4@sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b`，不得使用 `latest`；
 - 活动代码、配置、健康检查、测试和开发文档不保留旧 Provider、旧凭据或运行时回退；
 - 应用层环境变量使用通用 `NEXWEAVE_OBJECT_STORE_*` 命名，Compose 仅在 Adapter 边界映射到 `RUSTFS_*`；
 - 领域与公共契约只依赖 `ObjectStoragePort` 和批准的 S3 子集，不依赖 RustFS SDK、管理 API 或磁盘格式；
@@ -68,3 +68,5 @@ M0 通过条件：
 生产或承载 Raw/Release 前的附加门禁：SPK-004 形成可复现的 S3 能力、故障恢复、备份恢复、安全扫描和多架构验证报告。
 
 2026-08-24 验证更新：`scripts/verify_rustfs_spk004.py` 在固定镜像上通过单节点 S3/恢复矩阵；对象 key、状态、补偿、受控下载和内部签名镜像规则由 ADR-0018 冻结。GitHub Actions run `32702688049` 已完成双架构 SBOM/CVE/签名权威外部回执。
+
+2026-08-29 安全更新：RustFS `1.0.0-rc.3` 的 Alpine OpenSSL 层出现可修复 HIGH `CVE-2026-14456`。官方 `1.0.0-rc.4` 多架构索引已通过只读 Quay 清单核验并替换固定 pin；完整 S3/SPK-004 与双架构 CI 回执仍是升级后的验收条件。

@@ -50,9 +50,9 @@ async def test_scan_activity_replay_uses_recorded_clean_fact() -> None:
 async def test_parse_activity_is_fail_closed_until_clamav_clean_fact() -> None:
     activities = SourceActivities(  # type: ignore[arg-type]
         repository=RepositoryStub(
-                {
-                    "status": "RUNNING",
-                    "malware_scan_status": "PENDING",
+            {
+                "status": "RUNNING",
+                "malware_scan_status": "PENDING",
                 "source_document_status": "ACTIVE",
                 "source_version_status": "PARSING",
                 "invalidated": False,

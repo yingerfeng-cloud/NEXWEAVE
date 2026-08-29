@@ -186,7 +186,7 @@ jobs:
       id-token: write
       packages: write
     env:
-      SOURCE: quay.io/rustfs/rustfs:1.0.0-rc.3@sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5
+      SOURCE: quay.io/rustfs/rustfs:1.0.0-rc.4@sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b
       TARGET: ghcr.io/yingerfeng-cloud/nexweave-rustfs
       TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
     steps:
@@ -250,8 +250,8 @@ jobs:
           DIGEST: ${{ steps.mirror.outputs.digest }}
         run: |
           cosign sign --yes "${TARGET}@${DIGEST}"
-          crane tag "${TARGET}@${DIGEST}" 1.0.0-rc.3-approved
-          test "$(crane digest "${TARGET}:1.0.0-rc.3-approved")" = "${DIGEST}"
+          crane tag "${TARGET}@${DIGEST}" 1.0.0-rc.4-approved
+          test "$(crane digest "${TARGET}:1.0.0-rc.4-approved")" = "${DIGEST}"
           cosign verify \
             --certificate-identity "https://github.com/yingerfeng-cloud/NEXWEAVE/.github/workflows/ci.yml@refs/heads/main" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
