@@ -16,7 +16,7 @@ from botocore.exceptions import ClientError
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = "http://localhost:8080"
-M1_COMPATIBLE_MILESTONES = {"M1", "M2"}
+M1_COMPATIBLE_MILESTONES = {"M1", "M2", "M3"}
 
 
 def environment() -> dict[str, str]:
@@ -169,7 +169,10 @@ def assert_object_storage_immutable(metadata: dict[str, object], content: bytes)
             raise
     else:
         raise RuntimeError("RustFS allowed an immutable object key to be overwritten")
-    if len(content) != int(metadata["size"]):
+    expected_size = metadata.get("size")
+    if not isinstance(expected_size, int):
+        raise RuntimeError("Managed object size metadata is missing or invalid")
+    if len(content) != expected_size:
         raise RuntimeError("Managed object size metadata is incorrect")
 
 
@@ -376,7 +379,7 @@ def main() -> None:
         if downloaded.content != content or downloaded.headers["X-Content-Checksum"] != checksum:
             raise RuntimeError("Authorized object download did not preserve bytes and checksum")
 
-        eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE"
+        eicar = b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
         infected_upload = request(
             client,
             "POST",

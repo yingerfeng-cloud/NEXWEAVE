@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-ADR-0001—0018 已在 M0 冻结；ADR-0019 冻结 M1，ADR-0020 根据用户正式下发的 M2 任务书冻结 Temporal 内核语义。这些 `Accepted` 决策可作为 R1 工程与契约基线执行，不代表尚未发生的业务专家确认、外部联调或性能验证已完成。被替代时必须保留历史并链接 superseding ADR。
+ADR-0001—0018 已在 M0 冻结；ADR-0019 冻结 M1；ADR-0020 冻结已验收的 M2 Temporal 内核语义；ADR-0021 在用户正式下发 M3 后冻结 Source/Parse 执行前语义。M3 当前已进入正式实施；Accepted 决策不代表尚未验证的 M3 业务代码、真实 Parser/OCR 或外部回执已完成。被替代时必须保留历史并链接 superseding ADR。
 
 | ADR | 主题 | 状态 |
 |---|---|---|
@@ -24,3 +24,4 @@ ADR-0001—0018 已在 M0 冻结；ADR-0019 冻结 M1，ADR-0020 根据用户正
 | ADR-0018 | SourceVersion Raw 对象与容器供应链门禁 | Accepted |
 | ADR-0019 | M1 身份、授权、空间与托管对象基础 | Accepted |
 | ADR-0020 | M2 Temporal 内核、任务投影与控制契约 | Accepted |
+| ADR-0021 | M3 Source、解析版本与 SourceAnchor 语义 | Accepted |

@@ -96,3 +96,24 @@ M-1 只验收资料、治理、基线、契约草案、追踪、ADR/Spike 和开
 - 官方 Temporal SDK time-skipping 测试首次本地初始化在 296 秒内未完成并被中止；2026-08-25 修正测试 Activity 类型并为 test-server 设置显式缓存目录后，本地真实执行 `1 passed`，GitHub Actions 独立 `temporal-time-skipping` job 在 run `32808198635` 通过，本条件项关闭；
 - 用户已明确授权提交并 push。run `32808198635` 的 quality、time-skipping、Compose integration、四个 application-image 与 RustFS approval 共八个 job 全部通过；双架构 CycloneDX SBOM、可修复 HIGH/CRITICAL CVE 阻断证据、Cosign 签名与验证均成功并上传制品。
 - 用户于 2026-08-25 正式验收 M2；该验收关闭 M2 阶段，不构成 M3 下发授权。
+
+## 13. M3 执行前校准门禁（2026-08-25）
+
+- 用户已正式下发 M3，任务书/ADR/治理校准已完成并进入正式实施；在实现与门禁真实通过前不得声称 Source/Parse 已完成；
+- ADR-0021 与校准任务书明确 M2 `source-ingestion.v1` 仅 Stub，M3 业务使用 v2 并保留 v1 Replay；
+- failure/partial/retry/reparse、active/latest ParseJob、版本替代、Anchor 失效/重定位和扫描 PDF `OCR_REQUIRED` 已冻结；
+- M3 实现验收必须使用真实 PostgreSQL/RustFS/Temporal/MalwareScanner/Parser。无真实 OCR Provider 时只能验收真实扫描检测与 `PARTIAL/OCR_REQUIRED`，Mock 不得冒充 OCR；
+- 本节是治理门禁，不允许将 `APPROVED` 需求或文档 diff 标记为 `IMPLEMENTED/VERIFIED`。
+
+## 14. M3 实施、审查修复与本地 P0 门禁证据（2026-08-27—2026-08-29）
+
+- 独立审查发现的权限、同一 Source 密级一致性、ParseJob 并发终态、版本替代竞争、结果清单、定位器、上传终态、取消与 Parser 凭据隔离问题已修复；M3 代码仍未由用户验收；
+- Python format/Ruff、strict mypy（60 source files）、70 项非集成测试（另有 4 项集成测试按标记排除）通过；契约与快照 22 项、Web 11 项、TypeScript SDK、Web production build、Prettier/ESLint/typecheck 通过；
+- 在自动生成并于结束时删除的一次性真实 PostgreSQL 数据库中完成 `0001 → 0004 → 0003 → 0004`，核验 M3 的 10 张表、6 个数据库保护 trigger 和单一替代版本约束；未对开发数据库执行 destructive downgrade；
+- 新建的 Temporal v1/v2 history Replay 与 v2 integration 通过；没有取得已验收 M2 的归档 history，因此不声称完成归档历史兼容证明；
+- Secret scan、`pip check`、Python/JavaScript production dependency audit、Compose config 与 `git diff --check` 通过；
+- 2026-08-27 固定上游 ClamAV 镜像连续两次因 Docker Hub TLS handshake timeout 未能拉取，本机也无缓存；该时点如实保留为未关闭的本地 P0。
+- 2026-08-29 改用可复现的本地打包路径：基于已接受的 Python 3.12.13/Debian 12 digest，安装官方 Debian 精确包 `clamav-daemon/freshclam=1.4.3+dfsg-1~deb12u2`；ClamAV 运行版本为 1.4.3，FreshClam 签名为 daily 28106、main 63、bytecode 339。
+- `docker compose up --build --detach --wait` 后全部服务 running，配置了 healthcheck 的 API、Web、PostgreSQL、Redis、RustFS、Temporal、Parser sandbox 和 ClamAV 均 healthy；三个 Worker 未配置容器 healthcheck，但保持 running 并被后续 E2E 实际调用。`.venv/bin/python scripts/verify_m1.py` 通过真实干净文件与完整 EICAR 检测、感染保留及下载拒绝链路，`.venv/bin/python scripts/verify_m3.py` 通过 TXT/DOCX/XLSX、扫描 PDF `OCR_REQUIRED`、幂等 complete、reparse、失效、批次与事务 Outbox 链路，同时覆盖独立 Parser sandbox IPC。
+- Trivy 0.74.0 使用当前 GHCR 官方漏洞库扫描本地 ARM64 `nexweave-clamav:1.4.3-deb12u2`，Debian 与 Python 元数据均为 0 个可修复 HIGH/CRITICAL；Secret、Compose、定向 format/Ruff/mypy、16 项相关非集成回归与 `git diff --check` 复核通过。
+- 当前已知本地 M3 P0 为零。本结论不替代用户验收，也不声称已取得远程双架构构建/SBOM/Cosign、已验收 M2 归档 history Replay、真实 OCR、生产 HA/DR 或外部 CI 回执。

@@ -42,7 +42,7 @@ def test_scanner_stub_preserves_clean_and_infected_gate_states() -> None:
     clean = asyncio.run(scanner.scan(content=b"trusted", content_type="text/plain"))
     infected = asyncio.run(
         scanner.scan(
-            content=b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE",
+            content=b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
             content_type="text/plain",
         )
     )

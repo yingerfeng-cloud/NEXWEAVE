@@ -1,6 +1,6 @@
 # Requirements Traceability Matrix
 
-> M2 状态：M1 平台基础已验收；M2 通用 Temporal 可靠内核、任务投影和任务中心可标记 `VERIFIED`/`PARTIAL`。七类 Kernel Stub 不使 M3+ 同名知识业务变为已实现。
+> M3 状态：M2 已正式验收；M3 已完成校准、代码实施、独立审查、本地修复回归和真实 ClamAV-backed Compose E2E，本地 P0 已关闭。已真实执行的范围可标记 `LOCALLY VERIFIED`；用户未明确验收前不得标记 M3 `ACCEPTED`，远程双架构晋级证据也不得由本地结果替代。M2 Kernel Stub 不作为 M3 业务证据。
 > `原型` 使用页面名称；`API` 仅引用资源域，详细路径见 API baseline。
 
 ## 1. 16 个一级模块
@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|---|---|
 | NXW-DASH-001 | PRD 8.1 / 总览 | M1,M7 | Space, CompileJob, ReviewTask, Conflict, EvaluationRun, Release | read projections | API/UI/E2E/权限 | PARTIAL | M1 已实现真实 Space/Audit 概览；知识流水线指标待 M7 |
 | NXW-SPACE-001 | PRD 8.2 / 知识空间 | M1 | Tenant, KnowledgeSpace, SpaceMember | `/spaces`, memberships | unit/API/E2E/越权 | VERIFIED | 创建、编辑、成员授权/撤销、归档和隔离闭环 |
-| NXW-SOURCE-001 | PRD 8.3 / 资料中心 | M3 | SourceDocument, SourceVersion, ParseJob, Segment, Anchor | sources; SourceIngestion | parser/集成/E2E/安全 | BASELINED | Raw、checksum、版本、预览、失败重试 |
+| NXW-SOURCE-001 | PRD 8.3 / 资料中心 | M3 | SourceDocument, SourceVersion, ParseJob, Segment, Anchor | sources; SourceIngestion v2 | parser/集成/E2E/安全 | LOCALLY VERIFIED；USER ACCEPTANCE PENDING | 真实代码、契约、本地回归与 ClamAV-backed Compose E2E 已通过；远程晋级证据和用户验收待关闭 |
 | NXW-COMPILE-001 | PRD 8.5 / 编译中心 | M2,M5 | CompileJob, CompileStep | workflow tasks; KnowledgeCompile | workflow/E2E/故障/幂等 | PARTIAL | M2 已验证通用步骤图、查询/控制/恢复；真实 Source/Schema/Prompt/Model 锁定与 CompileJob 输出待 M5 |
 | NXW-WIKI-001 | PRD 8.6 / Wiki | M5 | WikiPage, WikiPageVersion, Entity | wiki pages | unit/API/UI/E2E | BASELINED | diff、人工保护区、不可覆盖版本 |
 | NXW-SCHEMA-001 | PRD 8.4 / Schema Studio | M4 | SchemaDefinition/Version, EntityType, RelationType, Template, LintRule | schemas | contract/UI/兼容/迁移 | BASELINED | 破坏性变更阻断 |
@@ -29,7 +29,7 @@
 | 需求 ID | MVP 能力 | 来源/原型 | Milestone | 对象 / API | 测试 | 状态 |
 |---|---|---|---|---|---|---|
 | NXW-SPACE-002 | 创建知识空间 | PRD 16.1-1 / 知识空间 | M1 | Space; `POST /spaces` | API/UI/E2E/权限 | VERIFIED |
-| NXW-SOURCE-002 | 上传 PDF、Word、Markdown | PRD 16.1-2 / 资料中心 | M3 | SourceVersion/ParseJob | parser/E2E/恶意文件 | BASELINED |
+| NXW-SOURCE-002 | 上传 PDF、Word、Markdown | PRD 16.1-2 / 资料中心 | M3 | SourceVersion/ParseJob | parser/E2E/恶意文件 | LOCALLY VERIFIED；六类 parser 与真实扫描/Compose E2E 通过，用户验收待关闭 |
 | NXW-SCHEMA-002 | 配置基础实体与关系 Schema | PRD 16.1-3 / Schema Studio | M4 | SchemaVersion/Types | contract/UI/兼容 | BASELINED |
 | NXW-COMPILE-002 | LLM 创建/更新 Wiki 草稿 | PRD 16.1-4 / 编译中心、Wiki | M5 | CompileJob/PageVersion | eval/E2E/幂等 | BASELINED |
 | NXW-CLAIM-002 | 自动提取来源引用 | PRD 16.1-5 / 主张与证据 | M5,M6 | Evidence/SourceAnchor | 定位准确率/E2E | BASELINED |
@@ -96,7 +96,7 @@
 - MVP 必须完成能力：14/14 已独立映射；
 - PRD 性能、可用性、安全、审计和兼容性：已建立基线行；
 - M1 已真实实现 KnowledgeSpace 与系统管理基础；M2 已实现通用 WorkflowTask/Step/Event、Temporal 执行控制与任务中心；
-- Source、Schema、真实 Compile、Wiki、Claim、Graph、Conflict、Review、Quality、Release、Query、Pack 和 Integration 业务仍未实现；七类 Workflow 只产生 `business_features_implemented=false` 的 Kernel Stub 结果；
+- M3 Source/parse 已实现但尚未验收；Schema、真实 Compile、Wiki、Claim、Graph、Conflict、Review、Quality、Release、Query、Pack 和 Integration 业务仍不得声称已实现。七类 M2 v1 Workflow 只产生 `business_features_implemented=false` 的 Kernel Stub 结果；
 - M2 已把任务端点映射到 OpenAPI/Schema/Event/SDK/测试；后续业务资源仍随对应 Milestone 契约先行落地，禁止提前伪造；
 - 试点质量阈值仍由产品/RCA 专家决定，M0 不以未经批准的数字关闭 NXW-KQ-002。
 
@@ -113,3 +113,14 @@
 | 时间跳跃 | SDK time-skipping test | integration test | VERIFIED；本地真实执行通过，GitHub Actions run 32808198635 的独立 `temporal-time-skipping` job 通过 |
 | 任务中心/API/SDK | 真实列表/详情/步骤/日志/动作/深链接；typed clients | OpenAPI/contract/UI/build/E2E | VERIFIED |
 | 数据与迁移 | `0003_m2_temporal_kernel` | 隔离真实 PostgreSQL base/down/up | VERIFIED |
+
+## 8. M3 执行前治理追踪
+
+| M3 要求 | 校准证据 | 当前状态 |
+|---|---|---|
+| M0—M2 实况对齐 | M3 任务书明确 M2 `source-ingestion.v1` 仅 Kernel Stub，ManagedObject 不是 SourceVersion | IMPLEMENTED；边界测试通过 |
+| 失败/部分/retry/reparse/替代 | ADR-0021；OQ-PARSE-001 已关闭 | LOCALLY VERIFIED；并发/终态修复、本地回归与真实 Compose E2E 通过 |
+| SourceAnchor | 固定 SourceVersion/checksum/ParseJob，状态使用 VALID/STALE/UNRESOLVED/REVOKED，重定位新建 Anchor | IMPLEMENTED；清单/定位器单测通过 |
+| Parser/OCR 与扫描 PDF | ParserPort/OcrPort、真实扫描检测、无真实 OCR 时 `OCR_REQUIRED/PARTIAL`，禁止 Mock 冒充 | IMPLEMENTED；无真实 OCR 声明 |
+| Workflow 兼容 | v1 保留 Replay，M3 使用 `nexweave.source-ingestion.v2` 与 ParseJob 稳定 ID | LOCALLY VERIFIED；新建 v1/v2 history replay 通过，已验收归档 M2 history 未取得 |
+| 安全/迁移/供应链 | 真实扫描、解析隔离、`0004` additive migration、新依赖治理与真实 E2E 门禁 | LOCALLY VERIFIED；真实 PostgreSQL `0001→0004→0003→0004`、ClamAV clean/EICAR、无凭据沙箱、Compose E2E 与本地 ARM64 可修复 HIGH/CRITICAL=0 已验证；远程双架构/SBOM/Cosign 晋级证据待关闭 |

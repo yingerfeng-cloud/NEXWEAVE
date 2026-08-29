@@ -1,13 +1,13 @@
 # Data Model Baseline
 
-> M0 冻结逻辑数据边界，M1 以 `0002_m1_platform_services` 实现平台基础；M2 以追加迁移 `0003_m2_temporal_kernel` 实现通用任务查询投影。Source 及后续知识业务表仍未建立。
+> M0 冻结逻辑数据边界，M1/M2 已分别由 `0002`/`0003` 实现并验收。M3 Source/Parse 逻辑语义已由 ADR-0021 校准，但 `0004` 和下列 Source 表尚未建立。
 
 ## 1. 核心表域
 
 | 域 | 候选表 |
 |---|---|
 | 身份/空间 | `tenant`, `organization`, `user_identity`, `service_identity`, `knowledge_space`, `space_member`, `permission_policy` |
-| 原始资料 | `source_document`, `source_version`, `parse_job`, `document_segment`, `source_anchor` |
+| 原始资料 | `source_document`, `source_version`, `source_upload_session`, `source_import_batch`, `source_invalidation`, `parse_job`, `parse_failure_unit`, `document_segment`, `source_anchor` |
 | Schema | `schema_definition`, `schema_version`, `entity_type`, `relation_type`, `page_template`, `lint_rule` |
 | 知识 | `wiki_page`, `wiki_page_version`, `entity`, `entity_alias`, `relation`, `claim`, `evidence`, `conflict` |
 | 编译/审核 | `compile_job`, `compile_step`, `review_task`, `review_action`, `approval` |
@@ -60,9 +60,13 @@ M2 Task/Step/Event 均包含稳定 UUIDv7 与 tenant/space 范围；Task 写入�
 
 - `SourceDocument` 是逻辑资料；每次内容变化创建不可变 `SourceVersion`。
 - `SourceVersion` 保存 SHA-256、大小、MIME、来源、密级、对象 key、上传者和替代关系。
+- Source 上传会话在写入前预分配 SourceDocument/SourceVersion ID；ImportBatch 只汇总逐项结果，部分失败不回滚成功项。
 - 对象 key 使用稳定逻辑结构，不暴露本机绝对路径；同 key 不得静默覆盖。
 - 原始字节权威在对象存储；数据库保存元数据、checksum 和状态。
 - checksum 去重与业务重复提示分离：相同字节可幂等，元数据相似只提示，不自动合并。
+- 每次 reparse 新建 ParseJob 并固定 parser/OCR/config/document-model/locator 版本；retry 保持同一输入配置。
+- SourceVersion 分开保存 active/latest ParseJob；reparse 失败不破坏既有 active 结果。失效保存 append-only SourceInvalidation，不覆盖解析状态。
+- Segment/Anchor 绑定 ParseJob；重定位创建新 Anchor 与 predecessor 关系，不改写历史 locator。
 
 ## 5. 版本与不可变约束
 
@@ -77,7 +81,7 @@ M2 Task/Step/Event 均包含稳定 UUIDv7 与 tenant/space 范围；Task 写入�
 
 - 进入正式审核的 Claim 至少一个有效 Evidence；正式因果 Relation 同样要求 Evidence。
 - Evidence 必须绑定不可变 SourceVersion 和可验证 SourceAnchor，并声明支持/反对方向。
-- Anchor 失效不会删除 Evidence；状态变为 STALE/INVALID 并阻断相应发布或引用。
+- Anchor 失效不会删除 Evidence；状态只能变为 `STALE`、`UNRESOLVED` 或 `REVOKED` 并阻断相应发布或引用；不得使用 `INVALID`。
 - Citation 必须绑定固定 Release、QueryAnswer、Evidence/ReleaseItem，且返回前校验 Anchor。
 - 证据不足、冲突未决或权限不足必须产生明确结果，不生成伪引用。
 
@@ -131,4 +135,4 @@ erDiagram
 
 ## 11. 后续冻结项
 
-Broker 事件保留、Source/Anchor 物理表示、Release manifest 存储、知识投影索引版本、生产 RLS 运维模型及知识大数据迁移/回滚策略仍按对应 Milestone 冻结。M2 通用任务投影由 ADR-0020 与 `0003` 实现；生产 Temporal history retention/升级与大规模投影分区仍需部署证据。
+ADR-0021 已冻结 Source/Parse/Anchor 逻辑语义；具体 `0004` 物理列、索引和 parser adapter 仍需在 M3 实现并以真实迁移证据验收。Broker 事件保留、Release manifest 存储、知识投影索引版本、生产 RLS 运维模型及知识大数据迁移/回滚策略仍按对应 Milestone 冻结。M2 通用任务投影由 ADR-0020 与 `0003` 实现；生产 Temporal history retention/升级与大规模投影分区仍需部署证据。

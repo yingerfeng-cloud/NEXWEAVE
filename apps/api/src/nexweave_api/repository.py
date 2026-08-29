@@ -783,14 +783,16 @@ class PlatformRepository:
         space_id: UUID | None,
         trace_id: str,
         payload: Mapping[str, Any],
+        correlation_id: UUID | None = None,
+        causation_id: UUID | None = None,
     ) -> None:
         await connection.execute(
             text(
                 "INSERT INTO outbox_events "
                 "(id, tenant_id, space_id, event_type, schema_version, aggregate_type, "
-                "aggregate_id, aggregate_version, correlation_id, trace_id, payload) VALUES "
+                "aggregate_id, aggregate_version, correlation_id, causation_id, trace_id, payload) VALUES "
                 "(:id, :tenant, :space, :event_type, '1.0', :aggregate_type, :aggregate_id, "
-                ":aggregate_version, :correlation, :trace, CAST(:payload AS jsonb))"
+                ":aggregate_version, :correlation, :causation, :trace, CAST(:payload AS jsonb))"
             ),
             {
                 "id": new_uuid7(),
@@ -800,7 +802,8 @@ class PlatformRepository:
                 "aggregate_type": aggregate_type,
                 "aggregate_id": aggregate_id,
                 "aggregate_version": aggregate_version,
-                "correlation": new_uuid7(),
+                "correlation": correlation_id or new_uuid7(),
+                "causation": causation_id,
                 "trace": trace_id,
                 "payload": json.dumps(payload, default=str),
             },

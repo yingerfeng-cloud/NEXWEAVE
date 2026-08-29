@@ -1,7 +1,7 @@
 # NEXWEAVE Open Questions
 
 > 状态值：`OPEN`、`PROPOSED`、`DECIDED`、`DEFERRED`。  
-> M2 只实现任务书与 Accepted ADR 授权范围；任何仍未决事项不得被编码静默固化。M2 执行完成不等于用户已验收或已授权 M3。
+> M2 已正式验收。用户已正式下发 M3，任务书、ADR 与治理校准已完成并进入正式实施；任何仍未决事项不得被编码静默固化。
 
 ## 已明确
 
@@ -16,6 +16,19 @@
 | OQ-GOV-004 | DECIDED | 上述 M0 P1 已通过远程 main CI、双架构 SBOM/CVE/Cosign 与 SPK-004 实测闭环；RustFS RC 的 HA/DR/升级规模风险转入既定 M7/M12 门禁，不再是 M0 阻塞 | 用户 2026-08-24 要求解决剩余问题；ADR-0018；GitHub Actions run 32702688049 |
 | OQ-GOV-005 | DECIDED | 正式进入 M1，以 `03_NEXWEAVE_M1_平台基础、身份权限与核心领域模型任务书.md` 为边界，完成后停止 | 用户 2026-08-24 明确下发“进入 M1” |
 | OQ-GOV-006 | DECIDED | M1 正式验收通过并进入 M2，以 `04_NEXWEAVE_M2_Temporal可靠知识工作流内核任务书.md` 为边界，完成后停止 | 用户 2026-08-24 明确“同意 M1 验收，进入 M2” |
+| OQ-GOV-007 | DECIDED | M2 正式验收通过；用户正式下发 M3，并明确授权按 M0—M2 已验收基线完成任务书/ADR/治理校准后继续正式实施，实施后进行独立审查并停止在 M3 | 用户 2026-08-25 明确 M2 验收与 M3 下发/实施/审查顺序 |
+
+## M3 已冻结决策
+
+| ID | 状态 | 决策 | 依据 |
+|---|---|---|---|
+| OQ-PARSE-001 | DECIDED | 每次 reparse 创建新 ParseJob/Workflow；retry 保持同一输入配置；部分成功为 `PARTIAL_FAILED/PARTIAL` 并列出失败单元；reparse 失败不破坏既有 active 结果；文件替代创建新 SourceVersion；Anchor 固定 SourceVersion + checksum + ParseJob，重定位新建 Anchor；M2 v1 Stub 保留 Replay，M3 使用 v2。无真实 OCR Provider 时扫描 PDF 必须真实检测并明确 `OCR_REQUIRED`，不得冒充 OCR 成功 | ADR-0021；ADR-0008、0014、0018、0020；M3 正式任务书校准 |
+
+## M3 实施中发现的权威冲突
+
+| ID | 状态 | 问题 | 处理边界 |
+|---|---|---|---|
+| OQ-M3-ANCHOR-001 | DECIDED | `docs/architecture/DATA_MODEL_BASELINE.md` 第 6 节曾把 Anchor 失效结果写为 `STALE/INVALID`，与 ADR-0021 明确限定的 `VALID/STALE/UNRESOLVED/REVOKED` 及“不得使用 `INVALID`”冲突；已确认为低优先级基线残留并修正为 `STALE/UNRESOLVED/REVOKED`，不得实现 `INVALID` | M3 正式任务书；Accepted ADR-0021；主执行者 2026-08-25 按权威优先级确认并要求保留发现/修正证据 |
 
 ## M0 已冻结决策
 
@@ -51,7 +64,6 @@
 
 | ID | 状态 | 问题 | 最晚阶段 |
 |---|---|---|---|
-| OQ-PARSE-001 | OPEN | 解析失败、部分成功、重新解析与 Anchor 失效如何版本化？ | M3 |
 | OQ-PACK-UI-001 | OPEN | Domain Pack 是否允许前端扩展，允许到声明式布局还是沙箱组件？ | M4 |
 | OQ-GRID-001 | OPEN | GridCrew Skill 如何锁定空间、Release、权限策略和租户映射？ | M8 前联合冻结 |
 | OQ-OBSIDIAN-001 | OPEN | Obsidian 导入、导出、稳定 ID 和冲突回写策略？ | M8 |

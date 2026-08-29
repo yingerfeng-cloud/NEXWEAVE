@@ -1,6 +1,6 @@
 # Domain Model Baseline
 
-> 状态：M1 平台增量已验收；M2 通用 WorkflowTask/Step/Event 已由 ADR-0020、domain/contracts 和 `0003` 实现。后续知识对象仍是已冻结的概念/契约基线，随对应 Milestone 实现。
+> 状态：M1/M2 已验收。M3 Source/Parse 对象语义已由 ADR-0021 和校准任务书批准，但本文件中的 M3 行仍是待实现契约；当前数据库/domain 代码尚无这些业务对象。
 > 通用字段：除明确的全局配置外，业务对象预留 `id`、`tenant_id`、`space_id`、`status`、`version/etag`、`created_by`、`updated_by`、`created_at`、`updated_at`。
 
 ## 1. 身份与空间
@@ -28,11 +28,15 @@
 
 | 对象 | 含义 / ID | 归属与版本 | 生命周期 | 关键关系 | 权威源 | AI / 人审 |
 |---|---|---|---|---|---|---|
-| SourceDocument | 逻辑资料及替代链，`source_document_id` | tenant/space；聚合多个版本 | ACTIVE/INVALID/ARCHIVED | SourceVersion、Connector | DB | AI 可建议元数据；人工确认 |
-| SourceVersion | 不可变原始版本，`source_version_id` | tenant/space；同一幂等请求 + checksum 唯一；相同字节不跨业务对象静默合并 | STORED/PARSING/PARTIAL/PARSED/FAILED/SUPERSEDED | Object key、ParseJob、Evidence | DB 元数据 + 对象存储字节 | AI 不得修改；上传/失效受权；上传会话与扫描执行状态不扩展聚合状态 |
-| ParseJob | 对一个 SourceVersion 的解析执行，`parse_job_id` | tenant/space；每次解析新记录 | CREATED/QUEUED/RUNNING/PARTIAL_FAILED/FAILED/SUCCEEDED/CANCELED | SourceVersion、Segment、Workflow | Temporal 执行 + DB 投影/结果 | AI 可参与 OCR 后处理；结果需质量检查 |
+| SourceUploadSession | Source 专用上传技术会话，`source_upload_session_id` | tenant/space；预分配 Source/Version ID 与 immutable key | INITIATED/UPLOADING/COMPLETING/COMPLETED/ABORTED/EXPIRED | SourceDocument、SourceVersion、ImportBatch | DB + ObjectStorage adapter | AI 禁止；不冒充 SourceVersion |
+| ImportBatch | 多个独立上传项的批次句柄，`import_batch_id` | tenant/space；逐项结果 | CREATED/UPLOADING/PROCESSING/PARTIAL/SUCCEEDED/FAILED/CANCELED | UploadSession、SourceVersion | DB | 单项失败不回滚成功项 |
+| SourceDocument | 逻辑资料及替代链，`source_document_id` | tenant/space；聚合多个版本 | REGISTERED/ACTIVE/ARCHIVED | SourceVersion、SourceInvalidation、Connector | DB | AI 可建议元数据；人工确认 |
+| SourceVersion | 不可变原始版本，`source_version_id` | tenant/space；同一幂等请求 + checksum 唯一；active/latest ParseJob 分离 | STORED/PARSING/PARTIAL/PARSED/FAILED/SUPERSEDED | Object key、ParseJob、Evidence | DB 元数据 + 对象存储字节 | AI 不得修改；失效为正交追加事实，不扩展解析状态 |
+| SourceInvalidation | SourceVersion 失效事实，`source_invalidation_id` | tenant/space/version；append-only | RECORDED | SourceVersion、Anchor | DB | AI 禁止；授权人员给出理由 |
+| ParseJob | 对一个 SourceVersion 的一次固定配置解析，`parse_job_id` | tenant/space；每次 reparse 新记录，retry 不换配置 | CREATED/QUEUED/RUNNING/PARTIAL_FAILED/FAILED/SUCCEEDED/CANCELED | SourceVersion、Segment、Workflow | Temporal 执行 + DB 投影/结果 | OCR 可选；结果需 contract/质量检查 |
+| ParseFailureUnit | 页/表/工作表/块级解析失败事实，`parse_failure_unit_id` | ParseJob；append-only | RECORDED | ParseJob | DB | 稳定错误、范围与 retryable 标志 |
 | DocumentSegment | 版本化解析块，`segment_id` | tenant/space；绑定 parser/config version | VALID/INVALIDATED | SourceVersion、SourceAnchor | DB/对象存储衍生结果 | AI 可生成派生标签；非正式知识 |
-| SourceAnchor | Evidence 定位值对象，`source_anchor_id` 或 Evidence 内嵌版本对象 | tenant/space；绑定 SourceVersion 与 anchor schema version | VALID/STALE/INVALID/RELOCATED | Segment、Evidence | DB | AI 可提出；发布前必须可验证 |
+| SourceAnchor | Evidence 定位值对象，`source_anchor_id` | tenant/space；绑定 SourceVersion/checksum/ParseJob/locator version | VALID/STALE/UNRESOLVED/REVOKED | Segment、Evidence、relocated_from Anchor | DB | 重定位新建 Anchor；发布前必须可验证 |
 
 ## 3. Schema 与模板
 

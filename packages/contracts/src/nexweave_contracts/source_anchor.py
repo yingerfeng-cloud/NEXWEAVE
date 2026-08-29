@@ -80,8 +80,10 @@ Locator = Annotated[
 class SourceAnchor(ContractModel):
     id: UUID7
     source_version_id: UUID7
+    parse_job_id: UUID7 | None = None
     locator_version: Literal["1.0"] = "1.0"
     source_checksum: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     excerpt_hash: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     locators: tuple[Locator, ...] = Field(min_length=1)
     status: LocatorStatus
+    relocated_from_anchor_id: UUID7 | None = None

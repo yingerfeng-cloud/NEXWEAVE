@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     env: str = "development"
     log_level: str = "INFO"
-    build_version: str = "0.3.0-m2"
+    build_version: str = "0.4.0-m3"
     database_url: str = "postgresql+asyncpg://nexweave:local@localhost:5432/nexweave"
     object_store_endpoint: str = "http://localhost:9000"
     object_store_health_url: str = "http://localhost:9000/health"
@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     temporal_task_queue: str = "nexweave-m0-health"
     temporal_workflow_task_queue: str = "nexweave-m2-workflows"
     temporal_activity_task_queue: str = "nexweave-m2-activities"
+    temporal_parser_activity_task_queue: str = "nexweave-m3-parser-activities"
+    parser_sandbox_host: str = "localhost"
+    parser_sandbox_port: int = Field(default=7001, ge=1, le=65535)
     identity_provider: str = "local"
     oidc_issuer: str = ""
     oidc_jwks_url: str = ""
@@ -43,6 +46,10 @@ class Settings(BaseSettings):
     health_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
     object_upload_max_bytes: int = Field(default=104_857_600, gt=0)
     object_upload_session_seconds: int = Field(default=900, ge=60, le=86_400)
+    malware_scanner_provider: str = "clamav"
+    clamav_host: str = "localhost"
+    clamav_port: int = Field(default=3310, ge=1, le=65535)
+    clamav_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     otel_service_name: str = "nexweave-api"
     otel_exporter_otlp_endpoint: str = ""
 
@@ -50,6 +57,8 @@ class Settings(BaseSettings):
     def production_identity_must_be_oidc(self) -> "Settings":
         if self.identity_provider not in {"local", "oidc"}:
             raise ValueError("identity provider must be local or oidc")
+        if self.malware_scanner_provider != "clamav":
+            raise ValueError("M3 requires the approved ClamAV malware scanner provider")
         if self.env != "development" and self.identity_provider != "oidc":
             raise ValueError("non-development environments require the OIDC identity provider")
         if self.identity_provider == "oidc" and not (
@@ -95,12 +104,15 @@ class Settings(BaseSettings):
             "temporal_namespace": self.temporal_namespace,
             "temporal_workflow_task_queue": self.temporal_workflow_task_queue,
             "temporal_activity_task_queue": self.temporal_activity_task_queue,
+            "temporal_parser_activity_task_queue": self.temporal_parser_activity_task_queue,
+            "parser_sandbox": f"{self.parser_sandbox_host}:{self.parser_sandbox_port}",
             "oidc_configured": str(bool(self.oidc_issuer)).lower(),
             "identity_provider": self.identity_provider,
             "local_dev_identity_enabled": str(self.local_dev_identity_enabled).lower(),
             "model_gateway_configured": str(bool(self.model_gateway_endpoint)).lower(),
             "secret_provider": self.secret_provider,
             "telemetry_export_configured": str(bool(self.otel_exporter_otlp_endpoint)).lower(),
+            "malware_scanner": self.malware_scanner_provider,
         }
 
 

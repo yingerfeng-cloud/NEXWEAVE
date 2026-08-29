@@ -86,6 +86,22 @@ def test_space_access_requires_active_membership_and_archived_resources_reject_w
     assert archived.reason == "RESOURCE_ARCHIVED"
 
 
+def test_consumer_cannot_read_draft_source_material() -> None:
+    actor = principal()
+    decision = authorize(
+        actor,
+        AuthorizationRequest(
+            action="source.read",
+            resource_tenant_id=actor.tenant_id,
+            resource_space_id=new_uuid7(),
+            member_roles=frozenset({Role.CONSUMER}),
+            membership_active=True,
+        ),
+    )
+
+    assert (decision.allowed, decision.reason) == (False, "ACTION_NOT_GRANTED")
+
+
 def test_knowledge_space_enforces_slug_version_and_soft_archive() -> None:
     now, actor_id = datetime.now(UTC), new_uuid7()
     with pytest.raises(DomainRuleViolation):

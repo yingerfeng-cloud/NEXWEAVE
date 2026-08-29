@@ -131,6 +131,132 @@
         "title": "AuditLogResponse",
         "type": "object"
       },
+      "BlockLocator": {
+        "additionalProperties": false,
+        "properties": {
+          "block_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Block Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "block",
+            "default": "block",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "block_id"
+        ],
+        "title": "BlockLocator",
+        "type": "object"
+      },
+      "BlockType": {
+        "enum": [
+          "heading",
+          "paragraph",
+          "list",
+          "table",
+          "table-cell",
+          "image/figure-reference",
+          "page-boundary"
+        ],
+        "title": "BlockType",
+        "type": "string"
+      },
+      "BoundingBoxLocator": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinate_system": {
+            "const": "normalized_top_left",
+            "default": "normalized_top_left",
+            "title": "Coordinate System",
+            "type": "string"
+          },
+          "height": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Height",
+            "type": "number"
+          },
+          "kind": {
+            "const": "bounding_box",
+            "default": "bounding_box",
+            "title": "Kind",
+            "type": "string"
+          },
+          "page": {
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "width": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Width",
+            "type": "number"
+          },
+          "x": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "page",
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "title": "BoundingBoxLocator",
+        "type": "object"
+      },
+      "CharacterRangeLocator": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "exclusiveMinimum": 0.0,
+            "title": "End",
+            "type": "integer"
+          },
+          "kind": {
+            "const": "character_range",
+            "default": "character_range",
+            "title": "Kind",
+            "type": "string"
+          },
+          "start": {
+            "minimum": 0.0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "text_basis": {
+            "enum": [
+              "normalized_utf8",
+              "source_utf8"
+            ],
+            "title": "Text Basis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "text_basis"
+        ],
+        "title": "CharacterRangeLocator",
+        "type": "object"
+      },
       "ComponentHealth": {
         "additionalProperties": false,
         "properties": {
@@ -379,6 +505,222 @@
         "title": "DevSessionResponse",
         "type": "object"
       },
+      "DocumentSegment": {
+        "additionalProperties": false,
+        "properties": {
+          "block_type": {
+            "$ref": "#/components/schemas/BlockType"
+          },
+          "column_index": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column Index"
+          },
+          "config_checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Config Checksum",
+            "type": "string"
+          },
+          "derived_object_key": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived Object Key"
+          },
+          "document_model_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Document Model Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "locator_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Locator Version",
+            "type": "string"
+          },
+          "locators": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "block": "#/components/schemas/BlockLocator",
+                  "bounding_box": "#/components/schemas/BoundingBoxLocator",
+                  "character_range": "#/components/schemas/CharacterRangeLocator",
+                  "page": "#/components/schemas/PageLocator",
+                  "table_cell": "#/components/schemas/TableCellLocator",
+                  "time_range": "#/components/schemas/TimeRangeLocator"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/PageLocator"
+                },
+                {
+                  "$ref": "#/components/schemas/BlockLocator"
+                },
+                {
+                  "$ref": "#/components/schemas/CharacterRangeLocator"
+                },
+                {
+                  "$ref": "#/components/schemas/TableCellLocator"
+                },
+                {
+                  "$ref": "#/components/schemas/BoundingBoxLocator"
+                },
+                {
+                  "$ref": "#/components/schemas/TimeRangeLocator"
+                }
+              ]
+            },
+            "minItems": 1,
+            "title": "Locators",
+            "type": "array"
+          },
+          "normalized_text": {
+            "anyOf": [
+              {
+                "maxLength": 2000000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Text"
+          },
+          "page_number": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Number"
+          },
+          "parse_job_id": {
+            "format": "uuid7",
+            "title": "Parse Job Id",
+            "type": "string"
+          },
+          "parser_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Parser Id",
+            "type": "string"
+          },
+          "parser_version": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Parser Version",
+            "type": "string"
+          },
+          "row_index": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Index"
+          },
+          "sequence": {
+            "minimum": 0.0,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "sheet_name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sheet Name"
+          },
+          "source_version_id": {
+            "format": "uuid7",
+            "title": "Source Version Id",
+            "type": "string"
+          },
+          "structure_path": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Structure Path",
+            "type": "string"
+          },
+          "table_id": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table Id"
+          },
+          "text_checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Text Checksum",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_version_id",
+          "parse_job_id",
+          "sequence",
+          "block_type",
+          "structure_path",
+          "text_checksum",
+          "locators",
+          "parser_id",
+          "parser_version",
+          "config_checksum"
+        ],
+        "title": "DocumentSegment",
+        "type": "object"
+      },
+      "FailureScope": {
+        "enum": [
+          "document",
+          "page",
+          "table",
+          "sheet",
+          "block"
+        ],
+        "title": "FailureScope",
+        "type": "string"
+      },
       "FieldError": {
         "additionalProperties": false,
         "properties": {
@@ -413,6 +755,204 @@
           "DEPRECATED"
         ],
         "title": "GovernanceStatus",
+        "type": "string"
+      },
+      "ImportBatchCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name"
+        ],
+        "title": "ImportBatchCreate",
+        "type": "object"
+      },
+      "ImportBatchItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "safe_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe Detail"
+          },
+          "source_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Id"
+          },
+          "source_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version Id"
+          },
+          "status": {
+            "enum": [
+              "UPLOADING",
+              "PROCESSING",
+              "SUCCEEDED",
+              "PARTIAL",
+              "FAILED",
+              "CANCELED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "upload_session_id": {
+            "format": "uuid7",
+            "title": "Upload Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "upload_session_id",
+          "source_document_id",
+          "source_version_id",
+          "filename",
+          "status",
+          "error_code",
+          "safe_detail",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ImportBatchItemResponse",
+        "type": "object"
+      },
+      "ImportBatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid7",
+            "title": "Created By",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "item_summary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Item Summary",
+            "type": "object"
+          },
+          "items": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ImportBatchItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "space_id": {
+            "format": "uuid7",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ImportBatchStatus"
+          },
+          "tenant_id": {
+            "format": "uuid7",
+            "title": "Tenant Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "space_id",
+          "display_name",
+          "status",
+          "version",
+          "created_at",
+          "created_by"
+        ],
+        "title": "ImportBatchResponse",
+        "type": "object"
+      },
+      "ImportBatchStatus": {
+        "enum": [
+          "CREATED",
+          "UPLOADING",
+          "PROCESSING",
+          "PARTIAL",
+          "SUCCEEDED",
+          "FAILED",
+          "CANCELED"
+        ],
+        "title": "ImportBatchStatus",
         "type": "string"
       },
       "KnowledgeSpaceResponse": {
@@ -1073,6 +1613,434 @@
         "title": "OrganizationSummary",
         "type": "object"
       },
+      "PageLocator": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "page",
+            "default": "page",
+            "title": "Kind",
+            "type": "string"
+          },
+          "page": {
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page"
+        ],
+        "title": "PageLocator",
+        "type": "object"
+      },
+      "ParseFailureUnit": {
+        "additionalProperties": false,
+        "properties": {
+          "error_code": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Error Code",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "parse_job_id": {
+            "format": "uuid7",
+            "title": "Parse Job Id",
+            "type": "string"
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "safe_detail": {
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Safe Detail",
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/FailureScope"
+          },
+          "scope_ref": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Scope Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "parse_job_id",
+          "error_code",
+          "scope",
+          "scope_ref",
+          "retryable",
+          "safe_detail"
+        ],
+        "title": "ParseFailureUnit",
+        "type": "object"
+      },
+      "ParseJobResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "config_checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Config Checksum",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "document_model_version": {
+            "title": "Document Model Version",
+            "type": "string"
+          },
+          "failure_units": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ParseFailureUnit"
+            },
+            "title": "Failure Units",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "locator_version": {
+            "title": "Locator Version",
+            "type": "string"
+          },
+          "ocr_provider_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocr Provider Id"
+          },
+          "ocr_provider_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocr Provider Version"
+          },
+          "parser_id": {
+            "title": "Parser Id",
+            "type": "string"
+          },
+          "parser_version": {
+            "title": "Parser Version",
+            "type": "string"
+          },
+          "result_checksum": {
+            "anyOf": [
+              {
+                "pattern": "^sha256:[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Checksum"
+          },
+          "source_version_id": {
+            "format": "uuid7",
+            "title": "Source Version Id",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid7",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ParseJobStatus"
+          },
+          "temporal_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporal Run Id"
+          },
+          "tenant_id": {
+            "format": "uuid7",
+            "title": "Tenant Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "space_id",
+          "source_version_id",
+          "status",
+          "version",
+          "parser_id",
+          "parser_version",
+          "config_checksum",
+          "document_model_version",
+          "locator_version",
+          "ocr_provider_id",
+          "ocr_provider_version",
+          "workflow_id",
+          "temporal_run_id",
+          "result_checksum",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ParseJobResponse",
+        "type": "object"
+      },
+      "ParseJobStatus": {
+        "enum": [
+          "CREATED",
+          "QUEUED",
+          "RUNNING",
+          "PARTIAL_FAILED",
+          "FAILED",
+          "SUCCEEDED",
+          "CANCELED"
+        ],
+        "title": "ParseJobStatus",
+        "type": "string"
+      },
+      "ParserBudget": {
+        "additionalProperties": false,
+        "properties": {
+          "max_columns": {
+            "default": 2000,
+            "maximum": 16384.0,
+            "minimum": 1.0,
+            "title": "Max Columns",
+            "type": "integer"
+          },
+          "max_input_bytes": {
+            "default": 104857600,
+            "maximum": 536870912.0,
+            "minimum": 1.0,
+            "title": "Max Input Bytes",
+            "type": "integer"
+          },
+          "max_output_chars": {
+            "default": 20000000,
+            "maximum": 200000000.0,
+            "minimum": 1.0,
+            "title": "Max Output Chars",
+            "type": "integer"
+          },
+          "max_pages": {
+            "default": 2000,
+            "maximum": 20000.0,
+            "minimum": 1.0,
+            "title": "Max Pages",
+            "type": "integer"
+          },
+          "max_rows": {
+            "default": 100000,
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Max Rows",
+            "type": "integer"
+          },
+          "max_segments": {
+            "default": 200000,
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Max Segments",
+            "type": "integer"
+          },
+          "max_sheets": {
+            "default": 200,
+            "maximum": 5000.0,
+            "minimum": 1.0,
+            "title": "Max Sheets",
+            "type": "integer"
+          },
+          "timeout_seconds": {
+            "default": 120,
+            "maximum": 3600.0,
+            "minimum": 1.0,
+            "title": "Timeout Seconds",
+            "type": "integer"
+          }
+        },
+        "title": "ParserBudget",
+        "type": "object"
+      },
+      "ParserConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/ParserBudget"
+          }
+        },
+        "title": "ParserConfig",
+        "type": "object"
+      },
+      "PreviewLocatorResult": {
+        "additionalProperties": false,
+        "properties": {
+          "locator": {
+            "discriminator": {
+              "mapping": {
+                "block": "#/components/schemas/BlockLocator",
+                "bounding_box": "#/components/schemas/BoundingBoxLocator",
+                "character_range": "#/components/schemas/CharacterRangeLocator",
+                "page": "#/components/schemas/PageLocator",
+                "table_cell": "#/components/schemas/TableCellLocator",
+                "time_range": "#/components/schemas/TimeRangeLocator"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PageLocator"
+              },
+              {
+                "$ref": "#/components/schemas/BlockLocator"
+              },
+              {
+                "$ref": "#/components/schemas/CharacterRangeLocator"
+              },
+              {
+                "$ref": "#/components/schemas/TableCellLocator"
+              },
+              {
+                "$ref": "#/components/schemas/BoundingBoxLocator"
+              },
+              {
+                "$ref": "#/components/schemas/TimeRangeLocator"
+              }
+            ],
+            "title": "Locator"
+          },
+          "matched": {
+            "title": "Matched",
+            "type": "boolean"
+          },
+          "safe_detail": {
+            "title": "Safe Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "locator",
+          "matched",
+          "safe_detail"
+        ],
+        "title": "PreviewLocatorResult",
+        "type": "object"
+      },
+      "PreviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor Id"
+          },
+          "anchor_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "VALID",
+                  "STALE",
+                  "UNRESOLVED",
+                  "REVOKED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor Status"
+          },
+          "content_type": {
+            "enum": [
+              "text/plain",
+              "text/html"
+            ],
+            "title": "Content Type",
+            "type": "string"
+          },
+          "locator_results": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PreviewLocatorResult"
+            },
+            "title": "Locator Results",
+            "type": "array"
+          },
+          "parse_job_id": {
+            "format": "uuid7",
+            "title": "Parse Job Id",
+            "type": "string"
+          },
+          "sanitized_content": {
+            "title": "Sanitized Content",
+            "type": "string"
+          },
+          "source_version_id": {
+            "format": "uuid7",
+            "title": "Source Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_version_id",
+          "parse_job_id",
+          "anchor_id",
+          "anchor_status",
+          "content_type",
+          "sanitized_content"
+        ],
+        "title": "PreviewResponse",
+        "type": "object"
+      },
       "PrincipalResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1361,6 +2329,54 @@
         "title": "ReadinessReport",
         "type": "object"
       },
+      "ReparseRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/ParserConfig"
+          },
+          "ocr_provider_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocr Provider Id"
+          },
+          "ocr_provider_version": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ocr Provider Version"
+          },
+          "parser_id": {
+            "default": "nexweave.parser.builtin",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Parser Id",
+            "type": "string"
+          },
+          "parser_version": {
+            "default": "1.0.0",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Parser Version",
+            "type": "string"
+          }
+        },
+        "title": "ReparseRequest",
+        "type": "object"
+      },
       "Role": {
         "enum": [
           "platform_admin",
@@ -1434,6 +2450,34 @@
         ],
         "title": "ScanStatus",
         "type": "string"
+      },
+      "SegmentListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentSegment"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SegmentListResponse",
+        "type": "object"
       },
       "ServiceIdentityCreate": {
         "additionalProperties": false,
@@ -1629,6 +2673,711 @@
         ],
         "title": "ServiceIdentitySummary",
         "type": "object"
+      },
+      "SourceDocumentResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "classification": {
+            "$ref": "#/components/schemas/DataClassification"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid7",
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "source_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Level"
+          },
+          "space_id": {
+            "format": "uuid7",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SourceDocumentStatus"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "tenant_id": {
+            "format": "uuid7",
+            "title": "Tenant Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "updated_by": {
+            "format": "uuid7",
+            "title": "Updated By",
+            "type": "string"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "versions": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SourceVersionResponse"
+            },
+            "title": "Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "space_id",
+          "display_name",
+          "description",
+          "classification",
+          "source_level",
+          "tags",
+          "valid_until",
+          "status",
+          "version",
+          "created_at",
+          "created_by",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "SourceDocumentResponse",
+        "type": "object"
+      },
+      "SourceDocumentStatus": {
+        "enum": [
+          "REGISTERED",
+          "ACTIVE",
+          "ARCHIVED"
+        ],
+        "title": "SourceDocumentStatus",
+        "type": "string"
+      },
+      "SourceInvalidationCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "policy_version": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "reason_code": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Reason Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason_code",
+          "reason",
+          "policy_version"
+        ],
+        "title": "SourceInvalidationCreate",
+        "type": "object"
+      },
+      "SourceInvalidationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid7",
+            "title": "Created By",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "reason_code": {
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "source_version_id": {
+            "format": "uuid7",
+            "title": "Source Version Id",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid7",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "tenant_id": {
+            "format": "uuid7",
+            "title": "Tenant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "space_id",
+          "source_version_id",
+          "reason_code",
+          "reason",
+          "policy_version",
+          "created_at",
+          "created_by"
+        ],
+        "title": "SourceInvalidationResponse",
+        "type": "object"
+      },
+      "SourceListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SourceDocumentResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "SourceListResponse",
+        "type": "object"
+      },
+      "SourceUploadComplete": {
+        "additionalProperties": false,
+        "properties": {
+          "checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Checksum",
+            "type": "string"
+          },
+          "size": {
+            "minimum": 1.0,
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "checksum",
+          "size"
+        ],
+        "title": "SourceUploadComplete",
+        "type": "object"
+      },
+      "SourceUploadCompleteResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "duplicate_source_version_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid7",
+              "type": "string"
+            },
+            "title": "Duplicate Source Version Ids",
+            "type": "array"
+          },
+          "parse_job_id": {
+            "format": "uuid7",
+            "title": "Parse Job Id",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "source_id": {
+            "format": "uuid7",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_status": {
+            "$ref": "#/components/schemas/SourceDocumentStatus"
+          },
+          "source_version_id": {
+            "format": "uuid7",
+            "title": "Source Version Id",
+            "type": "string"
+          },
+          "version_status": {
+            "$ref": "#/components/schemas/SourceVersionState"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "source_version_id",
+          "parse_job_id",
+          "workflow_id",
+          "run_id",
+          "source_status",
+          "version_status"
+        ],
+        "title": "SourceUploadCompleteResponse",
+        "type": "object"
+      },
+      "SourceUploadCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "classification": {
+            "$ref": "#/components/schemas/DataClassification"
+          },
+          "content_type": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Content Type",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "expected_checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Expected Checksum",
+            "type": "string"
+          },
+          "expected_size": {
+            "maximum": 536870912.0,
+            "minimum": 1.0,
+            "title": "Expected Size",
+            "type": "integer"
+          },
+          "filename": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Filename",
+            "type": "string"
+          },
+          "import_batch_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Import Batch Id"
+          },
+          "source_document_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Id"
+          },
+          "source_level": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Level"
+          },
+          "supersedes_source_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Source Version Id"
+          },
+          "tags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Tags",
+            "type": "array"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "filename",
+          "content_type",
+          "expected_size",
+          "expected_checksum",
+          "display_name",
+          "classification"
+        ],
+        "title": "SourceUploadCreate",
+        "type": "object"
+      },
+      "SourceUploadSessionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expected_checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Expected Checksum",
+            "type": "string"
+          },
+          "expected_size": {
+            "title": "Expected Size",
+            "type": "integer"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "import_batch_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Import Batch Id"
+          },
+          "object_key": {
+            "title": "Object Key",
+            "type": "string"
+          },
+          "source_document_id": {
+            "format": "uuid7",
+            "title": "Source Document Id",
+            "type": "string"
+          },
+          "source_version_id": {
+            "format": "uuid7",
+            "title": "Source Version Id",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid7",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SourceUploadStatus"
+          },
+          "tenant_id": {
+            "format": "uuid7",
+            "title": "Tenant Id",
+            "type": "string"
+          },
+          "upload_url": {
+            "title": "Upload Url",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "space_id",
+          "source_document_id",
+          "source_version_id",
+          "import_batch_id",
+          "filename",
+          "content_type",
+          "expected_size",
+          "expected_checksum",
+          "object_key",
+          "status",
+          "version",
+          "upload_url",
+          "expires_at",
+          "created_at"
+        ],
+        "title": "SourceUploadSessionResponse",
+        "type": "object"
+      },
+      "SourceUploadStatus": {
+        "enum": [
+          "INITIATED",
+          "UPLOADING",
+          "COMPLETING",
+          "COMPLETED",
+          "ABORTED",
+          "EXPIRED"
+        ],
+        "title": "SourceUploadStatus",
+        "type": "string"
+      },
+      "SourceVersionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "active_parse_job_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Parse Job Id"
+          },
+          "checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Checksum",
+            "type": "string"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/DataClassification"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid7",
+            "title": "Created By",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "latest_parse_job_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Parse Job Id"
+          },
+          "object_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Object Version Id"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          },
+          "source_document_id": {
+            "format": "uuid7",
+            "title": "Source Document Id",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid7",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SourceVersionState"
+          },
+          "supersedes_source_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Source Version Id"
+          },
+          "tenant_id": {
+            "format": "uuid7",
+            "title": "Tenant Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "space_id",
+          "source_document_id",
+          "filename",
+          "content_type",
+          "size",
+          "checksum",
+          "object_version_id",
+          "classification",
+          "status",
+          "version",
+          "active_parse_job_id",
+          "latest_parse_job_id",
+          "supersedes_source_version_id",
+          "created_at",
+          "created_by"
+        ],
+        "title": "SourceVersionResponse",
+        "type": "object"
+      },
+      "SourceVersionState": {
+        "enum": [
+          "STORED",
+          "PARSING",
+          "PARTIAL",
+          "PARSED",
+          "FAILED",
+          "SUPERSEDED"
+        ],
+        "title": "SourceVersionState",
+        "type": "string"
       },
       "SpaceCreate": {
         "additionalProperties": false,
@@ -1870,6 +3619,79 @@
         ],
         "title": "SpaceStatus",
         "type": "string"
+      },
+      "TableCellLocator": {
+        "additionalProperties": false,
+        "properties": {
+          "column_end": {
+            "minimum": 0.0,
+            "title": "Column End",
+            "type": "integer"
+          },
+          "column_start": {
+            "minimum": 0.0,
+            "title": "Column Start",
+            "type": "integer"
+          },
+          "kind": {
+            "const": "table_cell",
+            "default": "table_cell",
+            "title": "Kind",
+            "type": "string"
+          },
+          "row_end": {
+            "minimum": 0.0,
+            "title": "Row End",
+            "type": "integer"
+          },
+          "row_start": {
+            "minimum": 0.0,
+            "title": "Row Start",
+            "type": "integer"
+          },
+          "table_id": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Table Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "table_id",
+          "row_start",
+          "row_end",
+          "column_start",
+          "column_end"
+        ],
+        "title": "TableCellLocator",
+        "type": "object"
+      },
+      "TimeRangeLocator": {
+        "additionalProperties": false,
+        "properties": {
+          "end_ms": {
+            "exclusiveMinimum": 0.0,
+            "title": "End Ms",
+            "type": "integer"
+          },
+          "kind": {
+            "const": "time_range",
+            "default": "time_range",
+            "title": "Kind",
+            "type": "string"
+          },
+          "start_ms": {
+            "minimum": 0.0,
+            "title": "Start Ms",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start_ms",
+          "end_ms"
+        ],
+        "title": "TimeRangeLocator",
+        "type": "object"
       },
       "UploadSessionStatus": {
         "enum": [
@@ -2584,9 +4406,9 @@
     }
   },
   "info": {
-    "description": "M2 reliable Temporal workflow kernel and real task-center APIs.",
+    "description": "M3 immutable Source, secure parsing and authorized preview APIs.",
     "title": "NEXWEAVE Platform API",
-    "version": "1.2.0-m2"
+    "version": "1.3.0-m3"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -3951,6 +5773,464 @@
         ]
       }
     },
+    "/api/v1/parse-jobs/{parse_job_id}": {
+      "get": {
+        "operationId": "get_parse_job_api_v1_parse_jobs__parse_job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "parse_job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Parse Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Get Parse Job",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/parse-jobs/{parse_job_id}/cancel": {
+      "post": {
+        "operationId": "cancel_parse_job_api_v1_parse_jobs__parse_job_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "parse_job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Parse Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 4,
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Cancel Parse Job",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/parse-jobs/{parse_job_id}/retry": {
+      "post": {
+        "operationId": "retry_parse_job_api_v1_parse_jobs__parse_job_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "parse_job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Parse Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 4,
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Retry Parse Job",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
     "/api/v1/prompt-versions": {
       "get": {
         "operationId": "list_prompt_versions_api_v1_prompt_versions_get",
@@ -4563,6 +6843,1867 @@
         "summary": "Create Service Identity",
         "tags": [
           "identity"
+        ]
+      }
+    },
+    "/api/v1/source-import-batches/{batch_id}": {
+      "get": {
+        "operationId": "get_import_batch_api_v1_source_import_batches__batch_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Get Import Batch",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/source-versions/{version_id}/content": {
+      "get": {
+        "operationId": "download_source_version_api_v1_source_versions__version_id__content_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Download Source Version",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/source-versions/{version_id}/invalidate": {
+      "post": {
+        "operationId": "invalidate_source_version_api_v1_source_versions__version_id__invalidate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 4,
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInvalidationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceInvalidationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Invalidate Source Version",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/source-versions/{version_id}/parse": {
+      "post": {
+        "operationId": "reparse_source_version_api_v1_source_versions__version_id__parse_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 4,
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReparseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParseJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Reparse Source Version",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/source-versions/{version_id}/preview": {
+      "get": {
+        "operationId": "preview_source_version_api_v1_source_versions__version_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "anchor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Anchor Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Preview Source Version",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/source-versions/{version_id}/segments": {
+      "get": {
+        "operationId": "list_source_segments_api_v1_source_versions__version_id__segments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "parse_job_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Parse Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SegmentListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "List Source Segments",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/sources/uploads/{upload_id}/abort": {
+      "post": {
+        "operationId": "abort_source_upload_api_v1_sources_uploads__upload_id__abort_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Upload Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceUploadSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Abort Source Upload",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/sources/uploads/{upload_id}/complete": {
+      "post": {
+        "operationId": "complete_source_upload_api_v1_sources_uploads__upload_id__complete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Upload Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceUploadComplete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceUploadCompleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Complete Source Upload",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/sources/uploads/{upload_id}/content": {
+      "put": {
+        "operationId": "upload_source_content_api_v1_sources_uploads__upload_id__content_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "upload_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Upload Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Content-Type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Content-Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceUploadSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Upload Source Content",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/sources/{source_id}": {
+      "get": {
+        "operationId": "get_source_api_v1_sources__source_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Get Source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/sources/{source_id}/archive": {
+      "post": {
+        "operationId": "archive_source_api_v1_sources__source_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 4,
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Archive Source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/sources/{source_id}/versions/{version_id}": {
+      "get": {
+        "operationId": "get_source_version_api_v1_sources__source_id__versions__version_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceVersionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Get Source Version",
+        "tags": [
+          "sources"
         ]
       }
     },
@@ -5715,6 +9856,558 @@
         "summary": "Create Object Upload",
         "tags": [
           "objects"
+        ]
+      }
+    },
+    "/api/v1/spaces/{space_id}/source-import-batches": {
+      "post": {
+        "operationId": "create_import_batch_api_v1_spaces__space_id__source_import_batches_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportBatchCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Create Import Batch",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/spaces/{space_id}/sources": {
+      "get": {
+        "operationId": "list_sources_api_v1_spaces__space_id__sources_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "content_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 255,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Content Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "classification",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DataClassification"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Classification"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 255,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "List Sources",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/spaces/{space_id}/sources/uploads": {
+      "post": {
+        "operationId": "create_source_upload_api_v1_spaces__space_id__sources_uploads_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceUploadCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceUploadSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Create Source Upload",
+        "tags": [
+          "sources"
         ]
       }
     },

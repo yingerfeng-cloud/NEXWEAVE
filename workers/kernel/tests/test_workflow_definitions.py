@@ -9,11 +9,12 @@ from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner
 from nexweave_worker_kernel.workflows import WORKFLOW_CLASSES
 
 
-def test_seven_versioned_workflow_definitions_are_registered() -> None:
+def test_m2_v1_and_m3_v2_workflow_definitions_are_registered() -> None:
     names = {workflow.__temporal_workflow_definition.name for workflow in WORKFLOW_CLASSES}
 
     assert names == {
         "nexweave.source-ingestion.v1",
+        "nexweave.source-ingestion.v2",
         "nexweave.knowledge-compile.v1",
         "nexweave.human-review.v1",
         "nexweave.quality-evaluation.v1",

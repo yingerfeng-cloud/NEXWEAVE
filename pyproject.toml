@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["apps/api/src", "packages/domain/src", "packages/application/src", "packages/contracts/src", "packages/sdk/python", "workers/health/src", "workers/kernel/src"]
+src = ["apps/api/src", "packages/domain/src", "packages/application/src", "packages/contracts/src", "packages/sdk/python", "workers/health/src", "workers/kernel/src", "workers/parser/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC", "S"]
@@ -18,21 +18,24 @@ ignore = ["S101"]
 "migrations/**/*.py" = ["E501"]
 "apps/api/src/nexweave_api/repository.py" = ["E501"]
 "apps/api/src/nexweave_api/workflow_repository.py" = ["E501"]
+# SQL text is intentionally kept readable in this adapter. The only formatted
+# fragments are module-private, static column allowlists; request values remain bound parameters.
+"apps/api/src/nexweave_api/source_repository.py" = ["E501", "S608"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 warn_unused_configs = true
-mypy_path = ["apps/api/src", "packages/domain/src", "packages/application/src", "packages/contracts/src", "packages/sdk/python", "workers/health/src", "workers/kernel/src"]
-packages = ["nexweave_api", "nexweave_domain", "nexweave_application", "nexweave_contracts", "nexweave_sdk", "nexweave_worker_health", "nexweave_worker_kernel"]
+mypy_path = ["apps/api/src", "packages/domain/src", "packages/application/src", "packages/contracts/src", "packages/sdk/python", "workers/health/src", "workers/kernel/src", "workers/parser/src"]
+packages = ["nexweave_api", "nexweave_domain", "nexweave_application", "nexweave_contracts", "nexweave_sdk", "nexweave_worker_health", "nexweave_worker_kernel", "nexweave_worker_parser"]
 
 [[tool.mypy.overrides]]
-module = ["boto3.*", "botocore.*", "redis.*"]
+module = ["boto3.*", "botocore.*", "redis.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "apps/api/tests", "packages/domain/tests", "packages/contracts/tests", "workers/health/tests", "workers/kernel/tests"]
-pythonpath = ["apps/api/src", "packages/domain/src", "packages/application/src", "packages/contracts/src", "packages/sdk/python", "workers/health/src", "workers/kernel/src"]
+testpaths = ["tests", "apps/api/tests", "packages/domain/tests", "packages/contracts/tests", "workers/health/tests", "workers/kernel/tests", "workers/parser/tests"]
+pythonpath = ["apps/api/src", "packages/domain/src", "packages/application/src", "packages/contracts/src", "packages/sdk/python", "workers/health/src", "workers/kernel/src", "workers/parser/src"]
 asyncio_mode = "auto"
 addopts = "--strict-markers --strict-config"
 markers = [

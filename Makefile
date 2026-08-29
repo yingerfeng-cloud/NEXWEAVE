@@ -2,7 +2,7 @@ PYTHON ?= python3
 PNPM ?= pnpm
 DOCKER ?= docker
 
-.PHONY: bootstrap format lint typecheck unit contract time-skipping sdk-check web-build check env dev-up dev-down dev-logs verify verify-m0 verify-m1 verify-m2 migration-check rustfs-spike
+.PHONY: bootstrap format lint typecheck unit contract time-skipping sdk-check web-build check env dev-up dev-down dev-logs verify verify-m0 verify-m1 verify-m2 verify-m3 migration-check rustfs-spike
 
 bootstrap:
 	$(PYTHON) -m pip install -r requirements/dev.txt -c requirements/dev.lock
@@ -54,6 +54,7 @@ dev-logs:
 verify:
 	$(PYTHON) scripts/verify_m1.py
 	$(PYTHON) scripts/verify_m2.py
+	$(PYTHON) scripts/verify_m3.py
 
 verify-m0:
 	$(PYTHON) scripts/verify_m0.py
@@ -63,6 +64,9 @@ verify-m1:
 
 verify-m2:
 	$(PYTHON) scripts/verify_m2.py
+
+verify-m3:
+	$(PYTHON) scripts/verify_m3.py
 
 migration-check:
 	$(DOCKER) compose exec -T api python scripts/check_migrations.py

@@ -1,6 +1,6 @@
-# M2 C4 Architecture Baseline
+# M3-calibrated C4 Architecture Baseline
 
-> Status: M0 context/container boundaries remain Accepted; ADR-0019 adds M1 platform components and ADR-0020 adds the M2 reliable Workflow kernel, task projection and task center without changing the frozen container topology.
+> Status: M0 context/container boundaries remain Accepted; M1/M2 components are implemented and accepted. ADR-0021 calibrates the future M3 Source/Parser v2 path without changing topology; no M3 component is implemented in this governance change.
 
 ## Level 1 — System context
 
@@ -35,7 +35,7 @@ flowchart TB
   PostgreSQL --> Projections[Rebuildable FTS / vector / relation projections]
 ```
 
-M2 runs eight services through Compose: the M0 health Worker remains isolated and `worker-kernel` registers seven versioned Workflow definitions on a dedicated Workflow queue plus Activities on a dedicated Activity queue. The API exposes authenticated task control and PostgreSQL projection queries; future Model/Parser/Search/Connector ports remain boundaries, not claims of implemented adapters.
+M2 runs eight services through Compose: the M0 health Worker remains isolated and `worker-kernel` registers seven versioned Workflow definitions on a dedicated Workflow queue plus Activities on a dedicated Activity queue. The API exposes authenticated task control and PostgreSQL projection queries. M3 later adds Source API/repository, Parser/OCR adapter Activities and `source-ingestion.v2` inside these accepted containers; they remain boundaries in this calibration, not claims of implemented adapters.
 
 ## Level 3 — API components
 
@@ -94,6 +94,8 @@ M0 retains `PlatformHealthWorkflow`. M2 adds seven explicit deterministic kernel
 | Workflow hosts | `workers/health`, `workers/kernel` | deterministic health plus seven M2 kernel Workflows/Activities |
 | Persistence evolution | `migrations` | M0/M1 foundations plus `0003_m2_temporal_kernel` |
 | Local deployment | `compose.yaml`, Dockerfiles | PostgreSQL/Redis/RustFS/Temporal/API/two Workers/Web |
+
+M3 calibrated target mapping (not implemented): Source routes/repository remain in `apps/api`; vendor-neutral Parser/OCR ports in `packages/application`; Source/Parse contracts in `packages/domain`/`packages/contracts`; deterministic v2 Workflow and isolated parser Activities in the Worker boundary; additive persistence begins at `0004`.
 
 ## Evolution constraints
 

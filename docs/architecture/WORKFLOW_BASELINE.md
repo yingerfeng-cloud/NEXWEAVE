@@ -1,6 +1,6 @@
 # Workflow Baseline
 
-> 执行内核：Temporal（Accepted）。M2 已实现下列七类版本化 Workflow 的可靠内核、控制、投影与真实恢复验证；各 Activity 仍是明确的 Kernel Stub，不代表 Source、Compile、Review、Release 等后续业务能力已实现。
+> 执行内核：Temporal（Accepted）。M2 已实现七类 v1 Kernel Stub 并正式验收。M3 只完成 SourceIngestion v2 业务语义校准；v2、Parser Activity 和 Source 聚合尚未实现。
 
 ## M2 运行拓扑与公共状态
 
@@ -25,13 +25,20 @@
 
 ## SourceIngestionWorkflow
 
-- 目标：上传完成后完成校验、扫描、登记、解析准备和状态更新。
-- Workflow ID：`source-ingestion/{tenant}/{source_version_id}`。
-- 输入/输出：SourceVersion ID、checksum、策略版本 → READY/PARSE job 或稳定失败。
-- Activities：读取对象元数据、checksum 校验、恶意文件扫描、创建/更新业务结果、启动解析。
-- Updates/Signals：取消、补充元数据、管理员标记误报。
-- 可靠性：扫描/存储 I/O 可重试；checksum 不匹配不可重试；取消不删除 Raw。
-- 幂等键：SourceVersion ID + policy version。
+### M2 v1 已实现边界
+
+- `nexweave.source-ingestion.v1` 使用三步 Kernel Stub，只验证可靠执行、控制、投影与恢复；`STUB_SUCCEEDED` 不创建 SourceVersion、ParseJob、Segment 或 Anchor。
+- v1 Workflow/历史必须保留注册与 Replay，不能通过修改 Activity 含义升级为 M3 业务成功。
+
+### M3 v2 已校准、待实现边界
+
+- 目标：固定 ParseJob 输入后完成 Raw 校验、安全扫描、Parser/OCR 能力选择、版本化解析、Segment/Anchor 持久化、重定位与 active/latest 指针更新。
+- Workflow type：`nexweave.source-ingestion.v2`；Workflow ID：`source-ingestion/{tenant}/{parse_job_id}`。
+- 输入：ParseJob、SourceVersion/checksum、parser/config/document-model/locator 版本与策略引用；输出为版本化 ParseJob 结果或稳定失败/partial，不输出知识/Evidence。
+- Activities：Raw metadata/checksum/type、恶意文件扫描、Parser/OCR、result validation、Segment/Anchor/failure-unit、reconciliation、状态/Audit/Outbox。
+- retry 保持同 ParseJob 与配置；reparse 创建新 ParseJob/Workflow。已有 active 结果时 reparse 失败不回退 SourceVersion。
+- 扫描 PDF 无真实 OCR Provider 时记录页级 `OCR_REQUIRED`，可为 `PARTIAL_FAILED/PARTIAL`；Mock 不能作为 OCR 验收。
+- 所有 I/O 位于可重试、可心跳、幂等 Activity；取消不删除 Raw 或历史结果。
 
 ## KnowledgeCompileWorkflow
 
@@ -102,5 +109,5 @@
 ## M2 验证边界
 
 - 已验证：七类真实运行、Activity 首次瞬态失败与重试、Update 幂等、人工批准、暂停/继续、取消/逆序补偿、Worker 重启恢复、投影损坏对账修复、历史 Replay；
-- 条件项：官方 Temporal Python SDK time-skipping 测试代码已纳入，但外部 test-server 二进制初始化在本次环境未完成，未取得通过结果；
+- 已关闭条件项：官方 Temporal Python SDK time-skipping 测试已于 2026-08-25 在本地及 GitHub Actions run `32808198635` 独立门禁通过；
 - 后续：Continue-As-New、大规模历史、生产 Namespace 保留/升级、多集群灾备与 M6 业务审核 SLA 在对应 Milestone/部署环境验证。

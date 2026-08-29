@@ -20,12 +20,13 @@ from nexweave_api.health import (
 )
 from nexweave_api.identity import LocalDevIdentityProvider, OidcIdentityProvider
 from nexweave_api.m1_routes import router as m1_router
-from nexweave_api.object_storage import PolicyStubMalwareScanner, S3ObjectStorage
+from nexweave_api.object_storage import ClamAvInstreamMalwareScanner, S3ObjectStorage
 from nexweave_api.repository import PlatformRepository
 from nexweave_api.settings import Settings, get_settings
+from nexweave_api.source_repository import SourceRepository
+from nexweave_api.source_routes import router as source_router
 from nexweave_api.telemetry import configure_telemetry
 from nexweave_api.workflow_gateway import TemporalWorkflowGateway
-from nexweave_api.workflow_repository import WorkflowRepository
 from nexweave_api.workflow_routes import router as workflow_router
 from nexweave_contracts import ProblemDetails
 
@@ -46,14 +47,14 @@ def create_app(
     manage_runtime_services = infrastructure_probe is None
     probe = infrastructure_probe or DefaultInfrastructureProbe(resolved_settings)
     resolved_database = database or Database(resolved_settings)
-    resolved_repository = repository or WorkflowRepository(resolved_database)
+    resolved_repository = repository or SourceRepository(resolved_database)
     resolved_identity_provider = identity_provider or (
         OidcIdentityProvider(resolved_settings)
         if resolved_settings.identity_provider == "oidc"
         else LocalDevIdentityProvider(resolved_settings)
     )
     resolved_object_storage = object_storage or S3ObjectStorage(resolved_settings)
-    resolved_scanner = malware_scanner or PolicyStubMalwareScanner()
+    resolved_scanner = malware_scanner or ClamAvInstreamMalwareScanner(resolved_settings)
     resolved_workflow_gateway = workflow_gateway or TemporalWorkflowGateway(resolved_settings)
 
     @asynccontextmanager
@@ -78,8 +79,8 @@ def create_app(
 
     application = FastAPI(
         title="NEXWEAVE Platform API",
-        version="1.2.0-m2",
-        description="M2 reliable Temporal workflow kernel and real task-center APIs.",
+        version="1.3.0-m3",
+        description="M3 immutable Source, secure parsing and authorized preview APIs.",
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
         lifespan=lifespan,
@@ -93,6 +94,7 @@ def create_app(
     application.state.workflow_gateway = resolved_workflow_gateway
     application.include_router(m1_router)
     application.include_router(workflow_router)
+    application.include_router(source_router)
 
     @application.middleware("http")
     async def trace_context(request: Request, call_next: Any) -> Response:
@@ -214,7 +216,7 @@ def create_app(
         return {
             "product": "NEXWEAVE",
             "release": "R1",
-            "milestone": "M2",
+            "milestone": "M3",
             "build_version": resolved_settings.build_version,
         }
 

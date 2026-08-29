@@ -17,7 +17,7 @@ services:
       timeout: 5s
       retries: 20
     restart: unless-stopped
-    networks: [platform]
+    networks: [platform, parser-isolated]
 
   redis:
     image: redis:7.4.11-alpine3.21
@@ -58,11 +58,38 @@ services:
       retries: 20
       start_period: 20s
     restart: unless-stopped
-    networks: [platform]
+    networks: [platform, parser-isolated]
+
+  clamav:
+    image: nexweave-clamav:1.4.3-deb12u2
+    build:
+      context: .
+      dockerfile: infra/clamav/Dockerfile
+      args:
+        CLAMAV_DEBIAN_VERSION: 1.4.3+dfsg-1~deb12u2
+    read_only: true
+    tmpfs:
+      - /run/clamav:size=16777216,mode=0755
+      - /tmp:size=268435456,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "3310:3310"
+    volumes:
+      - clamav-data:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/clamdcheck.sh"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 300s
+    restart: unless-stopped
+    networks: [platform, parser-isolated]
 
   temporal:
     image: temporalio/auto-setup:1.29.6
     environment:
+      BIND_ON_IP: 0.0.0.0
       DB: postgres12
       DB_PORT: 5432
       POSTGRES_SEEDS: postgres
@@ -83,7 +110,7 @@ services:
       timeout: 5s
       retries: 30
     restart: unless-stopped
-    networks: [platform]
+    networks: [platform, parser-isolated]
 
   api:
     build:
@@ -92,7 +119,7 @@ services:
     environment:
       NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
       NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
-      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.3.0-m2}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.4.0-m3}
       NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
       NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
       NEXWEAVE_OBJECT_STORE_HEALTH_URL: ${NEXWEAVE_OBJECT_STORE_HEALTH_URL:-http://rustfs:9000/health}
@@ -105,6 +132,7 @@ services:
       NEXWEAVE_TEMPORAL_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_TASK_QUEUE:-nexweave-m0-health}
       NEXWEAVE_TEMPORAL_WORKFLOW_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_WORKFLOW_TASK_QUEUE:-nexweave-m2-workflows}
       NEXWEAVE_TEMPORAL_ACTIVITY_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_ACTIVITY_TASK_QUEUE:-nexweave-m2-activities}
+      NEXWEAVE_TEMPORAL_PARSER_ACTIVITY_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_PARSER_ACTIVITY_TASK_QUEUE:-nexweave-m3-parser-activities}
       NEXWEAVE_IDENTITY_PROVIDER: ${NEXWEAVE_IDENTITY_PROVIDER:-local}
       NEXWEAVE_OIDC_ISSUER: ${NEXWEAVE_OIDC_ISSUER:-}
       NEXWEAVE_OIDC_JWKS_URL: ${NEXWEAVE_OIDC_JWKS_URL:-}
@@ -117,6 +145,10 @@ services:
       NEXWEAVE_SECRET_PROVIDER: ${NEXWEAVE_SECRET_PROVIDER:-local-env-m1-only}
       NEXWEAVE_OBJECT_UPLOAD_MAX_BYTES: ${NEXWEAVE_OBJECT_UPLOAD_MAX_BYTES:-104857600}
       NEXWEAVE_OBJECT_UPLOAD_SESSION_SECONDS: ${NEXWEAVE_OBJECT_UPLOAD_SESSION_SECONDS:-900}
+      NEXWEAVE_MALWARE_SCANNER_PROVIDER: clamav
+      NEXWEAVE_CLAMAV_HOST: ${NEXWEAVE_CLAMAV_HOST:-clamav}
+      NEXWEAVE_CLAMAV_PORT: ${NEXWEAVE_CLAMAV_PORT:-3310}
+      NEXWEAVE_CLAMAV_TIMEOUT_SECONDS: ${NEXWEAVE_CLAMAV_TIMEOUT_SECONDS:-30}
       NEXWEAVE_OTEL_SERVICE_NAME: ${NEXWEAVE_OTEL_SERVICE_NAME:-nexweave-api}
       NEXWEAVE_OTEL_EXPORTER_OTLP_ENDPOINT: ${NEXWEAVE_OTEL_EXPORTER_OTLP_ENDPOINT:-}
     depends_on:
@@ -125,6 +157,8 @@ services:
       redis:
         condition: service_healthy
       rustfs:
+        condition: service_healthy
+      clamav:
         condition: service_healthy
       temporal:
         condition: service_healthy
@@ -169,7 +203,7 @@ services:
     environment:
       NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
       NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
-      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.3.0-m2}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.4.0-m3}
       NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
       NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
       NEXWEAVE_REDIS_URL: ${NEXWEAVE_REDIS_URL:-redis://redis:6379/0}
@@ -178,6 +212,7 @@ services:
       NEXWEAVE_TEMPORAL_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_TASK_QUEUE:-nexweave-m0-health}
       NEXWEAVE_TEMPORAL_WORKFLOW_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_WORKFLOW_TASK_QUEUE:-nexweave-m2-workflows}
       NEXWEAVE_TEMPORAL_ACTIVITY_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_ACTIVITY_TASK_QUEUE:-nexweave-m2-activities}
+      NEXWEAVE_TEMPORAL_PARSER_ACTIVITY_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_PARSER_ACTIVITY_TASK_QUEUE:-nexweave-m3-parser-activities}
       NEXWEAVE_IDENTITY_PROVIDER: local
     depends_on:
       postgres:
@@ -186,6 +221,85 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks: [platform]
+
+  worker-parser:
+    build:
+      context: .
+      dockerfile: workers/parser/Dockerfile
+    read_only: true
+    tmpfs:
+      - /tmp:size=268435456,mode=1770
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 2.0
+    environment:
+      NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
+      NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.4.0-m3}
+      NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
+      NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
+      NEXWEAVE_OBJECT_STORE_BUCKET: ${NEXWEAVE_OBJECT_STORE_BUCKET:-nexweave-dev}
+      NEXWEAVE_OBJECT_STORE_ACCESS_KEY: ${NEXWEAVE_OBJECT_STORE_ACCESS_KEY:?run make env first}
+      NEXWEAVE_OBJECT_STORE_SECRET_KEY: ${NEXWEAVE_OBJECT_STORE_SECRET_KEY:?run make env first}
+      NEXWEAVE_TEMPORAL_ENDPOINT: ${NEXWEAVE_TEMPORAL_ENDPOINT:-temporal:7233}
+      NEXWEAVE_TEMPORAL_NAMESPACE: ${NEXWEAVE_TEMPORAL_NAMESPACE:-nexweave-dev}
+      NEXWEAVE_TEMPORAL_PARSER_ACTIVITY_TASK_QUEUE: ${NEXWEAVE_TEMPORAL_PARSER_ACTIVITY_TASK_QUEUE:-nexweave-m3-parser-activities}
+      NEXWEAVE_PARSER_SANDBOX_HOST: parser-sandbox
+      NEXWEAVE_PARSER_SANDBOX_PORT: 7001
+      NEXWEAVE_IDENTITY_PROVIDER: local
+      NEXWEAVE_MALWARE_SCANNER_PROVIDER: clamav
+      NEXWEAVE_CLAMAV_HOST: ${NEXWEAVE_CLAMAV_HOST:-clamav}
+      NEXWEAVE_CLAMAV_PORT: ${NEXWEAVE_CLAMAV_PORT:-3310}
+      NEXWEAVE_CLAMAV_TIMEOUT_SECONDS: ${NEXWEAVE_CLAMAV_TIMEOUT_SECONDS:-30}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+      parser-sandbox:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [parser-isolated, parser-sandbox]
+
+  parser-sandbox:
+    build:
+      context: .
+      dockerfile: workers/parser/Dockerfile
+    command: ["python", "-m", "nexweave_worker_parser.sandbox_server"]
+    read_only: true
+    tmpfs:
+      - /tmp:size=268435456,mode=1770
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 768m
+    cpus: 2.0
+    environment:
+      NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
+      NEXWEAVE_PARSER_SANDBOX_BIND: 0.0.0.0
+      NEXWEAVE_PARSER_SANDBOX_PORT: 7001
+    expose: ["7001"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; socket.create_connection(('127.0.0.1', 7001), 2).close()",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    networks: [parser-sandbox]
 
   web:
     build:
@@ -207,8 +321,15 @@ services:
 networks:
   platform:
     driver: bridge
+  parser-isolated:
+    driver: bridge
+    internal: true
+  parser-sandbox:
+    driver: bridge
+    internal: true
 
 volumes:
   postgres-data:
   redis-data:
   rustfs-data:
+  clamav-data:

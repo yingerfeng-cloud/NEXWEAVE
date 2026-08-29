@@ -34,7 +34,7 @@ async def client_for(probe: StubProbe) -> AsyncIterator[httpx.AsyncClient]:
 
 
 @pytest.mark.asyncio
-async def test_platform_endpoints_report_m2_without_exposing_later_business_routes() -> None:
+async def test_platform_endpoints_report_m3_without_exposing_later_business_routes() -> None:
     report = ReadinessReport(
         status="ready",
         components={"postgresql": ComponentHealth(status="up")},
@@ -49,7 +49,7 @@ async def test_platform_endpoints_report_m2_without_exposing_later_business_rout
 
     assert live.status_code == 200
     assert ready.status_code == 200
-    assert version.json()["milestone"] == "M2"
+    assert version.json()["milestone"] == "M3"
     assert "local@" not in str(diagnostics.json())
     assert missing_business_route.status_code == 404
     assert probe.closed is True

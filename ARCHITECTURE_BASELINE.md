@@ -1,6 +1,6 @@
 # NEXWEAVE Architecture Baseline
 
-> 状态：M0 终局架构仍冻结；M1 由 ADR-0019 实现平台基础，M2 由 ADR-0020 实现 Temporal 可靠工作流内核、只读任务投影与任务中心，不改变知识可信边界或提前实现 M3+ 业务对象。
+> 状态：M0 终局架构仍冻结；M1/M2 已由 ADR-0019/0020 实现并验收。用户已正式下发 M3，ADR-0021 与校准任务书仅冻结 Source/Parse 执行语义；当前未实现 M3 业务对象、Parser 或 v2 Workflow。
 
 ## 1. 不可变原则
 
@@ -135,7 +135,7 @@ Raw (immutable SourceVersion)
 
 ## 7. Port / Gateway 边界
 
-M0 冻结：Persistence、ObjectStorage、Workflow、Cache、Parser、OCR、ModelGateway、Embedding、Search、Vector、GraphQuery、Identity、Audit、Connector、Notification。M1 已实现 `IdentityProviderPort`、`ObjectStoragePort` 和 `MalwareScannerPort`；M2 已实现厂商无关 `WorkflowGatewayPort` 及 Temporal adapter。其余端口仍未实现。领域、契约和应用端口包不得依赖厂商 Adapter。
+M0 冻结：Persistence、ObjectStorage、Workflow、Cache、Parser、OCR、ModelGateway、Embedding、Search、Vector、GraphQuery、Identity、Audit、Connector、Notification。M1 已实现 `IdentityProviderPort`、`ObjectStoragePort` 和 `MalwareScannerPort`；M2 已实现厂商无关 `WorkflowGatewayPort` 及 Temporal adapter。M3 任务书已校准 `ParserPort/OcrPort` 边界，但当前尚未实现。领域、契约和应用端口包不得依赖厂商 Adapter。
 
 ## 8. GridCrew 集成位置
 
@@ -170,7 +170,7 @@ domain-pack ✕ platform internals/arbitrary executable code
 
 ## 11. M0 仍保留的后续决策
 
-完整列表见 `OPEN_QUESTIONS.md`。解析失败语义、Pack UI 扩展、GridCrew 最终租户映射、Obsidian 冲突回写、审核策略、连接器白名单、RCA 试点资料和量化门槛在对应业务 Milestone 前决策；M0 不伪造专家阈值或外部系统回执。
+完整列表见 `OPEN_QUESTIONS.md`。解析失败语义已由 ADR-0021 在 M3 校准中冻结；Pack UI 扩展、GridCrew 最终租户映射、Obsidian 冲突回写、审核策略、连接器白名单、RCA 试点资料和量化门槛仍在对应业务 Milestone 前决策；既有阶段不伪造专家阈值或外部系统回执。
 
 ## 12. M1 已实现增量
 
@@ -191,4 +191,12 @@ domain-pack ✕ platform internals/arbitrary executable code
 - 投影：PostgreSQL 保存 WorkflowTask/Step/Event 查询投影、审计与 Outbox；事件追加式，投影带 revision/同步标记，可从 Temporal 查询状态对账修复；
 - 边界：Workflow 模块不调用网络、数据库、文件或模型；I/O 全部在可重试 Activity/API adapter；
 - Web/API：服务端授权的任务创建、查询、控制和对账 API，真实任务中心与 typed SDK。页面状态与数据库投影均不成为第二套执行引擎；
-- 验证：真实 Temporal 覆盖七类运行、重试、重复 Update、人工批准、暂停恢复、取消补偿、Worker 重启、投影修复和历史 replay。官方时间跳跃测试因外部 test-server 初始化未完成，保留为条件项。
+- 验证：真实 Temporal 覆盖七类运行、重试、重复 Update、人工批准、暂停恢复、取消补偿、Worker 重启、投影修复和历史 replay；官方时间跳跃测试已在本地和 GitHub Actions run `32808198635` 独立门禁通过。
+
+## 14. M3 已校准、未实现边界
+
+- 用户已正式下发 M3；当前只完成任务书、ADR 与治理对齐，不包含业务代码或迁移；
+- M2 `nexweave.source-ingestion.v1` 保持 Kernel Stub/Replay 语义，不能转写为扫描/解析成功；
+- ADR-0021 冻结每次 reparse 新建 ParseJob、retry 同配置、partial/failure、active/latest 指针、SourceVersion 替代、Anchor 重定位与扫描 PDF `OCR_REQUIRED`；
+- M3 后续业务 Workflow 使用 `nexweave.source-ingestion.v2`，Parser/OCR I/O 仍只允许位于幂等 Activity/adapter；
+- 当前仍无 SourceDocument/SourceVersion/ParseJob/Segment/Parser/OCR/预览业务实现，不得将本节解释为功能完成。
