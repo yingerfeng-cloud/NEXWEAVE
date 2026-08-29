@@ -31,6 +31,7 @@ All notable changes to NEXWEAVE will be documented in this file.
 - M0 P1 closure backed by GitHub Actions run 32702688049: all six quality, Compose, application-image and RustFS approval jobs passed.
 - M1 formally accepted and M2 formally dispatched by the user on 2026-08-24.
 - Git commit and push of the accepted M1 and completed M2 delivery authorized by the user on 2026-08-25; GitHub Actions run 32808198635 passed all eight quality, time-skipping, Compose and image-supply-chain jobs.
+- M2 formally accepted by the user on 2026-08-25; M3 remains undispatched and no M3 implementation is authorized.
 
 ### Fixed
 

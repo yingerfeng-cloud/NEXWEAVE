@@ -95,3 +95,4 @@ M-1 只验收资料、治理、基线、契约草案、追踪、ADR/Spike 和开
 - Workflow 审计/Outbox 事实存在，数据库 trigger 阻止 `workflow_task_events` 更新；OpenAPI/Schema/SDK/UI 使用同一契约；
 - 官方 Temporal SDK time-skipping 测试首次本地初始化在 296 秒内未完成并被中止；2026-08-25 修正测试 Activity 类型并为 test-server 设置显式缓存目录后，本地真实执行 `1 passed`，GitHub Actions 独立 `temporal-time-skipping` job 在 run `32808198635` 通过，本条件项关闭；
 - 用户已明确授权提交并 push。run `32808198635` 的 quality、time-skipping、Compose integration、四个 application-image 与 RustFS approval 共八个 job 全部通过；双架构 CycloneDX SBOM、可修复 HIGH/CRITICAL CVE 阻断证据、Cosign 签名与验证均成功并上传制品。
+- 用户于 2026-08-25 正式验收 M2；该验收关闭 M2 阶段，不构成 M3 下发授权。
