@@ -201,7 +201,7 @@ jobs:
         run: |
           crane copy "${SOURCE}" "${TARGET}:candidate-${GITHUB_SHA}"
           digest="$(crane digest "${TARGET}:candidate-${GITHUB_SHA}")"
-          test "${digest}" = "sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5"
+          test "${digest}" = "sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b"
           echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
       - name: Verify both target architectures exist
         env:
