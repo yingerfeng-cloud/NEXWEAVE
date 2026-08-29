@@ -1,4 +1,4 @@
-"""Typed asynchronous client for the M2 public API."""
+"""Typed asynchronous client for the M3 public API."""
 
 from __future__ import annotations
 
@@ -10,12 +10,27 @@ import httpx
 
 from nexweave_contracts import (
     AuditLogListResponse,
+    ImportBatchCreate,
+    ImportBatchResponse,
     KnowledgeSpaceResponse,
     ManagedObjectResponse,
     MembershipPolicy,
     ObjectUploadCreate,
     ObjectUploadSessionResponse,
+    ParseJobResponse,
+    PreviewResponse,
     PrincipalResponse,
+    ReparseRequest,
+    SegmentListResponse,
+    SourceDocumentResponse,
+    SourceInvalidationCreate,
+    SourceInvalidationResponse,
+    SourceListResponse,
+    SourceUploadComplete,
+    SourceUploadCompleteResponse,
+    SourceUploadCreate,
+    SourceUploadSessionResponse,
+    SourceVersionResponse,
     SpaceCreate,
     SpaceListResponse,
     SpaceMemberResponse,
@@ -39,7 +54,7 @@ class NexweaveSdkError(RuntimeError):
 
 
 class NexweaveClient:
-    """M2 client with bearer auth, trace context, idempotency and ETag support."""
+    """M3 client with bearer auth, trace context, idempotency and ETag support."""
 
     def __init__(
         self,
@@ -210,6 +225,202 @@ class NexweaveClient:
         value = await self._request("POST", f"/api/v1/workflow-tasks/{task_id}/reconcile")
         return WorkflowReconcileResponse.model_validate(value)
 
+    async def create_source_import_batch(
+        self, space_id: str, command: ImportBatchCreate, *, idempotency_key: str
+    ) -> ImportBatchResponse:
+        value = await self._request(
+            "POST",
+            f"/api/v1/spaces/{space_id}/source-import-batches",
+            json=command.model_dump(mode="json"),
+            idempotency_key=idempotency_key,
+        )
+        return ImportBatchResponse.model_validate(value)
+
+    async def get_source_import_batch(self, batch_id: str) -> ImportBatchResponse:
+        return ImportBatchResponse.model_validate(
+            await self._request("GET", f"/api/v1/source-import-batches/{batch_id}")
+        )
+
+    async def create_source_upload(
+        self, space_id: str, command: SourceUploadCreate, *, idempotency_key: str
+    ) -> SourceUploadSessionResponse:
+        value = await self._request(
+            "POST",
+            f"/api/v1/spaces/{space_id}/sources/uploads",
+            json=command.model_dump(mode="json"),
+            idempotency_key=idempotency_key,
+        )
+        return SourceUploadSessionResponse.model_validate(value)
+
+    async def upload_source_content(
+        self, upload_id: str, content: bytes, *, content_type: str
+    ) -> SourceUploadSessionResponse:
+        value = await self._request(
+            "PUT",
+            f"/api/v1/sources/uploads/{upload_id}/content",
+            content=content,
+            content_type=content_type,
+        )
+        return SourceUploadSessionResponse.model_validate(value)
+
+    async def complete_source_upload(
+        self, upload_id: str, command: SourceUploadComplete, *, idempotency_key: str
+    ) -> SourceUploadCompleteResponse:
+        value = await self._request(
+            "POST",
+            f"/api/v1/sources/uploads/{upload_id}/complete",
+            json=command.model_dump(mode="json"),
+            idempotency_key=idempotency_key,
+        )
+        return SourceUploadCompleteResponse.model_validate(value)
+
+    async def list_sources(
+        self,
+        space_id: str,
+        *,
+        limit: int = 50,
+        cursor: str | None = None,
+        status: str | None = None,
+        content_type: str | None = None,
+        classification: str | None = None,
+        search: str | None = None,
+    ) -> SourceListResponse:
+        params: dict[str, str | int] = {"limit": limit}
+        params.update(
+            {
+                key: value
+                for key, value in {
+                    "cursor": cursor,
+                    "status": status,
+                    "content_type": content_type,
+                    "classification": classification,
+                    "search": search,
+                }.items()
+                if value is not None
+            }
+        )
+        return SourceListResponse.model_validate(
+            await self._request("GET", f"/api/v1/spaces/{space_id}/sources", params=params)
+        )
+
+    async def get_source(self, source_id: str) -> SourceDocumentResponse:
+        return SourceDocumentResponse.model_validate(
+            await self._request("GET", f"/api/v1/sources/{source_id}")
+        )
+
+    async def archive_source(
+        self, source_id: str, *, version: int, idempotency_key: str
+    ) -> SourceDocumentResponse:
+        value = await self._request(
+            "POST",
+            f"/api/v1/sources/{source_id}/archive",
+            idempotency_key=idempotency_key,
+            version=version,
+        )
+        return SourceDocumentResponse.model_validate(value)
+
+    async def get_source_version(self, source_id: str, version_id: str) -> SourceVersionResponse:
+        value = await self._request("GET", f"/api/v1/sources/{source_id}/versions/{version_id}")
+        return SourceVersionResponse.model_validate(value)
+
+    async def download_source_version(self, version_id: str) -> bytes:
+        response = await self._send("GET", f"/api/v1/source-versions/{version_id}/content")
+        return response.content
+
+    async def reparse_source_version(
+        self,
+        version_id: str,
+        command: ReparseRequest,
+        *,
+        version: int,
+        idempotency_key: str,
+    ) -> ParseJobResponse:
+        value = await self._request(
+            "POST",
+            f"/api/v1/source-versions/{version_id}/parse",
+            json=command.model_dump(mode="json"),
+            idempotency_key=idempotency_key,
+            version=version,
+        )
+        return ParseJobResponse.model_validate(value)
+
+    async def retry_parse_job(
+        self, parse_job_id: str, *, version: int, idempotency_key: str
+    ) -> ParseJobResponse:
+        value = await self._request(
+            "POST",
+            f"/api/v1/parse-jobs/{parse_job_id}/retry",
+            idempotency_key=idempotency_key,
+            version=version,
+        )
+        return ParseJobResponse.model_validate(value)
+
+    async def cancel_parse_job(
+        self, parse_job_id: str, *, version: int, idempotency_key: str
+    ) -> ParseJobResponse:
+        value = await self._request(
+            "POST",
+            f"/api/v1/parse-jobs/{parse_job_id}/cancel",
+            idempotency_key=idempotency_key,
+            version=version,
+        )
+        return ParseJobResponse.model_validate(value)
+
+    async def get_parse_job(self, parse_job_id: str) -> ParseJobResponse:
+        return ParseJobResponse.model_validate(
+            await self._request("GET", f"/api/v1/parse-jobs/{parse_job_id}")
+        )
+
+    async def list_source_segments(
+        self,
+        version_id: str,
+        *,
+        limit: int = 50,
+        cursor: str | None = None,
+        parse_job_id: str | None = None,
+    ) -> SegmentListResponse:
+        params = {
+            key: value
+            for key, value in {
+                "limit": limit,
+                "cursor": cursor,
+                "parse_job_id": parse_job_id,
+            }.items()
+            if value is not None
+        }
+        return SegmentListResponse.model_validate(
+            await self._request(
+                "GET", f"/api/v1/source-versions/{version_id}/segments", params=params
+            )
+        )
+
+    async def preview_source_version(
+        self, version_id: str, *, anchor_id: str | None = None
+    ) -> PreviewResponse:
+        params = {"anchor_id": anchor_id} if anchor_id is not None else None
+        return PreviewResponse.model_validate(
+            await self._request(
+                "GET", f"/api/v1/source-versions/{version_id}/preview", params=params
+            )
+        )
+
+    async def invalidate_source_version(
+        self,
+        version_id: str,
+        command: SourceInvalidationCreate,
+        *,
+        version: int,
+        idempotency_key: str,
+    ) -> SourceInvalidationResponse:
+        value = await self._request(
+            "POST",
+            f"/api/v1/source-versions/{version_id}/invalidate",
+            json=command.model_dump(mode="json"),
+            idempotency_key=idempotency_key,
+            version=version,
+        )
+        return SourceInvalidationResponse.model_validate(value)
+
     async def _request(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         response = await self._send(method, path, **kwargs)
         value = response.json()
@@ -232,6 +443,7 @@ class NexweaveClient:
         content_type: str | None = None,
         idempotency_key: str | None = None,
         version: int | None = None,
+        params: dict[str, str | int] | None = None,
     ) -> httpx.Response:
         trace_id, span_id = uuid4().hex, uuid4().hex[:16]
         headers = {
@@ -246,7 +458,7 @@ class NexweaveClient:
         if version is not None:
             headers["If-Match"] = f'"v{version}"'
         response = await self._client.request(
-            method, path, headers=headers, json=json, content=content
+            method, path, headers=headers, json=json, content=content, params=params
         )
         if response.is_error:
             problem = response.json()

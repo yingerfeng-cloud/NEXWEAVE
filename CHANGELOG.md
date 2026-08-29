@@ -6,6 +6,12 @@ All notable changes to NEXWEAVE will be documented in this file.
 
 ### Added
 
+- Calibrated and implemented the M3 Source/parse scope: immutable Raw/Source versions, upload sessions/batches, ParseJobs, Segment/Anchor/Invalidation facts, authenticated API/UI and typed SDKs.
+- Added `nexweave.source-ingestion.v2`, real PDF/DOCX/Markdown/TXT/CSV/XLSX adapters, scanned-PDF detection with truthful `OCR_REQUIRED`, real ClamAV fail-closed scanning and additive `0004_m3_source_parsing`.
+- Added a separate credential-free, non-root, read-only, resource-bounded parser sandbox on a dedicated internal IPC network; the trusted Activity coordinator retains DB/object/Temporal/ClamAV I/O.
+- Added a reproducible ClamAV 1.4.3 image path from the accepted Debian 12 base and exact Debian security packages, with FreshClam-before-clamd startup, persistent signatures, read-only runtime hardening and a CI multi-architecture build-matrix entry.
+- Added upload abort and ParseJob cancel APIs, immutable object-version reads, typed parser budgets, canonical result-manifest verification, global UTF-8 locators and replacement/classification concurrency guards.
+- ADR-0021 freezing M3 failure/partial/retry/reparse, version replacement, v1/v2 Workflow compatibility, scanned-PDF `OCR_REQUIRED` and SourceAnchor relocation semantics.
 - M2 dedicated Temporal namespace, separate Workflow/Activity task queues and non-root kernel Worker for seven versioned Workflow definitions.
 - M2 reliable control kernel with stable Workflow IDs, Update/Signal commands, durable approval waits, timeout escalation, Activity retry/heartbeat, cancellation compensation and replay-safe deterministic code.
 - `WorkflowTask`, `WorkflowStep` and append-only `WorkflowTaskEvent` PostgreSQL projections, reconciliation/repair, audit/Outbox, `0003_m2_temporal_kernel` migration and authenticated task APIs.
@@ -25,16 +31,18 @@ All notable changes to NEXWEAVE will be documented in this file.
 
 ### Accepted
 
+- M3 formally dispatched by the user on 2026-08-25 with explicit calibration, implementation and independent-review phases; implementation, independent review, local remediation and the disclosed local P0 Compose gate are complete, while user acceptance and remote promotion evidence remain pending.
 - M-1 governance baseline formally accepted by the user on 2026-08-23.
 - Formal M0 execution dispatched by the user on 2026-08-23 and formally accepted by the user on 2026-08-24 with the documented P1 follow-ups retained.
 - RustFS replacement explicitly approved by the user on 2026-08-24; production promotion remains gated by SPK-004 compatibility, recovery and supply-chain evidence.
 - M0 P1 closure backed by GitHub Actions run 32702688049: all six quality, Compose, application-image and RustFS approval jobs passed.
 - M1 formally accepted and M2 formally dispatched by the user on 2026-08-24.
 - Git commit and push of the accepted M1 and completed M2 delivery authorized by the user on 2026-08-25; GitHub Actions run 32808198635 passed all eight quality, time-skipping, Compose and image-supply-chain jobs.
-- M2 formally accepted by the user on 2026-08-25; M3 remains undispatched and no M3 implementation is authorized.
+- M2 formally accepted by the user on 2026-08-25; M3 was subsequently dispatched, calibrated, implemented, reviewed and locally P0-verified. M3 acceptance remains pending explicit user confirmation.
 
 ### Fixed
 
+- Closed the M3 local P0 through the real RustFS→ClamAV→credentialed coordinator→credential-free parser sandbox→Temporal→PostgreSQL→API/Web chain; corrected the full EICAR fixture, upload response filtering, SQLAlchemy nested-row serialization, sequential batch rollup and M3 compatibility checks exposed by that E2E.
 - Added an independent Temporal SDK time-skipping CI gate, fixed test Activity payload annotations and closed the official test-server initialization condition locally and remotely.
 - Scoped the GitHub `runner` context to step-level environment, installed locked Compose verification dependencies and made the M1 regression verifier accept the current M2 deployment.
 - Made duplicate M2 commands return the original business result before stale ETag evaluation, preserving command idempotency across retries.
@@ -50,4 +58,4 @@ All notable changes to NEXWEAVE will be documented in this file.
 
 ### Not implemented
 
-- M2 Workflow Activities are explicit kernel Stubs. No Source/parse, Schema, real Compile, Wiki, Claim/Evidence, Graph, Conflict, Review business objects, Quality evaluation, immutable Release, Query, Domain Pack installation, GridCrew intake, real Connector/model execution or RCA functionality is implemented.
+- M2 v1 Workflow Activities remain explicit kernel Stubs. No real OCR Provider, Schema, real Compile, Wiki, Claim/Evidence, Graph, Conflict, Review business objects, Quality evaluation, immutable Release, Query, Domain Pack installation, GridCrew intake, real Connector/model execution or RCA functionality is implemented.

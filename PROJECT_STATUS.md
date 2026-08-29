@@ -1,8 +1,8 @@
 # NEXWEAVE Project Status
 
 - Current Release: R1（M0—M9）
-- Current Milestone: M2 formally accepted and stopped; M3 not dispatched
-- Business implementation: M1 and M2 accepted; M2 Temporal workflow kernel and task center remain within the Stub boundary
+- Current Milestone: M3 formally dispatched; calibrated implementation, independent review, remediation and the local P0 Compose gate are complete; user acceptance and promotion evidence are pending
+- Business implementation: M1 and M2 accepted; M3 Source/Parse is locally verified within the calibrated boundary, but M3 is not accepted until the user explicitly accepts it
 - Git repository: `https://github.com/yingerfeng-cloud/NEXWEAVE.git`, local `main` preserves the remote initial commit without force-push
 - Git baseline before the M1/M2 delivery commit: `727811f`; the user authorized and pushed the M1/M2 delivery and CI closeout on 2026-08-25. Functional gate commit `ddbcc6e` is on `origin/main` and GitHub Actions run `32808198635` passed
 - M0: Explicitly dispatched by the user on 2026-08-23
@@ -10,6 +10,20 @@
 - M1: Formally accepted by the user on 2026-08-24
 - M2: Explicitly dispatched by the user on 2026-08-24
 - M2: Formally accepted by the user on 2026-08-25
+- M3: Formally dispatched by the user on 2026-08-25 with an explicit sequence of M0—M2-aligned taskbook calibration, formal implementation and independent post-implementation review; calibration is complete and implementation is authorized
+
+## M3 implementation status
+
+- The M3 taskbook has been calibrated against the accepted M0—M2 code, migrations, Workflow, security and contract baselines; the user already authorized formal implementation after this calibration.
+- ADR-0021 freezes Source/Parse failure, partial success, retry, reparse, version replacement, v1/v2 Workflow compatibility and SourceAnchor relocation semantics from existing authoritative principles.
+- M2 `nexweave.source-ingestion.v1` remains a Kernel Stub and Replay baseline. It is not Source/parse evidence and will not be relabeled as M3 completion.
+- `SourceDocument`, immutable `SourceVersion`/Raw registration, `ParseJob`, Segment/Anchor/Invalidation facts, upload batches, v2 Workflow, API/UI/SDK and additive `0004_m3_source_parsing` are implemented.
+- Six real bounded adapters cover PDF, DOCX, Markdown, TXT, CSV and XLSX. Scanned PDF detection is real; no OCR Provider is configured, so affected pages truthfully report `OCR_REQUIRED/PARTIAL_FAILED`.
+- A credentialed Activity coordinator performs trusted I/O; third-party document parsing runs in a separate non-root, read-only, resource-bounded, credential-free `parser-sandbox` container on a dedicated internal IPC network.
+- Independent post-implementation review found permission, mixed-classification, concurrency, manifest, locator, upload-terminal and isolation defects. Those code paths have been remediated; local format/lint/type/unit/contract/UI/build/security regression passed. This status is not an acceptance claim.
+- Real PostgreSQL `0001 → 0004 → 0003 → 0004` passed in an automatically generated disposable database, including checks for 10 M3 tables, 6 database guards and the replacement uniqueness constraint. Real Temporal v1/v2 newly-created history replay also passed; replay of an archived accepted-M2 history is not claimed.
+- On 2026-08-29, the Docker Hub-only ClamAV pull obstruction was removed from the local acceptance path by a reproducible image built from the already accepted Debian 12 base and exact official Debian packages `clamav-daemon/freshclam=1.4.3+dfsg-1~deb12u2`. FreshClam loaded daily 28106, main 63 and bytecode 339 before clamd became healthy.
+- The complete real Compose chain is running, every service that defines a healthcheck is healthy, and both `.venv/bin/python scripts/verify_m1.py` and `.venv/bin/python scripts/verify_m3.py` passed, covering RustFS, the real clean/EICAR ClamAV gate, the credentialed coordinator, credential-free parser sandbox IPC, Temporal, PostgreSQL and API/Web. The local ClamAV image also has zero fixable HIGH/CRITICAL findings under Trivy 0.74.0. The previously disclosed local M3 P0 is therefore closed; remote dual-architecture promotion/SBOM/signature evidence and explicit user acceptance remain pending.
 
 ## M2 implementation result
 
@@ -20,7 +34,7 @@
 - Real Compose verification passed all seven Workflow types, transient retry, approval, pause/resume, cancellation compensation, duplicate Update, projection repair, Worker restart and replay; isolated PostgreSQL `base → head → base → head` migration verification passed;
 - The official Temporal SDK time-skipping test now runs as an independent Linux x64 CI gate; local execution passed and the remote `temporal-time-skipping` job passed in run `32808198635`;
 - GitHub Actions run `32808198635` passed all eight quality, time-skipping, Compose integration, four application-image and RustFS approval jobs. Dual-architecture SBOM/CVE evidence and Cosign signature verification were uploaded successfully;
-- M2 was formally accepted by the user on 2026-08-25 and remains stopped. M3 Source/parse work has not been dispatched or started.
+- M2 was formally accepted by the user on 2026-08-25 and remains stopped. M3 has since been dispatched, calibrated, implemented, independently reviewed and locally P0-verified; formal user acceptance remains pending.
 
 ## M-1 result
 
@@ -61,7 +75,7 @@
 
 ## Hard boundaries
 
-- 当前没有 Source/parse、Schema、真实 Compile、Review 业务对象、Release、Query、GridCrew 等后续业务功能实现；M2 同名 Workflow 仅为可靠内核 Stub；
+- 当前已实现 M3 Source/parse；仍没有 Schema、真实 Compile、Review 业务对象、Release、Query、GridCrew 等 M4+ 功能。M2 v1 同名 Workflow 仍仅为可靠内核 Stub；
 - 高保真原型仍是静态演示，不是已完成功能；
 - 未提供合规脱敏 RCA 试点资料；
-- M2 已正式验收并停止；仍不得提前实现 M3 的 Source/解析或 M4+ 的 Schema、真实 Compile、Review、Release、Query、GridCrew、RCA 业务。
+- M2 已正式验收并停止；M3 任务书/ADR/治理校准已完成，用户已授权正式实施 M3 Source/解析；仍不得提前实现 M4+ 的 Schema、真实 Compile、Review、Release、Query、GridCrew、RCA 业务。

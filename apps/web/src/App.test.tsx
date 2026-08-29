@@ -53,7 +53,7 @@ test("authenticates through the development identity provider and opens the M2 s
   );
 });
 
-test("restores a trusted session and exposes all sixteen truthful route entries", async () => {
+test("restores a trusted session and opens the real M3 source center", async () => {
   sessionStorage.setItem("nexweave.m1.access-token", "test-token");
   vi.spyOn(globalThis, "fetch").mockImplementation(mockApi);
   render(<App />);
@@ -71,8 +71,10 @@ test("restores a trusted session and exposes all sixteen truthful route entries"
 
   fireEvent.click(screen.getByRole("button", { name: /资料中心/ }));
   expect(screen.getByRole("heading", { name: "资料中心" })).toBeInTheDocument();
-  expect(screen.getByText("NOT IMPLEMENTED IN M2")).toBeInTheDocument();
-  expect(screen.getByText(/不会展示 Mock、固定 JSON/)).toBeInTheDocument();
+  expect(
+    await screen.findByText("当前空间尚无资料，可以从上方导入"),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "管理 Connector" })).toBeDisabled();
 });
 
 test("opens the real M2 task center from a refresh-safe route", async () => {
@@ -180,6 +182,9 @@ async function mockApi(input: RequestInfo | URL, init?: RequestInit) {
   }
   if (url.includes("/audit-logs")) return json({ items: [] });
   if (url.includes("/workflow-tasks")) return json({ items: [] });
+  if (url.includes("/spaces/") && url.includes("/sources")) {
+    return json({ items: [], next_cursor: null });
+  }
   throw new Error(`Unexpected test API request: ${url}`);
 }
 

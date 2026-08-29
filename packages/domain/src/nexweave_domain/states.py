@@ -26,7 +26,7 @@ class EvidenceRole(StrEnum):
 class SourceState(StrEnum):
     REGISTERED = "REGISTERED"
     ACTIVE = "ACTIVE"
-    REVOKED = "REVOKED"
+    ARCHIVED = "ARCHIVED"
 
 
 class SourceVersionState(StrEnum):

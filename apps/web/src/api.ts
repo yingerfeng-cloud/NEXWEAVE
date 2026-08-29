@@ -7,6 +7,16 @@ import type {
   RoleDescriptor,
   Session,
   Space,
+  CursorPage,
+  DocumentSegment,
+  ImportBatch,
+  ParseJob,
+  PreviewResponse,
+  SourceDocument,
+  SourceFilters,
+  SourceUploadComplete,
+  SourceUploadSession,
+  SourceVersion,
   User,
   WorkflowCommand,
   WorkflowTask,
@@ -35,7 +45,8 @@ export class NexweaveApi {
     headers.set("Accept", "application/json");
     headers.set("traceparent", `00-${traceId}-${spanId}-01`);
     if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
-    if (init.body) headers.set("Content-Type", "application/json");
+    if (init.body && !headers.has("Content-Type"))
+      headers.set("Content-Type", "application/json");
     const response = await fetch(`/api/v1${path}`, { ...init, headers });
     if (!response.ok) {
       const problem = (await response.json().catch(() => ({}))) as {
@@ -201,5 +212,212 @@ export class NexweaveApi {
       repaired: boolean;
       temporal_status: string;
     }>(`/workflow-tasks/${taskId}/reconcile`, { method: "POST" });
+  }
+
+  sources(spaceId: string, filters: SourceFilters = {}) {
+    const query = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== "")
+        query.set(key === "type" ? "content_type" : key, String(value));
+    });
+    const suffix = query.size ? `?${query}` : "";
+    return this.request<CursorPage<SourceDocument>>(
+      `/spaces/${spaceId}/sources${suffix}`,
+    );
+  }
+
+  source(sourceId: string) {
+    return this.request<SourceDocument>(`/sources/${sourceId}`);
+  }
+
+  sourceVersion(sourceId: string, versionId: string) {
+    return this.request<SourceVersion>(
+      `/sources/${sourceId}/versions/${versionId}`,
+    );
+  }
+
+  parseJob(parseJobId: string) {
+    return this.request<ParseJob>(`/parse-jobs/${parseJobId}`);
+  }
+
+  sourceSegments(
+    versionId: string,
+    options: { parse_job_id?: string; cursor?: string; limit?: number } = {},
+  ) {
+    const query = new URLSearchParams();
+    Object.entries(options).forEach(([key, value]) => {
+      if (value !== undefined && value !== "") query.set(key, String(value));
+    });
+    const suffix = query.size ? `?${query}` : "";
+    return this.request<CursorPage<DocumentSegment>>(
+      `/source-versions/${versionId}/segments${suffix}`,
+    );
+  }
+
+  sourcePreview(versionId: string, anchorId?: string) {
+    const query = anchorId
+      ? `?${new URLSearchParams({ anchor_id: anchorId })}`
+      : "";
+    return this.request<PreviewResponse>(
+      `/source-versions/${versionId}/preview${query}`,
+    );
+  }
+
+  createImportBatch(spaceId: string, displayName: string) {
+    return this.request<ImportBatch>(
+      `/spaces/${spaceId}/source-import-batches`,
+      {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ display_name: displayName }),
+      },
+    );
+  }
+
+  importBatch(batchId: string) {
+    return this.request<ImportBatch>(`/source-import-batches/${batchId}`);
+  }
+
+  createSourceUpload(spaceId: string, body: Record<string, unknown>) {
+    return this.request<SourceUploadSession>(
+      `/spaces/${spaceId}/sources/uploads`,
+      {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async uploadSourceContent(
+    session: SourceUploadSession,
+    file: File,
+    signal?: AbortSignal,
+  ) {
+    const headers = new Headers({
+      Accept: "application/json",
+      "Content-Type": file.type || "application/octet-stream",
+    });
+    if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
+    const target = new URL(session.upload_url, location.origin);
+    const expectedPath = `/api/v1/sources/uploads/${session.id}/content`;
+    if (target.origin !== location.origin || target.pathname !== expectedPath) {
+      throw new ApiError(
+        "上传端点不受信任。",
+        400,
+        "SOURCE_UPLOAD_URL_INVALID",
+      );
+    }
+    const response = await fetch(target.pathname + target.search, {
+      method: "PUT",
+      headers,
+      body: file,
+      signal,
+    });
+    if (!response.ok) await this.throwProblem(response);
+  }
+
+  completeSourceUpload(uploadId: string, checksum: string, size: number) {
+    return this.request<SourceUploadComplete>(
+      `/sources/uploads/${uploadId}/complete`,
+      {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ checksum, size }),
+      },
+    );
+  }
+
+  abortSourceUpload(uploadId: string) {
+    return this.request<SourceUploadSession>(
+      `/sources/uploads/${uploadId}/abort`,
+      {
+        method: "POST",
+        headers: { "Idempotency-Key": crypto.randomUUID() },
+      },
+    );
+  }
+
+  archiveSource(source: SourceDocument) {
+    return this.request<SourceDocument>(`/sources/${source.id}/archive`, {
+      method: "POST",
+      headers: {
+        "Idempotency-Key": crypto.randomUUID(),
+        "If-Match": `"v${source.version}"`,
+      },
+    });
+  }
+
+  reparseSourceVersion(version: SourceVersion, body: Record<string, unknown>) {
+    return this.request<ParseJob>(`/source-versions/${version.id}/parse`, {
+      method: "POST",
+      headers: {
+        "Idempotency-Key": crypto.randomUUID(),
+        "If-Match": `"v${version.version}"`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  retryParseJob(job: ParseJob) {
+    return this.request<ParseJob>(`/parse-jobs/${job.id}/retry`, {
+      method: "POST",
+      headers: {
+        "Idempotency-Key": crypto.randomUUID(),
+        "If-Match": `"v${job.version}"`,
+      },
+    });
+  }
+
+  cancelParseJob(job: ParseJob) {
+    return this.request<ParseJob>(`/parse-jobs/${job.id}/cancel`, {
+      method: "POST",
+      headers: {
+        "Idempotency-Key": crypto.randomUUID(),
+        "If-Match": `"v${job.version}"`,
+      },
+    });
+  }
+
+  invalidateSourceVersion(
+    version: SourceVersion,
+    body: { reason_code: string; reason: string; policy_version: string },
+  ) {
+    return this.request<{ id: string }>(
+      `/source-versions/${version.id}/invalidate`,
+      {
+        method: "POST",
+        headers: {
+          "Idempotency-Key": crypto.randomUUID(),
+          "If-Match": `"v${version.version}"`,
+        },
+        body: JSON.stringify(body),
+      },
+    );
+  }
+
+  async downloadSourceVersion(versionId: string) {
+    const headers = new Headers({ Accept: "application/octet-stream" });
+    if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
+    const response = await fetch(
+      `/api/v1/source-versions/${versionId}/content`,
+      {
+        headers,
+      },
+    );
+    if (!response.ok) await this.throwProblem(response);
+    return response.blob();
+  }
+
+  private async throwProblem(response: Response): Promise<never> {
+    const problem = (await response.json().catch(() => ({}))) as {
+      detail?: string;
+      code?: string;
+    };
+    throw new ApiError(
+      problem.detail || `请求失败（${response.status}）`,
+      response.status,
+      problem.code,
+    );
   }
 }

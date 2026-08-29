@@ -274,6 +274,32 @@
       "title": "Locators",
       "type": "array"
     },
+    "parse_job_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parse Job Id"
+    },
+    "relocated_from_anchor_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Relocated From Anchor Id"
+    },
     "source_checksum": {
       "pattern": "^sha256:[0-9a-f]{64}$",
       "title": "Source Checksum",

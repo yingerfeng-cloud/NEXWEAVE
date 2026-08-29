@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "DataClassification": {
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "HIGHLY_RESTRICTED"
+      ],
+      "title": "DataClassification",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "aggregate_version": {
+      "minimum": 1,
+      "title": "Aggregate Version",
+      "type": "integer"
+    },
+    "causation_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Causation Id"
+    },
+    "checksum": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Checksum",
+      "type": "string"
+    },
+    "classification": {
+      "$ref": "#/$defs/DataClassification"
+    },
+    "correlation_id": {
+      "format": "uuid7",
+      "title": "Correlation Id",
+      "type": "string"
+    },
+    "parse_job_id": {
+      "format": "uuid7",
+      "title": "Parse Job Id",
+      "type": "string"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "maxLength": 255,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "source_id": {
+      "format": "uuid7",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_version_id": {
+      "format": "uuid7",
+      "title": "Source Version Id",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "const": "STORED",
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "trace_id": {
+      "pattern": "^[0-9a-f]{32}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "workflow_id": {
+      "maxLength": 768,
+      "minLength": 1,
+      "title": "Workflow Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "space_id",
+    "source_id",
+    "source_version_id",
+    "aggregate_version",
+    "correlation_id",
+    "trace_id",
+    "status",
+    "checksum",
+    "classification",
+    "parse_job_id",
+    "workflow_id"
+  ],
+  "title": "SourceVersionReadyEventData",
+  "type": "object"
+}

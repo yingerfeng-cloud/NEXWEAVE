@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { ApiError, NexweaveApi } from "./api";
+import { SourceCenter } from "./SourceCenter";
 import { TaskCenter } from "./TaskCenter";
 import type {
   AuditLog,
@@ -46,7 +47,6 @@ const NAVIGATION = [
 ] as const;
 
 const FUTURE_BOUNDARIES: Record<string, [string, string]> = {
-  sources: ["资料中心", "M3 开始实现资料接入；M1 仅提供可信对象底座。"],
   schemas: [
     "Schema",
     "Schema Registry 不在 M2 边界；当前没有伪造 Schema 数据。",
@@ -123,6 +123,7 @@ export function App() {
   function navigate(next: string) {
     history.pushState({}, "", `/${next}`);
     setRoute(next);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   function selectSpace(id: string) {
@@ -180,7 +181,12 @@ export function App() {
             const disabled = key === "admin" && !canAdmin;
             return (
               <button
-                className={route === key ? "active" : ""}
+                className={
+                  route === key ||
+                  (key === "sources" && route === "source-versions")
+                    ? "active"
+                    : ""
+                }
                 disabled={disabled}
                 key={key}
                 onClick={() => navigate(key)}
@@ -205,7 +211,7 @@ export function App() {
       <main className="workspace">
         <header className="workspace-header">
           <div>
-            <span className="eyebrow">R1 · M2 RELIABLE WORKFLOW KERNEL</span>
+            <span className="eyebrow">R1 · M3 SOURCE &amp; PARSE</span>
             <strong>{selectedSpace?.display_name ?? "租户工作台"}</strong>
           </div>
           <span className="status-chip">
@@ -233,6 +239,13 @@ export function App() {
               onChanged={loadSpaces}
             />
           )}
+          {(route === "sources" || route === "source-versions") && (
+            <SourceCenter
+              api={api}
+              principal={principal}
+              spaceId={selectedSpaceId}
+            />
+          )}
           {route === "compile" && (
             <TaskCenter
               api={api}
@@ -248,7 +261,8 @@ export function App() {
               boundary={FUTURE_BOUNDARIES[route][1]}
             />
           )}
-          {!NAVIGATION.some(([key]) => key === route) && <NotFound />}
+          {!NAVIGATION.some(([key]) => key === route) &&
+            route !== "source-versions" && <NotFound />}
         </PageBoundary>
       </main>
     </div>
@@ -288,7 +302,7 @@ function Login({
         </div>
         <span className="eyebrow">TRUSTED KNOWLEDGE PLATFORM</span>
         <h1>把权限边界，变成知识可信的起点。</h1>
-        <p>M2 已在平台底座上接通可靠工作流内核与真实任务投影。</p>
+        <p>M3 在可信底座上建立不可变 Raw、版本化解析与可授权预览。</p>
       </section>
       <form className="login-card" onSubmit={submit}>
         <span className="step">01 / LOCAL DEVELOPMENT</span>

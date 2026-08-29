@@ -11,6 +11,7 @@ cffi==2.1.1
 charset-normalizer==3.5.1
 click==8.4.2
 cryptography==50.0.0
+et_xmlfile==2.0.0
 fastapi==0.141.1
 googleapis-common-protos==1.75.1
 greenlet==3.5.5
@@ -19,9 +20,11 @@ httpcore==1.0.9
 httpx==0.28.1
 idna==3.19
 jmespath==1.1.0
+lxml==6.1.2
 Mako==1.4.1
 MarkupSafe==3.0.3
 nexus-rpc==1.4.0
+openpyxl==3.1.5
 opentelemetry-api==1.44.0
 opentelemetry-exporter-otlp-proto-common==1.44.0
 opentelemetry-exporter-otlp-proto-http==1.44.0
@@ -40,7 +43,9 @@ pydantic==2.11.7
 pydantic-settings==2.10.1
 pydantic_core==2.33.2
 pycparser==3.0
+pypdf==6.16.2
 PyJWT==2.13.0
+python-docx==1.2.0
 python-dotenv==1.2.3
 python-dateutil==2.9.0.post0
 redis==6.4.0

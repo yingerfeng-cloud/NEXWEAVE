@@ -14,9 +14,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from nexweave_api.errors import ApiProblem, AuthenticationFailed
 from nexweave_api.identity import LocalDevIdentityProvider
-from nexweave_api.object_storage import PolicyStubMalwareScanner, S3ObjectStorage
+from nexweave_api.object_storage import S3ObjectStorage
 from nexweave_api.repository import PlatformRepository
 from nexweave_api.settings import Settings
+from nexweave_application import MalwareScannerPort
 from nexweave_contracts import (
     AuditLogListResponse,
     ConnectorDefinitionCreate,
@@ -727,7 +728,7 @@ async def upload_object_content(
     info = await storage.put_if_absent(
         key=key, content=content, content_type=content_type, checksum_sha256=checksum
     )
-    scanner = cast(PolicyStubMalwareScanner, request.app.state.malware_scanner)
+    scanner = cast(MalwareScannerPort, request.app.state.malware_scanner)
     scan_status = await scanner.scan(content=content, content_type=content_type)
     result = await repository.complete_upload(
         principal=principal,

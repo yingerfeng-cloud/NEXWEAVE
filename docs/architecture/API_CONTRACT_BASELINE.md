@@ -1,6 +1,6 @@
 # API Contract Baseline
 
-> 公共前缀：`/api/v1`。M1 已实现平台基础端点；M2 已实现本文件明确列出的通用任务查询/控制端点。七类 Workflow 仍是内核 Stub，不代表同名后续业务 API 已实现。
+> 公共前缀：`/api/v1`。M1/M2 端点已实现并验收。M3 Source API 已由 ADR-0021/校准任务书批准，但以下 M3 路径仍是待实现契约，不得与通用 M2 Kernel Stub 混为已完成能力。
 > 所有写请求必须包含授权、审计、乐观锁/前置条件和幂等策略；异步请求返回业务对象 ID 与 Workflow ID。
 
 ## M0 已实现的平台端点
@@ -66,12 +66,21 @@
 | `PUT /spaces/{space_id}/members/{subject_id}` | 空间管理员；`member.grant` | resource PUT | MembershipPolicy → SpaceMember | 同步 | M1 |
 | `DELETE /spaces/{space_id}/members/{subject_id}` | 空间管理员；`member.revoke` | resource DELETE | revoke result | 同步 | M1 |
 | `POST /spaces/{space_id}/sources/uploads` | 知识工程师；`source.upload` | upload session key | metadata → upload session | 同步 | M3 |
+| `POST /spaces/{space_id}/source-import-batches` | 知识工程师；`source.upload` | batch key | metadata → ImportBatch | 同步 | M3 |
+| `PUT /sources/uploads/{upload_id}/content` | 上传者；`source.upload` | conditional session write | Raw bytes → upload state | 同步/受控 multipart | M3 |
 | `POST /sources/uploads/{upload_id}/complete` | 上传者；`source.upload` | checksum + key | checksum/parts → SourceVersion + workflow | 异步 | M3 |
+| `POST /sources/uploads/{upload_id}/abort` | 上传者；`source.upload` | command key | 未完成会话 → ABORTED/批次单项终态 | 同步 | M3 |
 | `GET /spaces/{space_id}/sources` | `source.read` + 密级 | GET | SourceDocument page | 同步 | M3 |
+| `GET /sources/{source_id}` | `source.read` + 密级 | GET | metadata/version chain/etag | 同步 | M3 |
+| `POST /sources/{source_id}/archive` | `source.archive` | command key + etag | archive result | 同步 | M3 |
 | `GET /sources/{source_id}/versions/{version_id}` | `source.read` + 密级 | GET | SourceVersion metadata | 同步 | M3 |
 | `GET /source-versions/{id}/content` | `source.download` + 密级 | GET | 受控下载/流 | 同步 | M3 |
-| `GET /source-versions/{id}/preview?anchor=...` | `source.read` + 密级 | GET | sanitized preview + highlight status | 同步 | M3 |
-| `POST /source-versions/{id}/parse` | `source.parse` | source+parser+config key | ParseCommand → ParseJob/workflow | 异步 | M3 |
+| `GET /source-versions/{id}/preview?anchor_id=...` | `source.read` + 密级 | GET | sanitized preview + per-locator status | 同步 | M3 |
+| `GET /source-versions/{id}/segments` | `source.read` + 密级 | GET | active/selected ParseJob segments | 同步 | M3 |
+| `POST /source-versions/{id}/parse` | `source.parse` | source+parser+config key + etag | ReparseCommand → new ParseJob/v2 Workflow | 异步 | M3 |
+| `GET /parse-jobs/{id}` | `source.read` + 密级 | GET | ParseJob/steps/failure units/config/result | 同步 | M3 |
+| `POST /parse-jobs/{id}/retry` | `source.parse` | command key + etag | same-config retry → same business job/new Run if closed | 异步 | M3 |
+| `POST /parse-jobs/{id}/cancel` | `source.parse` | command key + etag | 未终态 ParseJob → CANCELED | 异步 | M3 |
 | `POST /source-versions/{id}/invalidate` | `source.invalidate` | command key | reason → new state | 同步 | M3 |
 | `POST /spaces/{space_id}/schemas` | `schema.edit` | key | SchemaCreate → definition/version | 同步 | M4 |
 | `GET /schemas/{schema_id}/versions/{version}` | `schema.read` | GET | SchemaVersion | 同步 | M4 |
@@ -125,3 +134,5 @@
 - verified OIDC/service identity 提供 actor/tenant claims；路径/资源 space 与 claims 共同校验。客户端自报 header 不授予租户权限。
 - 产生副作用的命令使用 `Idempotency-Key`；可变资源写入使用 `If-Match`；列表使用 opaque cursor；异步命令返回 operation/business ID + Workflow ID。
 - 同 major 只允许增加可选字段或新路径。删除、改义、收紧枚举和 Release/Evidence/SourceAnchor 语义变化必须 ADR + 新 major/迁移窗口。
+
+M3 校准补充：Source 业务端点必须启动/关联 `nexweave.source-ingestion.v2` 与 ParseJob，不能要求客户端使用通用 M2 Stub 创建业务结果；v1 路径/历史保持 Replay。M3 新错误码、事件和 SDK 仍须在实现时进入 canonical contracts 与生成物门禁，当前文档不等于 OpenAPI 已实现。

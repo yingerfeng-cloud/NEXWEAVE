@@ -1,0 +1,85 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "aggregate_version": {
+      "minimum": 1,
+      "title": "Aggregate Version",
+      "type": "integer"
+    },
+    "causation_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Causation Id"
+    },
+    "correlation_id": {
+      "format": "uuid7",
+      "title": "Correlation Id",
+      "type": "string"
+    },
+    "policy_version": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Policy Version",
+      "type": "string"
+    },
+    "reason_code": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Reason Code",
+      "type": "string"
+    },
+    "source_id": {
+      "format": "uuid7",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_version_id": {
+      "format": "uuid7",
+      "title": "Source Version Id",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "trace_id": {
+      "pattern": "^[0-9a-f]{32}$",
+      "title": "Trace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "space_id",
+    "source_id",
+    "source_version_id",
+    "aggregate_version",
+    "correlation_id",
+    "trace_id",
+    "status",
+    "reason_code",
+    "policy_version"
+  ],
+  "title": "SourceInvalidatedEventData",
+  "type": "object"
+}

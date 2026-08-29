@@ -1,0 +1,161 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "aggregate_version": {
+      "minimum": 1,
+      "title": "Aggregate Version",
+      "type": "integer"
+    },
+    "causation_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Causation Id"
+    },
+    "config_checksum": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Config Checksum",
+      "type": "string"
+    },
+    "correlation_id": {
+      "format": "uuid7",
+      "title": "Correlation Id",
+      "type": "string"
+    },
+    "document_model_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Document Model Version",
+      "type": "string"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "failure_count": {
+      "minimum": 0,
+      "title": "Failure Count",
+      "type": "integer"
+    },
+    "locator_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Locator Version",
+      "type": "string"
+    },
+    "parse_job_id": {
+      "format": "uuid7",
+      "title": "Parse Job Id",
+      "type": "string"
+    },
+    "parser_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Parser Id",
+      "type": "string"
+    },
+    "parser_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Parser Version",
+      "type": "string"
+    },
+    "result_checksum": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Result Checksum"
+    },
+    "run_id": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "source_id": {
+      "format": "uuid7",
+      "title": "Source Id",
+      "type": "string"
+    },
+    "source_version_id": {
+      "format": "uuid7",
+      "title": "Source Version Id",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "SUCCEEDED",
+        "PARTIAL_FAILED",
+        "FAILED",
+        "CANCELED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "trace_id": {
+      "pattern": "^[0-9a-f]{32}$",
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "workflow_id": {
+      "maxLength": 768,
+      "minLength": 1,
+      "title": "Workflow Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tenant_id",
+    "space_id",
+    "source_id",
+    "source_version_id",
+    "aggregate_version",
+    "correlation_id",
+    "trace_id",
+    "parse_job_id",
+    "status",
+    "parser_id",
+    "parser_version",
+    "config_checksum",
+    "document_model_version",
+    "locator_version",
+    "failure_count",
+    "workflow_id",
+    "run_id"
+  ],
+  "title": "ParseEventData",
+  "type": "object"
+}

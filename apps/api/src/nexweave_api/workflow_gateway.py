@@ -35,7 +35,10 @@ class TemporalWorkflowGateway:
         self, *, workflow_name: str, workflow_id: str, payload: dict[str, Any]
     ) -> WorkflowExecutionInfo:
         client = await self._connected_client()
-        payload = {**payload, "activity_task_queue": self._settings.temporal_activity_task_queue}
+        payload = {
+            "activity_task_queue": self._settings.temporal_activity_task_queue,
+            **payload,
+        }
         try:
             handle = await client.start_workflow(
                 workflow_name,
@@ -45,7 +48,7 @@ class TemporalWorkflowGateway:
                 id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
                 run_timeout=timedelta(minutes=30),
                 task_timeout=timedelta(seconds=10),
-                static_summary=f"NEXWEAVE M2 {payload['workflow_type']} kernel task",
+                static_summary=f"NEXWEAVE {payload['workflow_type']} workflow",
             )
             run_id = handle.first_execution_run_id or handle.run_id or ""
             return WorkflowExecutionInfo(workflow_id, run_id, "RUNNING")
@@ -89,7 +92,10 @@ class TemporalWorkflowGateway:
         self, *, workflow_name: str, workflow_id: str, payload: dict[str, Any]
     ) -> WorkflowExecutionInfo:
         client = await self._connected_client()
-        payload = {**payload, "activity_task_queue": self._settings.temporal_activity_task_queue}
+        payload = {
+            "activity_task_queue": self._settings.temporal_activity_task_queue,
+            **payload,
+        }
         try:
             handle = await client.start_workflow(
                 workflow_name,
@@ -99,7 +105,7 @@ class TemporalWorkflowGateway:
                 id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
                 run_timeout=timedelta(minutes=30),
                 task_timeout=timedelta(seconds=10),
-                static_summary=f"NEXWEAVE M2 retry {payload['workflow_type']} kernel task",
+                static_summary=f"NEXWEAVE retry {payload['workflow_type']} workflow",
             )
             return WorkflowExecutionInfo(
                 workflow_id,
@@ -120,6 +126,13 @@ class TemporalWorkflowGateway:
                 state = {}
             temporal_status = description.status.name if description.status else "RUNNING"
             return _merge_temporal_state(state, description.run_id, temporal_status)
+        except Exception as exc:
+            raise _temporal_problem(exc) from exc
+
+    async def cancel(self, *, workflow_id: str) -> None:
+        client = await self._connected_client()
+        try:
+            await client.get_workflow_handle(workflow_id).cancel()
         except Exception as exc:
             raise _temporal_problem(exc) from exc
 

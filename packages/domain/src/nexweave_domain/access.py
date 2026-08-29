@@ -39,6 +39,8 @@ ROLE_ACTIONS: dict[Role, frozenset[str]] = {
             "diagnostics.read",
             "workflow.read",
             "workflow.reconcile",
+            "source.read",
+            "source.download",
         }
     ),
     Role.TENANT_ADMIN: frozenset(
@@ -60,6 +62,12 @@ ROLE_ACTIONS: dict[Role, frozenset[str]] = {
             "workflow.control",
             "workflow.review",
             "workflow.reconcile",
+            "source.upload",
+            "source.read",
+            "source.download",
+            "source.parse",
+            "source.invalidate",
+            "source.archive",
         }
     ),
     Role.SPACE_ADMIN: frozenset(
@@ -78,6 +86,12 @@ ROLE_ACTIONS: dict[Role, frozenset[str]] = {
             "workflow.read",
             "workflow.control",
             "workflow.review",
+            "source.upload",
+            "source.read",
+            "source.download",
+            "source.parse",
+            "source.invalidate",
+            "source.archive",
         }
     ),
     Role.KNOWLEDGE_ENGINEER: frozenset(
@@ -88,15 +102,30 @@ ROLE_ACTIONS: dict[Role, frozenset[str]] = {
             "workflow.create",
             "workflow.read",
             "workflow.control",
+            "source.upload",
+            "source.read",
+            "source.download",
+            "source.parse",
+            "source.invalidate",
+            "source.archive",
         }
     ),
-    Role.REVIEWER: frozenset({"space.read", "object.download", "workflow.read", "workflow.review"}),
+    Role.REVIEWER: frozenset(
+        {"space.read", "object.download", "workflow.read", "workflow.review", "source.read"}
+    ),
     Role.PUBLISHER: frozenset(
-        {"space.read", "object.download", "workflow.read", "workflow.review"}
+        {"space.read", "object.download", "workflow.read", "workflow.review", "source.read"}
     ),
     Role.CONSUMER: frozenset({"space.read", "object.download", "workflow.read"}),
     Role.AUDITOR: frozenset(
-        {"space.read", "member.read", "audit.read", "object.download", "workflow.read"}
+        {
+            "space.read",
+            "member.read",
+            "audit.read",
+            "object.download",
+            "workflow.read",
+            "source.read",
+        }
     ),
     Role.SERVICE: frozenset(),
 }

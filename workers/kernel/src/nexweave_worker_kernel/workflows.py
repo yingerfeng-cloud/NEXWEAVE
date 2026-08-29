@@ -27,6 +27,23 @@ ACTIVITY_RETRY_POLICY = RetryPolicy(
     non_retryable_error_types=["M2_KERNEL_POLICY_VIOLATION"],
 )
 
+SOURCE_ACTIVITY_RETRY_POLICY = RetryPolicy(
+    initial_interval=timedelta(seconds=1),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(seconds=15),
+    maximum_attempts=3,
+    non_retryable_error_types=[
+        "SOURCE_CHECKSUM_MISMATCH",
+        "SOURCE_MALWARE_DETECTED",
+        "SOURCE_MALWARE_SCAN_FAILED",
+        "SOURCE_SECURITY_POLICY_FAILED",
+        "SOURCE_TYPE_UNSUPPORTED",
+        "PARSER_CAPABILITY_UNAVAILABLE",
+        "PARSER_RESOURCE_LIMIT_EXCEEDED",
+        "PARSE_RESULT_INVALID",
+    ],
+)
+
 
 class _KernelWorkflow:
     def __init__(self) -> None:
@@ -315,6 +332,91 @@ class SourceIngestionWorkflow(_KernelWorkflow):
         return self._state()
 
 
+@workflow.defn(name="nexweave.source-ingestion.v2")
+class SourceIngestionV2Workflow:
+    """M3 business workflow; it carries references only and performs no direct I/O."""
+
+    def __init__(self) -> None:
+        self._status = "CREATED"
+        self._current_step: str | None = None
+        self._parse_job_id = ""
+
+    @workflow.run
+    async def run(self, payload: dict[str, Any]) -> dict[str, Any]:
+        self._parse_job_id = str(payload["parse_job_id"])
+        activity_queue = str(payload["activity_task_queue"])
+        run_id = workflow.info().run_id
+        self._status = "RUNNING"
+        try:
+            self._current_step = "load-and-verify-raw"
+            await workflow.execute_activity(
+                "m3_source_verify_raw",
+                {"parse_job_id": self._parse_job_id, "run_id": run_id},
+                task_queue=activity_queue,
+                start_to_close_timeout=timedelta(seconds=45),
+                schedule_to_close_timeout=timedelta(minutes=3),
+                heartbeat_timeout=timedelta(seconds=10),
+                retry_policy=SOURCE_ACTIVITY_RETRY_POLICY,
+            )
+            self._current_step = "malware-security-scan"
+            await workflow.execute_activity(
+                "m3_source_scan_raw",
+                {"parse_job_id": self._parse_job_id, "run_id": run_id},
+                task_queue=activity_queue,
+                start_to_close_timeout=timedelta(minutes=3),
+                schedule_to_close_timeout=timedelta(minutes=10),
+                heartbeat_timeout=timedelta(seconds=10),
+                retry_policy=SOURCE_ACTIVITY_RETRY_POLICY,
+            )
+            self._current_step = "parse-validate-persist-relocate-finalize"
+            result = await workflow.execute_activity(
+                "m3_source_parse_and_persist",
+                {"parse_job_id": self._parse_job_id, "run_id": run_id},
+                task_queue=activity_queue,
+                start_to_close_timeout=timedelta(minutes=10),
+                schedule_to_close_timeout=timedelta(minutes=30),
+                heartbeat_timeout=timedelta(seconds=10),
+                retry_policy=SOURCE_ACTIVITY_RETRY_POLICY,
+            )
+            self._status = str(result["status"])
+            self._current_step = None
+            return dict(result)
+        except ActivityError as exc:
+            cause = exc.cause
+            code = (
+                cause.type
+                if isinstance(cause, ApplicationError) and cause.type
+                else "SOURCE_PARSE_ACTIVITY_FAILED"
+            )
+            detail = type(cause).__name__ if cause is not None else type(exc).__name__
+            self._status = "FAILED"
+            await workflow.execute_activity(
+                "m3_source_fail",
+                {
+                    "parse_job_id": self._parse_job_id,
+                    "run_id": run_id,
+                    "code": code,
+                    "detail": detail,
+                },
+                task_queue=activity_queue,
+                start_to_close_timeout=timedelta(seconds=30),
+                schedule_to_close_timeout=timedelta(minutes=3),
+                retry_policy=RetryPolicy(maximum_attempts=5),
+            )
+            raise
+
+    @workflow.query(name="state")
+    def state(self) -> dict[str, Any]:
+        return {
+            "workflow_id": workflow.info().workflow_id,
+            "run_id": workflow.info().run_id,
+            "workflow_type": "SOURCE_INGESTION_V2",
+            "parse_job_id": self._parse_job_id,
+            "status": self._status,
+            "current_step": self._current_step,
+        }
+
+
 @workflow.defn(name="nexweave.knowledge-compile.v1")
 class KnowledgeCompileWorkflow(_KernelWorkflow):
     @workflow.run
@@ -431,6 +533,7 @@ class GridCrewFeedbackIngestionWorkflow(_KernelWorkflow):
 
 WORKFLOW_CLASSES = [
     SourceIngestionWorkflow,
+    SourceIngestionV2Workflow,
     KnowledgeCompileWorkflow,
     HumanReviewWorkflow,
     QualityEvaluationWorkflow,
