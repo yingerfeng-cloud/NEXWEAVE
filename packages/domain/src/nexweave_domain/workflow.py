@@ -12,6 +12,7 @@ class WorkflowType(StrEnum):
     QUALITY_EVALUATION = "QUALITY_EVALUATION"
     KNOWLEDGE_RELEASE = "KNOWLEDGE_RELEASE"
     DOMAIN_PACK_INSTALL = "DOMAIN_PACK_INSTALL"
+    CONNECTOR_SYNC = "CONNECTOR_SYNC"
     GRIDCREW_FEEDBACK_INGESTION = "GRIDCREW_FEEDBACK_INGESTION"
 
 
@@ -62,6 +63,7 @@ WORKFLOW_ID_PREFIX: dict[WorkflowType, str] = {
     WorkflowType.QUALITY_EVALUATION: "evaluation",
     WorkflowType.KNOWLEDGE_RELEASE: "release",
     WorkflowType.DOMAIN_PACK_INSTALL: "pack-install",
+    WorkflowType.CONNECTOR_SYNC: "connector-sync",
     WorkflowType.GRIDCREW_FEEDBACK_INGESTION: "gridcrew-feedback",
 }
 
@@ -72,6 +74,7 @@ WORKFLOW_TEMPORAL_NAME: dict[WorkflowType, str] = {
     WorkflowType.QUALITY_EVALUATION: "nexweave.quality-evaluation.v1",
     WorkflowType.KNOWLEDGE_RELEASE: "nexweave.knowledge-release.v1",
     WorkflowType.DOMAIN_PACK_INSTALL: "nexweave.domain-pack-install.v1",
+    WorkflowType.CONNECTOR_SYNC: "nexweave.connector-sync.v1",
     WorkflowType.GRIDCREW_FEEDBACK_INGESTION: "nexweave.gridcrew-feedback-ingestion.v1",
 }
 
@@ -105,6 +108,11 @@ WORKFLOW_STEP_PLAN: dict[WorkflowType, tuple[str, ...]] = {
         "verify-declarative-pack-boundary-stub",
         "wait-for-install-approval",
         "apply-declarations-stub",
+    ),
+    WorkflowType.CONNECTOR_SYNC: (
+        "read-allowlisted-source",
+        "register-immutable-raw",
+        "start-source-parse",
     ),
     WorkflowType.GRIDCREW_FEEDBACK_INGESTION: (
         "validate-integration-boundary-stub",

@@ -35,7 +35,7 @@ services:
     networks: [platform]
 
   rustfs:
-    image: quay.io/rustfs/rustfs:1.0.0-rc.3@sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5
+    image: quay.io/rustfs/rustfs:1.0.0-rc.4@sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b
     security_opt:
       - no-new-privileges:true
     environment:
@@ -119,7 +119,7 @@ services:
     environment:
       NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
       NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
-      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.4.0-m3}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-a1}
       NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
       NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
       NEXWEAVE_OBJECT_STORE_HEALTH_URL: ${NEXWEAVE_OBJECT_STORE_HEALTH_URL:-http://rustfs:9000/health}
@@ -203,7 +203,7 @@ services:
     environment:
       NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
       NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
-      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.4.0-m3}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-a1}
       NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
       NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
       NEXWEAVE_REDIS_URL: ${NEXWEAVE_REDIS_URL:-redis://redis:6379/0}
@@ -238,7 +238,7 @@ services:
     environment:
       NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
       NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
-      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.4.0-m3}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-a1}
       NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
       NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
       NEXWEAVE_OBJECT_STORE_BUCKET: ${NEXWEAVE_OBJECT_STORE_BUCKET:-nexweave-dev}

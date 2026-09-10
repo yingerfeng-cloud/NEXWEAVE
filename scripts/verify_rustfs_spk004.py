@@ -23,8 +23,8 @@ from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 ROOT = Path(__file__).resolve().parents[1]
 RUSTFS_IMAGE = (
-    "quay.io/rustfs/rustfs:1.0.0-rc.3@"
-    "sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5"
+    "quay.io/rustfs/rustfs:1.0.0-rc.4@"
+    "sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b"
 )
 
 

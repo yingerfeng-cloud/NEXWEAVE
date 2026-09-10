@@ -1,6 +1,6 @@
 # GridCrew Integration Baseline
 
-> 状态：M-1 联合契约草案。首期为固定 Release 的只读知识消费；两产品独立部署、独立数据库、独立生命周期。
+> 状态：M-1 单边基线持续有效。M8 已验收；用户于 2026-09-01 通过 ADR-0030 明确 GridCrew 暂不开发、联合试点延期。GridCrew 不属于当前 M9/R1 验收，也不得描述为完成；本文继续只作为未来双边准入基线，不能作为真实联调或联合验收证据。
 
 ## 1. 产品边界
 
@@ -89,4 +89,4 @@ GridCrew `EmployeeRelease`/Task 必须锁定 Skill Version，从而间接锁定 
 
 ## 9. 联合依赖
 
-GridCrew 当前 M0 尚未开始。NEXWEAVE M8 前，GridCrew 至少需要可用的 ServiceIdentity、Skill Version、EmployeeRelease 固定资产引用、Tool/Connector 调用治理、Artifact/Evidence 引用、事件 Envelope 和审计链。双方须在各自编码前共同冻结 OpenAPI、事件 Schema、租户映射、错误码和测试 fixture。
+NEXWEAVE 当前没有可验证的 GridCrew 运行版本或联合环境。联合工作开始前，GridCrew 至少需要可用的 ServiceIdentity、Skill Version、EmployeeRelease 固定资产引用、Tool/Connector 调用治理、Artifact/Evidence 引用、事件 Envelope 和审计链。双方须在各自编码前共同冻结 OpenAPI、事件 Schema、租户映射、错误码和测试 fixture；直接调用 NEXWEAVE API 或 Mock 对端不计联合验收。

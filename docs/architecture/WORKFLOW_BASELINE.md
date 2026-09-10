@@ -1,6 +1,6 @@
 # Workflow Baseline
 
-> 执行内核：Temporal（Accepted）。M2 已实现七类 v1 Kernel Stub 并正式验收。M3 只完成 SourceIngestion v2 业务语义校准；v2、Parser Activity 和 Source 聚合尚未实现。
+> 执行内核：Temporal（Accepted）。M2 七类 v1 Kernel Stub、M3 SourceIngestion v2、M4 DomainPackInstall v2 和 M5 KnowledgeCompile v2 已正式验收。ADR-0024 的 M5 Activities 已通过本地真实链路技术验收。
 
 ## M2 运行拓扑与公共状态
 
@@ -30,7 +30,7 @@
 - `nexweave.source-ingestion.v1` 使用三步 Kernel Stub，只验证可靠执行、控制、投影与恢复；`STUB_SUCCEEDED` 不创建 SourceVersion、ParseJob、Segment 或 Anchor。
 - v1 Workflow/历史必须保留注册与 Replay，不能通过修改 Activity 含义升级为 M3 业务成功。
 
-### M3 v2 已校准、待实现边界
+### M3 v2 已实现并正式验收边界
 
 - 目标：固定 ParseJob 输入后完成 Raw 校验、安全扫描、Parser/OCR 能力选择、版本化解析、Segment/Anchor 持久化、重定位与 active/latest 指针更新。
 - Workflow type：`nexweave.source-ingestion.v2`；Workflow ID：`source-ingestion/{tenant}/{parse_job_id}`。
@@ -42,13 +42,18 @@
 
 ## KnowledgeCompileWorkflow
 
-- 目标：将固定 SourceVersion + SchemaVersion 编译为可审核候选知识。
-- Workflow ID：`compile/{tenant}/{compile_job_id}`。
-- 输入/输出：source set、schema、prompt、model、mode → versioned candidates/statistics。
-- Activities：segment selection、model structured extraction、entity normalization、relation/claim/evidence candidate、page decision、conflict detection、Lint、persist result。
-- Updates/Signals：pause、resume、cancel、retry failed step、补充人工映射。
-- 可靠性：步骤级幂等；重复执行不生成重复 Page/Entity；模型安全/预算策略不可绕过。
-- 幂等键：CompileJob ID；各 Activity 使用 job+step+input hash。
+### M2 v1 保留边界
+
+- `nexweave.knowledge-compile.v1` 继续保留 Kernel Stub 注册和历史 Replay；其 `STUB_SUCCEEDED` 不创建知识对象、Evidence 或 Wiki 页面。
+
+### M5 v2 已实现并正式验收边界
+
+- 目标：将固定 SourceVersion/checksum/ParseJob + PUBLISHED SchemaVersion/composition checksum + PromptVersion + ModelProfile 编译为可审核候选知识和版本化 Wiki 草稿。
+- Workflow type：`nexweave.knowledge-compile.v2`；Workflow ID：`compile/{tenant}/{compile_job_id}`。
+- Workflow 输入只携带 CompileJob/actor/trace 固定引用；上下文装配、segment selection、Model Gateway 调用、结构化校验、稳定 Entity/Page 归一化、Relation/Claim/Evidence/Conflict/Lint/Proposal 和持久化均位于可重试 Activity。
+- v2 本阶段暴露只读状态查询，不暴露业务 pause/resume/cancel Update；失败/取消后重新执行必须创建新的 `RECOMPILE` CompileJob，旧任务和调用审计不可覆盖。
+- Activity 使用 CompileJob + step + input checksum 幂等；相同稳定身份复用 Entity/Page，内容 checksum 未变化不制造重复版本。
+- 模型分类、外发、预算和结构化输出策略在 Model Gateway/可信 Activity 边界执行；Workflow 不能绕过。外部 Provider 不可用时明确失败，不以本地规则结果冒充外部模型回执。
 
 ## HumanReviewWorkflow
 
@@ -80,14 +85,26 @@
 - 可靠性：发布失败不产生半可见 Release；回滚切换指针，不修改历史。
 - 幂等键：candidate manifest hash + target channel。
 
+M7 实现为 `nexweave.knowledge-release.v2`：Workflow 先调用验证 Activity，门禁通过后以 durable wait 等待独立 Publisher 的审计批准，再调用发布 Activity；数据库、Model Gateway、投影与事件 I/O 均不进入 Workflow 定义。发布事务一次性固化 Release/Items/投影/Pointer/Outbox，失败不产生半可见版本。
+
+## QualityEvaluationWorkflow
+
+- M7 实现为 `nexweave.quality-evaluation.v2`，固定 EvaluationRun/Suite/target/strategy/config 引用；逐题结果、问题级错误、指标和门禁由可重试 Activity 原子保存。
+- 相同 Suite/目标可使用不同 Model/Prompt/检索策略形成独立 Run 供 A/B 比较，不覆盖既有结果。
+- Workflow 只编排引用和结果，评测读取与数据库写入都位于 Activity。
+
 ## DomainPackInstallWorkflow
 
-- 目标：校验 Pack、依赖、签名、兼容性并在空间生成新 Schema 配置。
-- Workflow ID：`pack-install/{tenant}/{installation_id}`。
-- Activities：fetch package、verify checksum/signature、validate manifest、resolve dependencies、impact preview、apply declarations、verify、record installation。
-- Updates/Signals：approval、cancel、rollback。
-- 可靠性：禁止任意代码；失败/卸载不删除既有知识；升级显式迁移。
-- 幂等键：space+pack version+requested config hash。
+- M2 `nexweave.domain-pack-install.v1` 保持 Kernel Stub 和历史 Replay；M4 业务实现使用 `nexweave.domain-pack-install.v2`，不得修改 v1 Activity 含义来冒充升级。
+- 目标：校验 Pack、依赖、签名与语义兼容，确定性组合声明并在空间生成新的 DRAFT SchemaVersion 和 SchemaCompositionReport。
+- Workflow type：`nexweave.domain-pack-install.v2`；Workflow ID 由 tenant + install/upgrade/disable/rollback business key 稳定派生，Run ID 单独记录。
+- 输入固定：Installation ID、actor/trace 与 Activity queue 引用；Installation 业务行已固定 tenant/space、精确 PackVersion、SchemaDefinition、目标语义版本和操作，Workflow 不携带制品正文。
+- Activities：单一幂等业务 Activity 读取已固定 Installation，完成签名/撤销复核、精确依赖 DAG、规范化组合、冲突/影响、DRAFT/report 和 audit/outbox 原子持久化；独立失败 Activity 记录终态和脱敏错误审计。
+- 控制：M4 v2 暴露只读 query；升级、禁用和回滚由授权版本化 API 创建新的 control Installation/Workflow，不通过 Signal 改写运行中输入。安装/发布职责分离由 Schema publish API 执行。
+- 确定性：Workflow 只编排固定引用和结果；制品读取、签名、依赖解析、持久化和影响扫描均在幂等 Activity。相同规范化输入必须产生相同 composition checksum；安装时间、数据库返回顺序和 Worker 调度不能影响结果。
+- 权威边界：安装成功不等于 Schema 发布；发布是独立授权动作。禁止后安装覆盖先安装；冲突、循环、歧义 EXACT mapping 和破坏性变化必须阻断。
+- 可靠性：禁止任意代码；失败/禁用/卸载不删除既有 Schema、知识、报告或 Release；升级显式迁移并生成新 SchemaVersion；回滚恢复先前安装/Schema 指针。
+- 幂等键：调用者提供的 command key + 服务端 canonical request hash；业务 key 固定 operation/PackVersion/SchemaDefinition/semantic version。
 
 ## GridCrewFeedbackIngestionWorkflow
 
@@ -110,4 +127,5 @@
 
 - 已验证：七类真实运行、Activity 首次瞬态失败与重试、Update 幂等、人工批准、暂停/继续、取消/逆序补偿、Worker 重启恢复、投影损坏对账修复、历史 Replay；
 - 已关闭条件项：官方 Temporal Python SDK time-skipping 测试已于 2026-08-25 在本地及 GitHub Actions run `32808198635` 独立门禁通过；
-- 后续：Continue-As-New、大规模历史、生产 Namespace 保留/升级、多集群灾备与 M6 业务审核 SLA 在对应 Milestone/部署环境验证。
+- M7 补充验证：QualityEvaluation v2、KnowledgeRelease v2 的真实 Temporal 新历史、独立批准等待和发布恢复已通过隔离 E2E；归档生产历史与专门的进程崩溃窗口演练仍作为后续部署风险。
+- 后续：Continue-As-New、大规模历史、生产 Namespace 保留/升级与多集群灾备在对应 Milestone/部署环境验证。

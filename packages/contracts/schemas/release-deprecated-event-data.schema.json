@@ -1,0 +1,33 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    },
+    "release_id": {
+      "format": "uuid7",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "replacement_release_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Replacement Release Id"
+    }
+  },
+  "required": [
+    "release_id",
+    "reason"
+  ],
+  "title": "ReleaseDeprecatedEventData",
+  "type": "object"
+}

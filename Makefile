@@ -2,7 +2,7 @@ PYTHON ?= python3
 PNPM ?= pnpm
 DOCKER ?= docker
 
-.PHONY: bootstrap format lint typecheck unit contract time-skipping sdk-check web-build check env dev-up dev-down dev-logs verify verify-m0 verify-m1 verify-m2 verify-m3 migration-check rustfs-spike
+.PHONY: bootstrap format lint typecheck unit contract time-skipping sdk-check web-build check env dev-up dev-down dev-logs verify verify-m0 verify-m1 verify-m2 verify-m3 verify-m4 verify-m9-pack migration-check rustfs-spike
 
 bootstrap:
 	$(PYTHON) -m pip install -r requirements/dev.txt -c requirements/dev.lock
@@ -44,9 +44,15 @@ env:
 
 dev-up: env
 	$(DOCKER) compose up --build --detach --wait
+	$(PYTHON) scripts/local_runtime.py worker-start
 
 dev-down:
+	$(PYTHON) scripts/local_runtime.py worker-stop
 	$(DOCKER) compose down
+
+dev-status:
+	$(DOCKER) compose ps
+	$(PYTHON) scripts/local_runtime.py status
 
 dev-logs:
 	$(DOCKER) compose logs --follow api worker-health worker-kernel web
@@ -55,6 +61,7 @@ verify:
 	$(PYTHON) scripts/verify_m1.py
 	$(PYTHON) scripts/verify_m2.py
 	$(PYTHON) scripts/verify_m3.py
+	$(PYTHON) scripts/verify_m4.py
 
 verify-m0:
 	$(PYTHON) scripts/verify_m0.py
@@ -67,6 +74,12 @@ verify-m2:
 
 verify-m3:
 	$(PYTHON) scripts/verify_m3.py
+
+verify-m4:
+	$(PYTHON) scripts/verify_m4.py
+
+verify-m9-pack:
+	$(PYTHON) scripts/verify_m9_pack.py
 
 migration-check:
 	$(DOCKER) compose exec -T api python scripts/check_migrations.py

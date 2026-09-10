@@ -1,0 +1,246 @@
+.space-layout,
+.task-layout,
+.wiki-graph-shell,
+.preview-layout {
+  gap: 0.9rem;
+}
+
+.space-list,
+.task-list,
+.stack-list {
+  background: var(--nw-surface-1);
+  border: 1px solid var(--nw-line);
+  border-radius: var(--nw-radius-md);
+}
+
+.space-list button,
+.task-list > button,
+.list-row {
+  color: var(--nw-text-secondary);
+  background: transparent;
+  border-color: transparent transparent var(--nw-line);
+  border-radius: 0;
+}
+
+.space-list button:hover,
+.space-list button.selected,
+.task-list > button:hover,
+.task-list > button.selected,
+.list-row:hover {
+  color: var(--nw-text);
+  background: var(--nw-violet-soft);
+  border-color: var(--nw-violet-28);
+}
+
+.compact-form,
+.inline-form,
+.m7-form,
+.upload-form {
+  gap: 0.75rem;
+}
+
+.compact-form label,
+.inline-form label,
+.m7-form label,
+.upload-form label,
+.form-group label {
+  color: var(--nw-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.notice-banner,
+.truth-note,
+.boundary-note,
+.future-boundary {
+  color: var(--nw-text-secondary);
+  background: var(--nw-violet-soft);
+  border: 1px solid var(--nw-violet-28);
+  border-radius: var(--nw-radius-sm);
+}
+
+.source-page .panel,
+.task-layout .panel {
+  box-shadow: none;
+}
+
+.source-filter,
+.upload-drop,
+.batch-summary,
+.source-summary,
+.parse-pointer,
+.checksum-card,
+.segment-list article,
+.preview-status,
+.sanitized-preview,
+.task-summary > div,
+.step-list li,
+.event-log li,
+.wiki-preview {
+  color: var(--nw-text-secondary);
+  background: var(--nw-surface-1);
+  border-color: var(--nw-line);
+  border-radius: var(--nw-radius-sm);
+}
+
+.source-link,
+.back-link,
+.version-main strong,
+.source-summary strong,
+.fact > strong,
+.parse-pointer strong,
+.checksum-card code,
+.segment-list p,
+.event-log strong,
+.step-list strong {
+  color: var(--nw-text);
+}
+
+.source-link small,
+.version-cell,
+.source-description,
+.fact > span,
+.parse-pointer small,
+.parse-pointer code,
+.checksum-card span,
+.segment-list header,
+.segment-list footer,
+.event-log time,
+.step-list small {
+  color: var(--nw-text-muted);
+}
+
+.upload-drop {
+  background: var(--nw-surface-1);
+  border-style: dashed;
+}
+
+.upload-drop:focus-within {
+  border-color: var(--nw-cyan);
+}
+
+.task-list progress {
+  accent-color: var(--nw-violet);
+}
+
+.answer-card {
+  padding: 1rem;
+}
+
+.answer-card code,
+.graph-edge code,
+.checksum-card code {
+  color: var(--nw-text-secondary);
+  background: var(--nw-surface-2);
+}
+
+.graph-edge {
+  color: var(--nw-text-secondary);
+  background: var(--nw-surface-1);
+  border-color: var(--nw-line);
+}
+
+.wiki-graph-shell {
+  background: var(--nw-bg-canvas);
+}
+
+.wiki-graph-page .page-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.wiki-graph-actions {
+  align-self: start;
+  justify-content: flex-end;
+}
+
+.wiki-graph-canvas {
+  background:
+    linear-gradient(var(--nw-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--nw-line) 1px, transparent 1px),
+    var(--nw-surface-1);
+  background-size:
+    2rem 2rem,
+    2rem 2rem,
+    auto;
+  border-color: var(--nw-line);
+  box-shadow: var(--nw-shadow-panel);
+}
+
+.wiki-graph-sidepanel,
+.wiki-graph-toolbar,
+.wiki-graph-hint {
+  color: var(--nw-text-secondary);
+  background: var(--nw-overlay-strong);
+  border-color: var(--nw-line);
+}
+
+.wiki-graph-link {
+  stroke: var(--nw-line-strong);
+}
+
+.wiki-graph-link.active {
+  stroke: var(--nw-cyan);
+}
+
+.wiki-graph-node circle {
+  fill: var(--nw-surface-raised);
+  stroke: var(--nw-violet);
+}
+
+.wiki-graph-node.related circle {
+  stroke: var(--nw-cyan);
+}
+
+.wiki-graph-node text {
+  fill: var(--nw-text);
+}
+
+.wiki-graph-legend button[aria-pressed="true"] {
+  color: var(--nw-text);
+  background: var(--nw-violet-soft);
+  border-color: var(--nw-violet-35);
+}
+
+.danger,
+.text-danger {
+  min-width: 2.25rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.4rem;
+  color: var(--nw-danger);
+}
+
+@media (max-width: 61.25rem) {
+  .wiki-graph-shell,
+  .preview-layout,
+  .task-layout,
+  .space-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 47.5rem) {
+  .source-filter,
+  .compact-form,
+  .compact-form.three,
+  .upload-form,
+  .m7-form {
+    grid-template-columns: 1fr;
+  }
+
+  .wiki-graph-canvas {
+    min-height: 26rem;
+  }
+
+  .wiki-graph-page .page-heading {
+    display: block;
+  }
+
+  .wiki-graph-actions {
+    margin-top: 0.75rem;
+    justify-content: flex-start;
+  }
+
+  .wiki-graph-toolbar {
+    align-items: stretch;
+  }
+}

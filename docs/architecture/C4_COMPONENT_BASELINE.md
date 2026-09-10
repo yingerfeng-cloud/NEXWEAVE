@@ -1,6 +1,6 @@
-# M3-calibrated C4 Architecture Baseline
+# M7 C4 Architecture Baseline
 
-> Status: M0 context/container boundaries remain Accepted; M1/M2 components are implemented and accepted. ADR-0021 calibrates the future M3 Source/Parser v2 path without changing topology; no M3 component is implemented in this governance change.
+> Status: M0 context/container boundaries remain Accepted; M1—M7 are formally accepted. ADR-0026 M7 Quality/Release/Graph/Query passed local technical acceptance without adding a second service authority.
 
 ## Level 1 — System context
 
@@ -35,7 +35,7 @@ flowchart TB
   PostgreSQL --> Projections[Rebuildable FTS / vector / relation projections]
 ```
 
-M2 runs eight services through Compose: the M0 health Worker remains isolated and `worker-kernel` registers seven versioned Workflow definitions on a dedicated Workflow queue plus Activities on a dedicated Activity queue. The API exposes authenticated task control and PostgreSQL projection queries. M3 later adds Source API/repository, Parser/OCR adapter Activities and `source-ingestion.v2` inside these accepted containers; they remain boundaries in this calibration, not claims of implemented adapters.
+M2 runs the health and kernel Workers through Compose. M3 adds Source/Parse, M4 Schema/Pack, M5 Compile/Wiki and Model Gateway, M6 Review/Evidence, and M7 Quality/Release/Graph/Query within the existing API/Worker topology. M7 uses PostgreSQL Relation/FTS/pgvector projections and does not introduce a graph/search database authority or provider SDK dependency in domain/contracts.
 
 ## Level 3 — API components
 
@@ -47,6 +47,12 @@ flowchart LR
   Routes --> Governance[Governance configuration boundary]
   Routes --> Objects[Controlled object application boundary]
   Routes --> Tasks[Workflow task and reconciliation boundary]
+  Routes --> Sources[Source and Parse application boundary]
+  Routes --> Schema[Schema / Semantic Model boundary]
+  Routes --> Packs[Domain Pack composition boundary]
+  Routes --> Compile[Compile / Knowledge / Wiki boundary]
+  Routes --> Review[Claim / Evidence / Review boundary]
+  Routes --> Release[Quality / Release / Query / Graph boundary]
   Routes --> Error[Problem Details mapper]
   Identity --> IdP[Local / OIDC IdentityProvider adapters]
   Workspace --> Repo[PostgreSQL Repository]
@@ -55,6 +61,17 @@ flowchart LR
   Tasks --> WorkflowPort[WorkflowGatewayPort]
   WorkflowPort --> TemporalAdapter[Temporal client adapter]
   Tasks --> Repo
+  Sources --> Repo
+  Sources --> ObjectPort
+  Sources --> ParserPort[Parser / OCR application ports]
+  Schema --> Repo
+  Packs --> Schema
+  Packs --> Repo
+  Compile --> Repo
+  Compile --> ModelPort[ModelGatewayPort]
+  Review --> Repo
+  Release --> Repo
+  Release --> ModelPort
   ObjectPort --> S3[RustFS S3 adapter]
   Repo --> Audit[Audit + Outbox + idempotency transaction facts]
   Platform --> Probe[Infrastructure health port]
@@ -66,7 +83,7 @@ flowchart LR
   Contracts --> Domain[Pure domain vocabulary / UUIDv7]
 ```
 
-Business modules follow `HTTP/Worker adapter → application Port/use-case boundary → domain`. ORM, FastAPI, Temporal and provider SDKs cannot enter `packages/domain`, `packages/contracts` or `packages/application`; an automated architecture test enforces the rule.
+Business modules follow `HTTP/Worker adapter → application Port/use-case boundary → domain`. ORM, FastAPI, Temporal and provider SDKs cannot enter `packages/domain`, `packages/contracts` or `packages/application`; an automated architecture test enforces the rule. M5 Model Gateway is an application Port implemented by an adapter, while Compile/Wiki invariants remain pure domain logic; the local structured adapter is deterministic/no-network and is not represented as an external LLM.
 
 ## Level 3 — Worker components
 
@@ -81,21 +98,27 @@ flowchart LR
 
 M0 retains `PlatformHealthWorkflow`. M2 adds seven explicit deterministic kernel Workflows. They use Temporal Update/Signal/query and call only named Activities; projection, step and compensation I/O is isolated in Activities. M2 Activity outcomes are Stubs and do not create M3+ business aggregates.
 
+M3 adds `nexweave.source-ingestion.v2`, M4 `domain-pack-install.v2`, M5 `knowledge-compile.v2`, M6 `human-review.v2`, and M7 `quality-evaluation.v2`/`knowledge-release.v2` while preserving v1 history definitions. Workflow code coordinates fixed references only; database, model, object and projection I/O remains in idempotent Activities.
+
 ## Source tree mapping
 
-| Boundary | Location | M2 content |
+| Boundary | Location | Current through M7 |
 |---|---|---|
-| Web adapter | `apps/web` | authenticated shell, platform pages and real M2 task center |
-| API adapters | `apps/api` | M1 platform adapters plus Temporal gateway, task repository/routes and reconcile |
-| Application boundary | `packages/application` | M1 ports plus vendor-neutral `WorkflowGatewayPort` |
-| Pure domain | `packages/domain` | platform vocabulary plus Workflow types/states/commands/stable IDs |
-| Public contracts | `packages/contracts` | M1/M2 Pydantic, JSON Schema, event payload and OpenAPI snapshots |
-| Client SDK | `packages/sdk` | typed Python/TypeScript platform and task API clients |
-| Workflow hosts | `workers/health`, `workers/kernel` | deterministic health plus seven M2 kernel Workflows/Activities |
-| Persistence evolution | `migrations` | M0/M1 foundations plus `0003_m2_temporal_kernel` |
-| Local deployment | `compose.yaml`, Dockerfiles | PostgreSQL/Redis/RustFS/Temporal/API/two Workers/Web |
+| Web adapter | `apps/web` | API-driven platform, Source, Schema/Pack, Compile/Wiki, Review, Quality, Release, Graph and Ask pages |
+| API adapters | `apps/api` | platform through M7 routes/repositories plus provider adapters |
+| Application boundary | `packages/application` | provider-neutral Workflow/Object/Parser/OCR/Model/Search/Vector/Graph ports |
+| Pure domain | `packages/domain` | platform through M7 deterministic rules and invariants |
+| Public contracts | `packages/contracts` | M1—M7 Pydantic, JSON Schema, event payload and OpenAPI snapshots |
+| Client SDK | `packages/sdk` | typed Python/TypeScript clients through M7 |
+| Workflow hosts | `workers/health`, `workers/kernel`, parser sandbox | deterministic Workflows through M7, trusted Activities and isolated parsing |
+| Persistence evolution | `migrations` | M0—M7 through additive `0008_m7` |
+| Local deployment | `compose.yaml`, Dockerfiles | accepted topology with final M7 API/Worker/Web code |
 
-M3 calibrated target mapping (not implemented): Source routes/repository remain in `apps/api`; vendor-neutral Parser/OCR ports in `packages/application`; Source/Parse contracts in `packages/domain`/`packages/contracts`; deterministic v2 Workflow and isolated parser Activities in the Worker boundary; additive persistence begins at `0004`.
+M4 implemented mapping: Schema/Semantic Model and Pack routes/repositories remain in `apps/api`; pure semantic objects/composition stay in `packages/domain`; public representations stay in `packages/contracts`; deterministic install orchestration stays in the Worker boundary; persistence is additive `0005_m4`. No independent Ontology service, table authority or `/ontologies` resource exists.
+
+M5 implemented mapping: Compile/Knowledge/Wiki routes and repository plus the local Model Gateway adapter remain in `apps/api`; provider-neutral Model Gateway contracts stay in `packages/application`; pure normalization/protection rules stay in `packages/domain`; deterministic compile orchestration stays in `workers/kernel`; persistence is additive `0006_m5`. Candidate knowledge remains in PostgreSQL authority, with no graph/search projection promoted to business truth.
+
+M6/M7 implemented mapping: Review and Release repositories remain in `apps/api`; Search/Vector/Graph ports stay in `packages/application`; Evidence/Release/RRF rules stay pure domain; HumanReview/QualityEvaluation/KnowledgeRelease v2 stay in `workers/kernel`; persistence is additive `0007_m6`/`0008_m7`. Release/Items remain authority and every graph/search artifact is rebuildable.
 
 ## Evolution constraints
 

@@ -1,5 +1,5 @@
 {
-  "version": "1.3",
+  "version": "1.9",
   "baseline_version": "1.0",
   "product": "NEXWEAVE",
   "files": [
@@ -60,6 +60,54 @@
       "adr": "ADR-0021",
       "scope": "M3 Source, parsing, versioning and SourceAnchor execution semantics",
       "decision": "Calibrate M3 against the accepted M0-M2 Stub, Raw, Workflow and contract baselines before business implementation"
+    },
+    {
+      "date": "2026-08-29",
+      "adr": "ADR-0022",
+      "scope": "M4 Semantic Model, SchemaVersion authority, Domain Pack composition and M5-M15 impact calibration",
+      "decision": "Use immutable SchemaVersion as the single R1 semantic authority, deterministically compose declarative Pack versions, calibrate M4 in detail and defer per-milestone M5-M15 taskbook edits until each dispatch gate"
+    },
+    {
+      "date": "2026-08-29",
+      "adr": "ADR-0023",
+      "scope": "M4 stable keys, canonical Pack artifacts, signatures, revocation, migration previews and declarative UI",
+      "decision": "Freeze the implementation-level M4 public contract before coding and reject executable or remote Pack extensions"
+    },
+    {
+      "date": "2026-08-30",
+      "adr": "ADR-0024",
+      "scope": "M5 fixed Compile inputs, Model Gateway, candidate knowledge and Wiki versioning",
+      "decision": "Keep generated knowledge in candidate state until M6 review and preserve provider-neutral, replayable Compile facts"
+    },
+    {
+      "date": "2026-08-30",
+      "adr": "ADR-0025",
+      "scope": "M6 formal Claim/Evidence, conflict decisions and staged HumanReview",
+      "decision": "Require accepted Evidence with VALID Anchor and duty-separated audited review before formal knowledge"
+    },
+    {
+      "date": "2026-08-31",
+      "adr": "ADR-0026",
+      "scope": "M7 quality evaluation, immutable Release, query, graph and rebuildable projection",
+      "decision": "Publish fixed evidence-backed manifests only after quality gates and independent approval; query exactly one immutable Release and roll back by pointer"
+    },
+    {
+      "date": "2026-08-31",
+      "adr": "ADR-0027/0028",
+      "scope": "M8 read-only Connector, Obsidian draft exchange and Wiki bidirectional-link graph",
+      "decision": "Keep Connector egress allowlisted and Obsidian writes in draft/conflict; keep the Wiki navigation graph separate from fixed-Release relations and defer GridCrew"
+    },
+    {
+      "date": "2026-09-01",
+      "adr": "ADR-0029",
+      "scope": "M9 Equipment RCA declarative Pack and real joint-pilot evidence boundary",
+      "decision": "Complete the signed local technical Pack without treating synthetic fixtures as real RCA, expert or GridCrew pilot evidence"
+    },
+    {
+      "date": "2026-09-01",
+      "adr": "ADR-0030",
+      "scope": "M9 public RCA candidate corpus and GridCrew joint-pilot deferral",
+      "decision": "Accession rights-scoped NTSB public reports for a NEXWEAVE-only technical pilot and remove deferred GridCrew work from M9 acceptance without claiming it complete"
     }
   ],
   "execution_profiles": {
@@ -69,5 +117,14 @@
       "replaces_formal_milestones": false,
       "next_profile": "local_real"
     }
-  }
+  },
+  "supplemental_tasks": [
+    {
+      "task": "11F_NEXWEAVE_阶段D_验收与可信边界收口.md",
+      "adr": "ADR-0036",
+      "status": "LOCAL_TECHNICALLY_VERIFIED",
+      "date": "2026-09-10",
+      "boundary": "M9.5; no M10 or industrial acceptance"
+    }
+  ]
 }

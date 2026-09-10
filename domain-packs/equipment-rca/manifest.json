@@ -1,0 +1,26 @@
+{
+  "apiVersion": "nexweave.io/domain-pack/v1alpha1",
+  "kind": "NexweaveDomainPack",
+  "canonicalizationAlgorithm": "RFC8785-JCS/1",
+  "metadata": {
+    "id": "equipment-rca-pack",
+    "version": "1.0.0",
+    "publisher": "NEXWEAVE",
+    "keyNamespace": "equipment.rca",
+    "description": "Evidence-backed equipment RCA knowledge schema, authoring policy and standard questions. Assists analysis; never performs automatic diagnosis or disposition."
+  },
+  "compatibility": {
+    "platform": ">=1.4.0 <2.0.0",
+    "semanticContract": ">=1.0.0 <2.0.0",
+    "dependencies": [{"id": "core-pack", "versionRange": ">=1.0.0 <2.0.0"}]
+  },
+  "content": {
+    "semantic": {"path": "semantic.json", "sha256": "sha256:cac270eb84042f719b50ca6575ba7368883153d67dde0da69dc9d2ff774d65bb"},
+    "authoring": {"path": "authoring.json", "sha256": "sha256:35e859ee53ad61cbf64135b028adfdd9e730633d63fbfaf30ad7bcf7ef20e340"},
+    "evaluation": {"path": "evaluation.json", "sha256": "sha256:b86886fa314c348c0a1fb0186e7f4e73f794f5067e7f3d7361796c8cab0aa3cc"}
+  },
+  "security": {
+    "executableContent": false,
+    "signature": {"algorithm": "Ed25519", "keyId": "nexweave-m9-equipment-rca-2026", "value": "xzuL6xWvPEA3rrdSYKYXaMOd7h4y2Oy0Rh3cmcbWLZufFjTXwoFUQ-3SGZ2EJ8sr6QZwxwba0ktuzKf3FcE8Dg"}
+  }
+}

@@ -1,6 +1,8 @@
-# M3 Dependency and Supply-chain Baseline
+# M4 Dependency and Supply-chain Baseline
 
 > M3 implementation adds only the isolated Parser Worker document libraries and the real ClamAV service described below. Preview is plain text, so the unused `nh3` dependency was removed. No real OCR Provider is selected.
+
+M4 adds no direct or transitive dependency. Ed25519 signing and verification use the already locked `cryptography==50.0.0`; canonical JSON, deterministic composition, semver ranges, migration preview and declarative UI validation are implemented in repository-owned typed code. No YAML parser, template engine, executable Pack runtime, RDF/OWL engine, graph database or remote Registry SDK was introduced. The removal alternative remains another audited Ed25519 implementation behind the same pure-domain bytes contract.
 
 All direct dependencies are exact-version pinned in `requirements/*.txt`, `package.json`, `pnpm-lock.yaml` and `compose.yaml`. Transitive JavaScript dependencies are integrity-locked by pnpm. Application Dockerfiles pin both the human-readable base-image version and the reviewed OCI index digest; production promotion consumes immutable multi-architecture digests rather than mutable tags.
 
@@ -49,14 +51,56 @@ pnpm 11 blocks lifecycle scripts by default. M0 explicitly allows only `esbuild`
 
 ## Container dependencies
 
-M2 Compose retains the accepted pinned Python 3.12.13, Node 24.19.0, Nginx 1.31.4/Alpine 3.24, pgvector 0.8.6/PostgreSQL 17, Redis 7.4.11, RustFS `1.0.0-rc.3`, and Temporal 1.29.6 images. Python, Node and Nginx Dockerfiles additionally pin the accepted OCI indexes `sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2`, `sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491f4857e25e35a36ba7995` and `sha256:db35bfc6b2951e7f8a72db5db120288c127ffaeeb4a6d4b95a26fead017d5913`. RustFS is Apache-2.0 licensed. The optional Temporal UI remains outside the acceptance surface. The M2 kernel Worker uses the same reviewed Python base and locked runtime set. M3 uses real ClamAV `1.4.3`, GPL-2.0 licensed, through clamd INSTREAM; unavailable, ambiguous or failed scan results fail closed. Because the development network cannot connect to Docker Hub Registry or its authentication endpoint, Compose builds `nexweave-clamav:1.4.3-deb12u2` from the already approved Python 3.12.13/Debian 12 base digest and installs exact Debian security package versions `clamav-daemon=1.4.3+dfsg-1~deb12u2` and `clamav-freshclam=1.4.3+dfsg-1~deb12u2` from the official Debian repository. FreshClam must update the persistent signature volume before clamd starts. This changes packaging provenance, not the scanner Provider or policy; the upstream `clamav/clamav:1.4.3` image remains the removal alternative when Docker Hub is reachable. On 2026-08-29 the running service reported ClamAV 1.4.3 with daily 28106, main 63 and bytecode 339, and the local ARM64 image passed Trivy 0.74.0 with zero fixable HIGH/CRITICAL findings using the current GHCR database. FreshClam also reported that upstream 1.4.6 is available; 1.4.3 remains deliberately locked to the approved M3 taskbook and any upgrade requires an isolated dependency change. Multi-architecture build, SBOM and signature evidence remain production-promotion gates.
+M2 Compose retains the accepted pinned Python 3.12.13, Node 24.19.0, Nginx 1.31.4/Alpine 3.24, pgvector 0.8.6/PostgreSQL 17, Redis 7.4.11, RustFS `1.0.0-rc.4`, and Temporal 1.29.6 images. Python, Node and Nginx Dockerfiles additionally pin the accepted OCI indexes `sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2`, `sha256:244cc2b53f46f9e876304391d17682b0ddae9ac33491f4857e25e35a36ba7995` and `sha256:db35bfc6b2951e7f8a72db5db120288c127ffaeeb4a6d4b95a26fead017d5913`; the Web runtime also refreshes Alpine packages at build time to receive fixed security packages. RustFS is Apache-2.0 licensed. The optional Temporal UI remains outside the acceptance surface. The M2 kernel Worker uses the same reviewed Python base and locked runtime set. M3 uses real ClamAV `1.4.3`, GPL-2.0 licensed, through clamd INSTREAM; unavailable, ambiguous or failed scan results fail closed. Because the development network cannot connect to Docker Hub Registry or its authentication endpoint, Compose builds `nexweave-clamav:1.4.3-deb12u2` from the already approved Python 3.12.13/Debian 12 base digest and installs exact Debian security package versions `clamav-daemon=1.4.3+dfsg-1~deb12u2` and `clamav-freshclam=1.4.3+dfsg-1~deb12u2` from the official Debian repository. FreshClam must update the persistent signature volume before clamd starts. This changes packaging provenance, not the scanner Provider or policy; the upstream `clamav/clamav:1.4.3` image remains the removal alternative when Docker Hub is reachable. On 2026-08-29 the running service reported ClamAV 1.4.3 with daily 28106, main 63 and bytecode 339, and the local ARM64 image passed Trivy 0.74.0 with zero fixable HIGH/CRITICAL findings using the current GHCR database. FreshClam also reported that upstream 1.4.6 is available; 1.4.3 remains deliberately locked to the approved M3 taskbook and any upgrade requires an isolated dependency change. Multi-architecture build, SBOM and signature evidence remain production-promotion gates.
 
-RustFS `1.0.0-rc.3` is tied to official Git tag commit `1aae6803739a5bac67e0d702ac46d43f09fb06dd`. The official Quay OCI index was verified on 2026-08-24: index digest `sha256:800cf3f352a0a27e3275ca854a51f0027975d7acc7a0d52089a35bcc9fcbf0b5`, `linux/amd64` digest `sha256:1aba56126e19f6b0791560710251c946ef0674b6a5130ae9889c3b15208dd0fb`, and `linux/arm64` digest `sha256:97801eaeb7d22d9138230b273bff2e1539b81c42fa5be56d94ff0ce8ccfb59b3`. The native ARM64 image was pulled successfully and a disposable container verified non-root UID/GID `10001:10001` can write `/data`. Cosign found no upstream signature or SBOM artifacts on that index; attestation-shaped manifests alone are not treated as provenance. SPK-004 S3 compatibility/recovery passed and the ARM64 Trivy 0.74.0 gate found zero fixable HIGH/CRITICAL vulnerabilities. GitHub CI therefore copies only the exact index into GHCR, validates both architectures, generates per-architecture CycloneDX/CVE evidence and signs the digest as a NEXWEAVE internal approval. RustFS is still an RC; distributed/HA and production DR claims remain gated by later Milestones.
+RustFS `1.0.0-rc.4` is tied to official Git tag commit `44f3f0e73ef4ced4dc6674df8c467071d67f324b`. The official Quay OCI index was verified on 2026-08-29: index digest `sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b`, `linux/amd64` digest `sha256:6c063491cb01e6e8c0cc605c3806542f288dd3925519225d32c0bdd97630d834`, and `linux/arm64` digest `sha256:93684db5b4878907b46ca224a3c05c1aec7123b44dc89e29b369c6d77c3e28a5`. The official RC4 index was fetched and a local amd64 Trivy 0.74.0 scan found zero fixable HIGH/CRITICAL vulnerabilities; full SPK-004 and CI evidence remain required. Cosign found no upstream signature or SBOM artifacts on the index; NEXWEAVE signs the exact digest as internal approval only. RustFS is still an RC; distributed/HA and production DR claims remain gated by later Milestones.
 
 The container gate uses official Trivy `0.74.0` at index `sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969` and Cosign `3.0.2`. All third-party GitHub Actions are pinned to immutable commit SHAs. The policy rejects fixable HIGH/CRITICAL findings; exceptions require separate time-bounded approval and must not be implemented as an unreviewed global ignore.
 
 The 2026-08-29 result above is a real local ARM64 image CVE scan, not multi-architecture promotion evidence. Acceptance must retain the actual `pip-audit`, CycloneDX/SBOM, container CVE and provenance outputs. Any fixable unapproved HIGH/CRITICAL result blocks M3. No OCR model, language pack or Provider may be claimed until its version, model origin, license, maintenance, CPU/memory, offline and replacement plan is added here and verified end-to-end.
 
+M7 adds no third-party dependency. PostgreSQL full-text search uses PostgreSQL 17 and vector projection uses the already pinned `pgvector/pgvector:0.8.6-pg17-trixie` image; Temporal, Python and Web dependencies remain the accepted locked set. The local deterministic embedding provider is a test/development boundary and is not presented as an external model. Alternative OpenSearch/Milvus/graph providers remain replaceable ports and were not installed.
+
 ## Update and removal rule
 
 Renovation is deliberate, one dependency family per change. CI must pass format, lint, typecheck, unit, contract, migration, Web build, dependency audit and real Compose verification. Domain/contracts/Workflow code must never absorb a dependency merely because an adapter already uses it.
+
+## M9.5 optional local forecast runtime (2026-09-08)
+
+ADR-0032 adds an isolated CPU-only host worker. The API image does not install these model
+libraries. Exact direct pins live in `requirements/forecast.txt`; complete installed transitive
+pins are in `requirements/forecast.lock` (Python 3.12, macOS ARM64 baseline).
+
+| Package | Version | License | Purpose / replacement |
+|---|---|---|---|
+| chronos-forecasting | 2.3.1 | Apache-2.0 | Initial provider; replace with another TimeSeriesModelProvider |
+| torch | 2.13.0 | BSD-3-Clause | Local inference tensor runtime; provider-local |
+| transformers | 5.10.4 | Apache-2.0 | Chronos model loading; provider-local |
+| accelerate | 1.12.0 | Apache-2.0 | CPU model loading support |
+| pandas | 2.3.3 | BSD-3-Clause | Provider-local dataframe preparation |
+| numpy | 2.3.5 | BSD-3-Clause | Numeric runtime; bundled third-party notices also apply |
+
+Model: `amazon/chronos-2`, Apache-2.0, official revision
+`29ec3766d36d6f73f0696f85560a422f50e8498c`.
+Weights SHA-256 `ddcda3c7508bf2528087723e98a20707cc04b7f370ae275a9fd88078ddba4f42`;
+config SHA-256 `ef1143bfdc9c0376d9a056eefca46cb4b1ec3d0ffacd541ff56feb40fb708031`.
+Official provenance: https://huggingface.co/amazon/chronos-2/blob/main/model.safetensors
+and https://github.com/amazon-science/chronos-forecasting . Direct HF connectivity timed out;
+initial public bytes used hf-mirror.com transport and were verified against pinned hashes.
+The provider enforces both hashes, local_files_only and trust_remote_code=False; no arbitrary
+model URLs, pickle uploads or remote model Python are accepted.
+
+Initial Torch 2.8.0 / Transformers 4.57.6 scan found 13 known advisories. Those pins were replaced
+with the versions above. Repeated pip-audit of the complete optional lock on 2026-09-08 found
+no known vulnerabilities. This is a point-in-time advisory scan, not a production approval,
+full binary attestation, all-platform lock or container supply-chain certification. Official
+registry dependency origins, model integrity, bounded CSV input and local execution are the
+current controls; full wheel hashes/SBOM/containerized production inference remain follow-up.
+Keep model weights and the virtual environment out of Git. Real industrial suitability,
+license distribution notices, CPU/memory concurrency budgets and offline deployment packaging
+must be validated before production/customer deployment. Persistence is only a transparent
+benchmark; TimesFM, private and industrial providers remain architecture alternatives.
+
+### 2026-09-09 阶段 A
+
+本轮无新增第三方依赖。进程锁、信号、监督循环使用 Python 标准库；持久投递与心跳复用既有 SQLAlchemy/asyncpg/Temporal。Chronos 可选运行环境、模型 revision/哈希和锁定依赖沿用 M9.5，不扩大网络或供应链范围。`fcntl` 本地管理器适用于当前 macOS/Linux，Windows 需另行适配，不声称已支持。

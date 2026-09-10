@@ -6,12 +6,13 @@
 > 执行对象：Codex  
 > 上位基线：NEXWEAVE PRD V1.0、高保真原型 V1.0、M-1/M0后已批准架构与契约、完整开发任务总纲  
 > 阶段原则：只执行本Milestone，完成后停止
+> 执行校准：用户于 2026-08-31 正式下发 M8 并确认 ADR-0027 的保守 Connector/Obsidian 边界；GridCrew 集成因对端仍处规划期，明确延期且不在本次实现或验收范围内。
 
 ---
 
 ## 1. 阶段定位
 
-把NEXWEAVE从独立产品扩展为可被企业资料源、专家工具和GridCrew稳定调用的知识底座。
+把NEXWEAVE扩展为可被受控企业资料源和专家工具稳定使用的知识底座；GridCrew 对接保持规划，不在本阶段实施。
 
 ---
 
@@ -28,7 +29,7 @@
 1. 实现Connector SPI、凭据、同步计划、水位、字段映射、重试与调用审计。
 2. 实现文件系统、S3、Web/REST、Git等首批连接器。
 3. 实现Obsidian安全导入/导出与页面打开适配。
-4. 实现GridCrew只读集成：知识包绑定Skill、Release查询、证据读取、关系遍历和发布事件。
+4. GridCrew只读集成（知识包绑定Skill、Release查询、证据读取、关系遍历和发布事件）按用户指令延期，不实现、不验收，也不得以 Mock 冒充。
 
 ---
 
@@ -63,10 +64,7 @@
 - Obsidian不是权威状态源；任何回写进入草稿/审核流程。
 ### GridCrew集成
 
-- Knowledge Pack→Skill映射清单，Skill绑定space_id、release_id、权限和查询策略。
-- 实现query、evidence、graph、release metadata API及SDK。
-- 发布、废止、Pack升级事件通过Webhook/Event推送。
-- 身份透传、服务身份、租户映射、correlation_id和双平台审计。
+- 延期：GridCrew 尚处规划期。本次不实现 Knowledge Pack→Skill 映射、对端 API/SDK、Webhook、身份透传或租户映射；保留 ADR-0001/0011 的独立部署和固定 Release 原则。
 ### 开发者体验
 
 - OpenAPI、TypeScript/Python SDK、示例应用、Webhook签名、速率限制与沙箱。
@@ -109,7 +107,7 @@
 
 ## 9. 阶段交付物
 
-- Connector SDK和首批连接器、Obsidian适配器、GridCrew Knowledge SDK。
+- Connector SDK和首批连接器、Obsidian适配器；GridCrew Knowledge SDK 已明确延期。
 - 集成契约测试与演示场景。
 
 同时必须交付：
@@ -126,7 +124,7 @@
 
 - [ ] 外部资料同步产生标准SourceVersion，不直接生成正式知识。
 - [ ] Obsidian修改回导生成diff/冲突，不能覆盖Release。
-- [ ] GridCrew可绑定固定Release完成带引用问答，并展示知识版本。
+- [ ] GridCrew可绑定固定Release完成带引用问答，并展示知识版本。（延期，不作为本次验收项）
 - [ ] 连接器凭据不进入日志、数据库明文或前端。
 - [ ] 全局CI门禁通过；
 - [ ] 无新增P0安全、架构、证据或版本问题；

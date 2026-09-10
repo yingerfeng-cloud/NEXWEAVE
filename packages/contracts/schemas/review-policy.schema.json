@@ -1,0 +1,105 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "allow_batch": {
+      "default": false,
+      "title": "Allow Batch",
+      "type": "boolean"
+    },
+    "batch_limit": {
+      "default": 1,
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Batch Limit",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "escalation_role": {
+      "default": "space_admin",
+      "enum": [
+        "space_admin",
+        "tenant_admin"
+      ],
+      "title": "Escalation Role",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "risk_level": {
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "title": "Risk Level",
+      "type": "string"
+    },
+    "source_authority_rules": {
+      "additionalProperties": true,
+      "title": "Source Authority Rules",
+      "type": "object"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "stages": {
+      "items": {
+        "enum": [
+          "ENGINEERING",
+          "EXPERT",
+          "APPROVAL"
+        ],
+        "type": "string"
+      },
+      "title": "Stages",
+      "type": "array"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "timeout_seconds": {
+      "maximum": 2592000,
+      "minimum": 60,
+      "title": "Timeout Seconds",
+      "type": "integer"
+    },
+    "version": {
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "risk_level",
+    "stages",
+    "timeout_seconds",
+    "id",
+    "tenant_id",
+    "space_id",
+    "version",
+    "status",
+    "created_at",
+    "created_by"
+  ],
+  "title": "ReviewPolicyResponse",
+  "type": "object"
+}

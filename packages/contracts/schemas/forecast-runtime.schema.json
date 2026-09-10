@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "delivery_pending": {
+      "title": "Delivery Pending",
+      "type": "integer"
+    },
+    "implementation_version": {
+      "title": "Implementation Version",
+      "type": "string"
+    },
+    "queued": {
+      "title": "Queued",
+      "type": "integer"
+    },
+    "running": {
+      "title": "Running",
+      "type": "integer"
+    },
+    "worker_count": {
+      "title": "Worker Count",
+      "type": "integer"
+    },
+    "worker_status": {
+      "enum": [
+        "AVAILABLE",
+        "UNAVAILABLE"
+      ],
+      "title": "Worker Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "worker_status",
+    "worker_count",
+    "queued",
+    "running",
+    "delivery_pending",
+    "implementation_version"
+  ],
+  "title": "ForecastRuntime",
+  "type": "object"
+}

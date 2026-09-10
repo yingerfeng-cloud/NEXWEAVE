@@ -1,0 +1,66 @@
+{
+  "$defs": {
+    "SchemaPackReference": {
+      "additionalProperties": false,
+      "properties": {
+        "content_checksum": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Checksum",
+          "type": "string"
+        },
+        "domain_pack_version_id": {
+          "format": "uuid7",
+          "title": "Domain Pack Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "domain_pack_version_id",
+        "content_checksum"
+      ],
+      "title": "SchemaPackReference",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "composition_checksum": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Composition Checksum",
+      "type": "string"
+    },
+    "pack_inputs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SchemaPackReference"
+      },
+      "maxItems": 32,
+      "title": "Pack Inputs",
+      "type": "array"
+    },
+    "schema_definition_id": {
+      "format": "uuid7",
+      "title": "Schema Definition Id",
+      "type": "string"
+    },
+    "schema_version_id": {
+      "format": "uuid7",
+      "title": "Schema Version Id",
+      "type": "string"
+    },
+    "semantic_version": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Semantic Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_definition_id",
+    "schema_version_id",
+    "semantic_version",
+    "composition_checksum"
+  ],
+  "title": "SchemaPublishedEventData",
+  "type": "object"
+}

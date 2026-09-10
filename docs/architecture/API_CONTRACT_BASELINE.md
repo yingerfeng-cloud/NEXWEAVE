@@ -1,6 +1,6 @@
 # API Contract Baseline
 
-> 公共前缀：`/api/v1`。M1/M2 端点已实现并验收。M3 Source API 已由 ADR-0021/校准任务书批准，但以下 M3 路径仍是待实现契约，不得与通用 M2 Kernel Stub 混为已完成能力。
+> 公共前缀：`/api/v1`。M1—M7 端点已实现并正式验收；M7 Quality/Release/Graph/Query API 已通过本地契约与隔离真实 E2E 技术验收。远程 CI 未在无提交授权下伪称执行。
 > 所有写请求必须包含授权、审计、乐观锁/前置条件和幂等策略；异步请求返回业务对象 ID 与 Workflow ID。
 
 ## M0 已实现的平台端点
@@ -84,41 +84,53 @@
 | `POST /source-versions/{id}/invalidate` | `source.invalidate` | command key | reason → new state | 同步 | M3 |
 | `POST /spaces/{space_id}/schemas` | `schema.edit` | key | SchemaCreate → definition/version | 同步 | M4 |
 | `GET /schemas/{schema_id}/versions/{version}` | `schema.read` | GET | SchemaVersion | 同步 | M4 |
-| `POST /schemas/{schema_id}/versions/{version}/validate` | `schema.edit` | content hash | Schema draft → compatibility report | 同步/异步 | M4 |
-| `POST /schemas/{schema_id}/versions/{version}/publish` | `schema.publish` + approval | command key + etag | approval → published SchemaVersion | 异步 | M4 |
+| `GET /schemas/{schema_id}/versions/{version}/semantic-model` | `schema.read` | GET | normalized types/properties/hierarchy/relations/terms/mappings + composition checksum | 同步；SchemaVersion 的只读逻辑视图 | M4 |
+| `POST /schemas/{schema_id}/compose` | `schema.edit` | command key | exact PackVersion refs + local declarations → SchemaCompositionReport/new draft snapshot | 同步；不得发布 | M4 |
+| `GET /schema-composition-reports/{report_id}` | `schema.read` | GET | inputs/conflicts/compatibility/impact/checksum | 同步 | M4 |
+| `POST /schemas/{schema_id}/versions/{version}/validate` | `schema.validate` | content hash | Schema draft → compatibility report | 同步 | M4 |
+| `POST /schemas/{schema_id}/versions/{version}/publish` | `schema.publish` | command key + etag | validated draft → published SchemaVersion | 同步；职责分离由授权身份验证 | M4 |
 | `POST /spaces/{space_id}/compile-jobs` | `compile.create` | scope+schema+config key | CompileRequest → CompileJob/workflow | 异步 | M5 |
-| `GET /compile-jobs/{job_id}` | `compile.read` | GET | job, steps, errors, cost summary | 同步 | M2/M5 |
-| `POST /compile-jobs/{job_id}/pause` | `compile.control` | command key | state transition | 异步 update | M2/M5 |
-| `POST /compile-jobs/{job_id}/resume` | `compile.control` | command key | state transition | 异步 update | M2/M5 |
-| `POST /compile-jobs/{job_id}/cancel` | `compile.control` | command key | cancellation result | 异步 | M2/M5 |
-| `GET /spaces/{space_id}/wiki/pages` | `page.read.draft/release` | GET | Page page + version scope | 同步 | M5 |
-| `GET /wiki/pages/{page_id}/versions/{version_id}` | version-scope permission | GET | WikiPageVersion + evidence links | 同步 | M5 |
+| `GET /spaces/{space_id}/compile-jobs` | `compile.read` | GET | CompileJob list | 同步 | M5 |
+| `GET /compile-jobs/{job_id}` | `compile.read` | GET | job, fixed inputs, steps, errors, cost/result summary | 同步 | M2/M5 |
+| `GET /spaces/{space_id}/wiki/pages` | `page.read` | GET | stable Page identities + current draft refs | 同步 | M5 |
+| `GET /wiki/pages/{page_id}` | `page.read` | GET | current draft, links/backlinks, safe Evidence candidate metadata, comments/follow state | 同步 | M5 |
+| `GET /wiki/pages/{page_id}/versions` | `page.read` | GET | append-only WikiPageVersion list | 同步 | M5 |
+| `GET /wiki/pages/{page_id}/versions/{version_id}` | `page.read` | GET | fixed WikiPageVersion | 同步 | M5 |
 | `PATCH /wiki/pages/{page_id}/drafts/{version_id}` | `page.edit` | `If-Match` | edits/diff → new page version | 同步 | M5 |
 | `GET /wiki/pages/{page_id}/diff` | `page.read` | GET | version diff | 同步 | M5 |
+| `POST /wiki/pages/{page_id}/comments` | `page.comment` | append-only | comment body → WikiComment | 同步 | M5 |
+| `PUT/DELETE /wiki/pages/{page_id}/follow` | `page.read` | resource PUT/DELETE | current actor follow state | 同步 | M5 |
 | `GET /spaces/{space_id}/entities` | `knowledge.read` | GET | entities by schema/release | 同步 | M5/M7 |
-| `GET /spaces/{space_id}/relations` | `knowledge.read` | GET | relations + evidence status | 同步 | M5/M7 |
-| `GET /spaces/{space_id}/claims` | `claim.read` | GET | claims with scope/status | 同步 | M6 |
-| `GET /evidence/{evidence_id}` | `evidence.read` + source ACL | GET | Evidence + anchor metadata | 同步 | M6 |
-| `GET /evidence/{evidence_id}/content` | `evidence.content.read` + source ACL | GET | permitted excerpt/highlight | 同步 | M6 |
+| `GET /spaces/{space_id}/claims` | `claim.read` | GET | approved Claim with scope/status/provenance | 同步 | M6 |
+| `GET /claims/{claim_id}/evidence` | `claim.read` + source ACL | GET | accepted Evidence with SourceAnchor metadata | 同步 | M6 |
 | `GET /spaces/{space_id}/conflicts` | `conflict.read` | GET | conflict queue | 同步 | M6 |
-| `POST /conflicts/{id}/resolve` | `conflict.resolve` + separation | command key + etag | resolution/evidence/reason → state | Workflow update | M6 |
-| `GET /spaces/{space_id}/reviews` | `review.read` | GET | review queue | 同步 | M6 |
-| `POST /reviews/{id}/claim` | `review.act` | command key | assignment result | Workflow update | M6 |
-| `POST /reviews/{id}/actions` | `review.act` | action key + etag | accept/edit/reject/request-input | Workflow update | M6 |
-| `POST /approvals/{id}/decide` | designated approver | command key + etag | approve/reject + reason | Workflow update | M6/M7 |
+| `POST /spaces/{space_id}/conflicts/detect` | `conflict.resolve` | command key | M5 candidates → M6 cluster cases; preserves originals | 同步 | M6 |
+| `POST /conflicts/{id}/decisions` | `conflict.resolve` | command key | append resolution/evidence snapshot/reason → state | 同步 + audit | M6 |
+| `POST /spaces/{space_id}/review-policies` | `review.policy.manage` | command key | versioned risk/stage/timeout/batch policy | 同步 | M6 |
+| `GET /spaces/{space_id}/review-cases` | `review.read` | GET | review queue and Temporal-linked tasks | 同步 | M6 |
+| `POST /spaces/{space_id}/review-cases` | `review.create` | command key | candidate + policy → ReviewCase/HumanReview v2 | 异步 | M6 |
+| `POST /review-cases/{case_id}/tasks/{task_id}/actions` | `review.act` | action key | accept/modify/reject/request-evidence/transfer | Workflow signal + audit | M6 |
 | `POST /spaces/{space_id}/evaluations/runs` | `evaluation.run` | suite+target+config key | EvaluationRequest → run/workflow | 异步 | M7 |
 | `GET /evaluations/runs/{id}` | `evaluation.read` | GET | metrics/errors/config versions | 同步 | M7 |
 | `POST /spaces/{space_id}/release-candidates` | `release.create` | content manifest key | scope/version → candidate | 异步 | M7 |
 | `POST /release-candidates/{id}/publish` | `release.publish` + approval | command key + etag | publish command → workflow | 异步 | M7 |
 | `GET /spaces/{space_id}/releases` | `release.read` | GET | release history | 同步 | M7 |
 | `GET /releases/{release_id}` | `release.read` | GET | immutable manifest/metadata | 同步 | M7 |
+| `GET /releases/{release_id}/export` | `release.read` | GET | immutable JSON/Markdown release export | 同步 | M7 |
+| `POST /releases/{release_id}/projections/rebuild` | `release.publish` | command key | rebuild FTS/vector projection from Release | 同步 + audit | M7 |
+| `GET /spaces/{space_id}/release-pointer` | `release.read` | GET | channel pointer/version | 同步 | M7 |
 | `POST /spaces/{space_id}/release-pointer` | `release.rollback/switch` | command key + etag | target release → pointer | 异步 | M7 |
 | `GET /releases/{release_id}/graph/traverse` | `query.release` | GET/query hash | nodes/edges/evidence refs | 同步 | M7 |
 | `POST /releases/{release_id}/queries` | `query.release` | client request ID | question/filters → QueryAnswer/Citations | 同步或 async handle | M7 |
 | `GET /query-answers/{answer_id}` | answer owner/audit | GET | reproducible answer | 同步 | M7 |
 | `GET /domain-packs` | `pack.read` | GET | compatible Pack versions | 同步 | M4 |
+| `POST /domain-pack-trust-keys` | `governance.manage` | command key | Ed25519 public trust root | 同步 | M4 |
+| `POST /domain-packs` | `governance.manage` | artifact key | signed manifest + declarations → immutable PackVersion | 同步 | M4 |
+| `POST /domain-pack-revocations/import` | `governance.manage` | evidence key | signed offline revocation list → revocation facts | 同步接受 | M4 |
 | `POST /spaces/{space_id}/domain-pack-installations` | `pack.install` + approval | space+pack version key | InstallRequest → installation/workflow | 异步 | M4 |
-| `POST /installations/{id}/rollback` | `pack.rollback` | command key | rollback target → workflow | 异步 | M4 |
+| `GET /domain-pack-installations/{id}` | `pack.read` | GET | exact PackVersion/checksum, dependency resolution, candidate/published SchemaVersion, report | 同步 | M4 |
+| `POST /spaces/{space_id}/domain-pack-installations/{id}/disable` | `pack.rollback` | command key | active installation → recomposed candidate/workflow | 异步 | M4 |
+| `POST /spaces/{space_id}/domain-pack-installations/rollback` | `pack.rollback` | command key | exact historical target → workflow | 异步 | M4 |
 | `POST /spaces/{space_id}/connectors` | `connector.manage` | key | config + CredentialRef → Connector | 同步 | M8 |
 | `POST /connectors/{id}/sync-runs` | `connector.run` | connector+watermark key | sync request → workflow | 异步 | M8 |
 | `GET /connectors/{id}/sync-runs/{run_id}` | `connector.read` | GET | status/errors/watermark | 同步 | M8 |
@@ -135,4 +147,12 @@
 - 产生副作用的命令使用 `Idempotency-Key`；可变资源写入使用 `If-Match`；列表使用 opaque cursor；异步命令返回 operation/business ID + Workflow ID。
 - 同 major 只允许增加可选字段或新路径。删除、改义、收紧枚举和 Release/Evidence/SourceAnchor 语义变化必须 ADR + 新 major/迁移窗口。
 
-M3 校准补充：Source 业务端点必须启动/关联 `nexweave.source-ingestion.v2` 与 ParseJob，不能要求客户端使用通用 M2 Stub 创建业务结果；v1 路径/历史保持 Replay。M3 新错误码、事件和 SDK 仍须在实现时进入 canonical contracts 与生成物门禁，当前文档不等于 OpenAPI 已实现。
+M3 实现补充：Source 业务端点已启动/关联 `nexweave.source-ingestion.v2` 与 ParseJob，不要求客户端使用通用 M2 Stub 创建业务结果；v1 路径/历史保持 Replay。M3 错误码、事件、OpenAPI/JSON Schema 和 SDK 已进入 canonical contracts 与生成物门禁并完成本地、远程验证；M3 已于 2026-08-29 正式验收。
+
+M4 语义模型实现补充：公共资源权威是 `/schemas` 与 `/domain-packs`，R1 无 `/ontologies`。`semantic-model` 是不可变 SchemaVersion 的只读表示；compose/validate 固定 PackVersion/checksum 与本地声明并返回确定性 checksum、冲突和影响报告。Pack 安装只生成 DRAFT 候选，不自动发布。上述路径已进入 OpenAPI/JSON Schema/SDK/权限/幂等和本地契约/E2E 门禁。
+
+M5 实现补充：Compile 创建时服务端固定已发布 SchemaVersion/composition checksum、排序后的 SourceVersion/checksum/ParseJob、PromptVersion 与 ModelProfile；运行中不可换参。失败或取消后的人工“重试”创建新的 `RECOMPILE` CompileJob，而非覆盖旧任务。M5 不另行暴露 Compile pause/resume/cancel 业务路由；通用 M2 Stub 控制语义不得冒充 M5 Compile 控制能力。Wiki 编辑以强 ETag 和幂等键创建追加版本，只允许修改保护区/属性，编译生成区不可由编辑接口覆盖。M5 输出全部保持候选态，不提供 M6 审核、冲突解决或正式发布接口。
+
+M6 实现补充：`ClaimCandidate`/`EvidenceCandidate` 仅经 ReviewCase 完整阶段后复制为正式 Claim/Evidence；批准时服务端验证至少一条 `VALID` SourceAnchor Evidence。`nexweave.human-review.v1` 保留历史 Stub，新增 `v2` 等待最终可审计决策。冲突候选显式投影为保留双方快照的 ConflictCase；未决阻断项不能被后续 Release 绕过。
+
+M7 实现补充：EvaluationSuite/Run 固定 Schema、目标、策略与逐题结果；ReleaseCandidate 显式锁定正式对象、Evidence/Anchor、Schema composition、Prompt、Model、Suite 和索引配置。KnowledgeRelease v2 在门禁通过后等待独立 Publisher，再原子固化 Release/Items/投影/Pointer/Outbox。Query 路径必须显式 Release ID，客户端请求 ID 幂等复现回答，检索执行密级、Evidence 与 VALID Anchor 过滤；证据不足返回无 Citation 的拒答。回滚只用强 ETag 移动 Pointer。

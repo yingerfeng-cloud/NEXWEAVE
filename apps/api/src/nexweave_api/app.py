@@ -1,34 +1,49 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-from typing import Any
+from contextlib import asynccontextmanager, suppress
+from typing import Any, cast
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from opentelemetry import trace
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp
 
 from nexweave_api.database import Database
 from nexweave_api.errors import ApiProblem
+from nexweave_api.forecast_execution import ForecastExecution
+from nexweave_api.forecast_gateway import ForecastModelGateway
+from nexweave_api.forecast_recovery import ForecastRecovery
+from nexweave_api.forecast_repository import ForecastRepository
+from nexweave_api.forecast_routes import router as forecast_router
 from nexweave_api.health import (
     DefaultInfrastructureProbe,
     InfrastructureProbe,
     ReadinessReport,
 )
 from nexweave_api.identity import LocalDevIdentityProvider, OidcIdentityProvider
+from nexweave_api.integration_repository import IntegrationRepository
+from nexweave_api.integration_routes import router as integration_router
+from nexweave_api.knowledge_routes import router as knowledge_router
 from nexweave_api.m1_routes import router as m1_router
 from nexweave_api.object_storage import ClamAvInstreamMalwareScanner, S3ObjectStorage
+from nexweave_api.release_routes import router as release_router
 from nexweave_api.repository import PlatformRepository
+from nexweave_api.review_routes import router as review_router
+from nexweave_api.semantic_routes import router as semantic_router
 from nexweave_api.settings import Settings, get_settings
-from nexweave_api.source_repository import SourceRepository
 from nexweave_api.source_routes import router as source_router
 from nexweave_api.telemetry import configure_telemetry
+from nexweave_api.trace_boundary import RequestTraceIsolation
 from nexweave_api.workflow_gateway import TemporalWorkflowGateway
 from nexweave_api.workflow_routes import router as workflow_router
 from nexweave_contracts import ProblemDetails
+from nexweave_contracts.runtime import IMPLEMENTATION_VERSION, MILESTONE, PHASE
+from nexweave_domain import SemanticRuleViolation
 
 LOGGER = logging.getLogger("nexweave.api")
 
@@ -47,7 +62,7 @@ def create_app(
     manage_runtime_services = infrastructure_probe is None
     probe = infrastructure_probe or DefaultInfrastructureProbe(resolved_settings)
     resolved_database = database or Database(resolved_settings)
-    resolved_repository = repository or SourceRepository(resolved_database)
+    resolved_repository = repository or IntegrationRepository(resolved_database)
     resolved_identity_provider = identity_provider or (
         OidcIdentityProvider(resolved_settings)
         if resolved_settings.identity_provider == "oidc"
@@ -70,17 +85,38 @@ def create_app(
             and resolved_settings.object_store_secret_key
         ):
             await resolved_object_storage.ensure_bucket()
+        recovery_task = None
+        if manage_runtime_services:
+            forecast_repository = ForecastRepository(
+                resolved_database,
+                cast(IntegrationRepository, resolved_repository),
+                resolved_settings,
+            )
+            recovery = ForecastRecovery(
+                forecast_repository,
+                resolved_workflow_gateway,
+                ForecastExecution(
+                    forecast_repository,
+                    resolved_object_storage,
+                    ForecastModelGateway(resolved_settings),
+                ),
+            )
+            recovery_task = asyncio.create_task(recovery.run())
         try:
             yield
         finally:
+            if recovery_task:
+                recovery_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await recovery_task
             await resolved_workflow_gateway.close()
             await probe.close()
             await resolved_database.close()
 
     application = FastAPI(
         title="NEXWEAVE Platform API",
-        version="1.3.0-m3",
-        description="M3 immutable Source, secure parsing and authorized preview APIs.",
+        version=IMPLEMENTATION_VERSION,
+        description="R1 trusted knowledge with M9.5 Stage D trusted-read consolidation.",
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
         lifespan=lifespan,
@@ -92,9 +128,18 @@ def create_app(
     application.state.object_storage = resolved_object_storage
     application.state.malware_scanner = resolved_scanner
     application.state.workflow_gateway = resolved_workflow_gateway
+    application.state.forecast_repository = ForecastRepository(
+        resolved_database, cast(IntegrationRepository, resolved_repository), resolved_settings
+    )
+    application.include_router(forecast_router)
     application.include_router(m1_router)
     application.include_router(workflow_router)
     application.include_router(source_router)
+    application.include_router(semantic_router)
+    application.include_router(knowledge_router)
+    application.include_router(review_router)
+    application.include_router(release_router)
+    application.include_router(integration_router)
 
     @application.middleware("http")
     async def trace_context(request: Request, call_next: Any) -> Response:
@@ -131,6 +176,33 @@ def create_app(
         )
         return JSONResponse(
             status_code=problem.status,
+            content=problem.model_dump(mode="json"),
+            media_type="application/problem+json",
+        )
+
+    @application.exception_handler(SemanticRuleViolation)
+    async def semantic_problem(request: Request, exc: SemanticRuleViolation) -> JSONResponse:
+        status_code = 422
+        if exc.code in {
+            "PACK_DEPENDENCY_CONFLICT",
+            "PACK_COMPOSITION_CONFLICT",
+            "SEMANTIC_MAPPING_AMBIGUOUS",
+            "SCHEMA_BREAKING_CHANGE",
+        }:
+            status_code = 409
+        if exc.code in {"PACK_SIGNATURE_INVALID", "PACK_REVOKED"}:
+            status_code = 403
+        problem = ProblemDetails(
+            type=f"https://docs.nexweave.local/problems/{exc.code.lower().replace('_', '-')}",
+            title="Semantic model request rejected",
+            status=status_code,
+            detail=exc.detail,
+            instance=str(request.url.path),
+            code=exc.code,
+            trace_id=getattr(request.state, "trace_id", None),
+        )
+        return JSONResponse(
+            status_code=status_code,
             content=problem.model_dump(mode="json"),
             media_type="application/problem+json",
         )
@@ -216,7 +288,9 @@ def create_app(
         return {
             "product": "NEXWEAVE",
             "release": "R1",
-            "milestone": "M3",
+            "milestone": MILESTONE,
+            "phase": PHASE,
+            "implementation_version": IMPLEMENTATION_VERSION,
             "build_version": resolved_settings.build_version,
         }
 
@@ -225,6 +299,13 @@ def create_app(
         return {"configuration": resolved_settings.diagnostics()}
 
     configure_telemetry(application, resolved_database.engine, resolved_settings)
+    original_build = application.build_middleware_stack
+
+    def isolated_build() -> ASGIApp:
+        return RequestTraceIsolation(original_build())
+
+    # Outer ASGI boundary must run before the instrumentor's server-span middleware.
+    application.build_middleware_stack = isolated_build  # type: ignore[method-assign]
     return application
 
 

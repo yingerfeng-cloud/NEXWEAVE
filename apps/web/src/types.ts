@@ -91,6 +91,195 @@ export type GovernanceObject = {
   status: string;
   version?: number;
   revision?: number;
+  provider?: string;
+  space_id?: string | null;
+};
+
+export type ConnectorInstance = {
+  id: string;
+  name: string;
+  kind: "FILESYSTEM" | "S3" | "WEB_REST" | "GIT";
+  status: string;
+  classification: string;
+  watermark: Record<string, unknown>;
+  version: number;
+};
+
+export type ConnectorSyncRun = {
+  id: string;
+  connector_instance_id: string;
+  workflow_id: string;
+  temporal_run_id?: string;
+  status: string;
+  result_summary: Record<string, unknown>;
+  error_code?: string;
+  created_at: string;
+};
+
+export type CompileSourceRef = {
+  source_version_id: string;
+  source_checksum: string;
+  parse_job_id: string;
+  input_order: number;
+};
+
+export type CompileStep = {
+  id: string;
+  step_key: string;
+  input_checksum: string;
+  status: string;
+  attempt: number;
+  output_summary: Record<string, unknown>;
+  error_code?: string | null;
+};
+
+export type CompileJob = {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  schema_version_id: string;
+  composition_checksum: string;
+  prompt_version_id: string;
+  model_profile_id: string;
+  workflow_task_id: string;
+  workflow_id: string;
+  run_id?: string | null;
+  mode: "FULL" | "INCREMENTAL" | "SOURCE_SCOPED" | "RECOMPILE";
+  status: string;
+  input_fingerprint: string;
+  normalization_version: string;
+  scope: Record<string, unknown>;
+  progress: number;
+  cost_summary: Record<string, unknown>;
+  result_summary: Record<string, unknown>;
+  error_code?: string | null;
+  error_detail?: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  sources: CompileSourceRef[];
+  steps: CompileStep[];
+};
+
+export type WikiPageVersion = {
+  id: string;
+  wiki_page_id: string;
+  compile_job_id?: string | null;
+  revision: number;
+  generated_sections: Record<string, string>;
+  protected_sections: Record<string, string>;
+  properties: Record<string, unknown>;
+  markdown: string;
+  content_checksum: string;
+  status: string;
+  edit_reason?: string | null;
+  created_at: string;
+  created_by: string;
+};
+
+export type WikiPage = {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  schema_version_id: string;
+  primary_entity_id: string;
+  template_key: string;
+  slug: string;
+  title: string;
+  status: string;
+  current_version_id?: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  current_version?: WikiPageVersion | null;
+  outbound_links?: Record<string, unknown>[];
+  backlinks?: Record<string, unknown>[];
+  comments?: Record<string, unknown>[];
+  evidence_candidates?: Record<string, unknown>[];
+  followed?: boolean;
+};
+
+export type WikiLinkGraphNode = {
+  id: string;
+  title: string;
+  template_key: string;
+  status: string;
+  version: number;
+  updated_at: string;
+  outbound_count: number;
+  backlink_count: number;
+};
+
+export type WikiLinkGraphEdge = {
+  id: string;
+  source_page_id: string;
+  target_page_id: string;
+  link_kind: string;
+};
+
+export type WikiLinkGraph = {
+  space_id: string;
+  focus_page_id?: string | null;
+  max_depth: number;
+  node_limit: number;
+  truncated: boolean;
+  nodes: WikiLinkGraphNode[];
+  edges: WikiLinkGraphEdge[];
+};
+
+export type Claim = {
+  id: string;
+  candidate_id: string;
+  schema_version_id: string;
+  subject_entity_id: string;
+  predicate_key: string;
+  object_value: Record<string, unknown>;
+  statement: string;
+  scope: Record<string, unknown>;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  confidence_level: "LOW" | "MEDIUM" | "HIGH";
+  status: string;
+  provenance: Record<string, unknown>;
+  created_at: string;
+  created_by: string;
+};
+
+export type ConflictCase = {
+  id: string;
+  cluster_key: string;
+  kind: string;
+  severity: string;
+  blocking: boolean;
+  status: string;
+  suggested_action?: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+};
+
+export type ReviewTask = {
+  id: string;
+  stage: string;
+  status: string;
+  assignee_id?: string | null;
+  claimed_by?: string | null;
+  due_at: string;
+  escalation_count: number;
+};
+
+export type ReviewCase = {
+  id: string;
+  workflow_task_id: string;
+  workflow_id: string;
+  target_type: string;
+  target_id: string;
+  policy_id: string;
+  risk_level: string;
+  status: string;
+  current_stage?: string | null;
+  created_by: string;
+  created_at: string;
+  tasks: ReviewTask[];
 };
 
 export type WorkflowType =
@@ -207,6 +396,76 @@ export type ParseJobStatus =
   | "SUCCEEDED"
   | "CANCELED";
 export type AnchorStatus = "VALID" | "STALE" | "UNRESOLVED" | "REVOKED";
+
+export type SchemaVersion = {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  schema_definition_id: string;
+  schema_key: string;
+  semantic_version: string;
+  status: "DRAFT" | "TESTING" | "PUBLISHED" | "DEPRECATED";
+  content_checksum: string;
+  composition_checksum: string;
+  canonicalization_algorithm: string;
+  breaking_change: boolean;
+  normalized_snapshot: Record<string, unknown>;
+  version: number;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+};
+
+export type CompositionReport = {
+  id: string;
+  schema_version_id: string;
+  input_checksum: string;
+  result_checksum: string;
+  report: Record<string, unknown>;
+};
+
+export type DomainPackVersion = {
+  id: string;
+  tenant_id: string;
+  pack_key: string;
+  pack_version: string;
+  publisher: string;
+  key_namespace: string;
+  content_checksum: string;
+  signature_key_id: string;
+  status: string;
+  created_at: string;
+};
+
+export type DomainPackInstallation = {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  domain_pack_version_id: string;
+  schema_definition_id: string;
+  requested_semantic_version: string;
+  operation: "INSTALL" | "UPGRADE" | "DISABLE" | "ROLLBACK";
+  previous_installation_id?: string | null;
+  workflow_task_id?: string | null;
+  workflow_id: string;
+  run_id?: string | null;
+  candidate_schema_version_id?: string | null;
+  composition_report_id?: string | null;
+  status:
+    | "PLANNED"
+    | "INSTALLING"
+    | "ACTIVE"
+    | "FAILED"
+    | "ROLLING_BACK"
+    | "ROLLED_BACK"
+    | "DISABLED";
+  version: number;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+};
 
 export type SourceVersion = {
   id: string;
@@ -425,4 +684,109 @@ export type ImportBatch = {
   items: ImportBatchItem[];
   created_at: string;
   created_by: string;
+};
+
+export type EvaluationCase = {
+  case_key: string;
+  case_type: string;
+  question: string;
+  expected_claim_ids: string[];
+  expected_terms: string[];
+  expect_refusal: boolean;
+  metadata: Record<string, unknown>;
+};
+
+export type EvaluationSuite = {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  schema_version_id: string;
+  suite_key: string;
+  version: number;
+  name: string;
+  cases: EvaluationCase[];
+  minimum_pass_rate: number;
+  status: string;
+  created_at: string;
+  created_by: string;
+};
+
+export type LintFinding = {
+  id: string;
+  code: string;
+  severity: string;
+  blocking: boolean;
+  object_type: string;
+  object_id?: string | null;
+  message: string;
+};
+
+export type ReleaseCandidate = {
+  id: string;
+  space_id: string;
+  version: string;
+  schema_version_id: string;
+  prompt_version_id: string;
+  model_profile_id: string;
+  evaluation_suite_id: string;
+  workflow_task_id: string;
+  workflow_id: string;
+  status: string;
+  manifest_checksum: string;
+  gate_summary: Record<string, unknown>;
+  index_config: Record<string, unknown>;
+  notes: string;
+  created_at: string;
+  lint_findings: LintFinding[];
+};
+
+export type KnowledgeRelease = {
+  id: string;
+  space_id: string;
+  candidate_id: string;
+  version: string;
+  status: string;
+  manifest_checksum: string;
+  schema_version_id: string;
+  model_profile_id: string;
+  prompt_version_id: string;
+  published_at: string;
+  deprecated_at?: string | null;
+  deprecation_reason?: string | null;
+};
+
+export type QueryCitation = {
+  id: string;
+  evidence_id: string;
+  source_version_id: string;
+  source_anchor_id: string;
+  status: string;
+};
+
+export type QueryAnswer = {
+  id: string;
+  release_id: string;
+  question: string;
+  status: "COMPLETED" | "REFUSED" | "FAILED";
+  direct_answer: string;
+  key_basis: string[];
+  uncertainty?: string | null;
+  citations: QueryCitation[];
+  conflicts: Record<string, unknown>[];
+};
+
+export type GraphTraverse = {
+  release_id: string;
+  start_entity_id: string;
+  mode: string;
+  nodes: Array<Record<string, unknown>>;
+  edges: Array<{
+    relation_id: string;
+    relation_type_key: string;
+    source_entity_id: string;
+    target_entity_id: string;
+    depth: number;
+    evidence_ids: string[];
+  }>;
+  truncated: boolean;
 };

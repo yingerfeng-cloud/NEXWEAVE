@@ -1,0 +1,288 @@
+{
+  "$defs": {
+    "EventRule": {
+      "additionalProperties": false,
+      "properties": {
+        "authority": {
+          "enum": [
+            "DEMONSTRATION_ONLY",
+            "USER_DEFINED_UNVERIFIED"
+          ],
+          "title": "Authority",
+          "type": "string"
+        },
+        "label": {
+          "default": "上分位进入关注区间",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "threshold": {
+          "title": "Threshold",
+          "type": "number"
+        },
+        "unit": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "threshold",
+        "unit",
+        "authority"
+      ],
+      "title": "EventRule",
+      "type": "object"
+    },
+    "ForecastCreate": {
+      "additionalProperties": false,
+      "properties": {
+        "binding_id": {
+          "format": "uuid7",
+          "title": "Binding Id",
+          "type": "string"
+        },
+        "cutoff": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cutoff"
+        },
+        "event_rule": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EventRule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "future_paths": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/FuturePath"
+          },
+          "maxItems": 8,
+          "title": "Future Paths",
+          "type": "array"
+        },
+        "history_points": {
+          "default": 720,
+          "maximum": 8192,
+          "minimum": 32,
+          "title": "History Points",
+          "type": "integer"
+        },
+        "horizon": {
+          "default": 120,
+          "maximum": 120,
+          "minimum": 1,
+          "title": "Horizon",
+          "type": "integer"
+        },
+        "provider_id": {
+          "default": "chronos2",
+          "enum": [
+            "chronos2",
+            "persistence"
+          ],
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "release_id": {
+          "anyOf": [
+            {
+              "format": "uuid7",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Release Id"
+        },
+        "scenario_name": {
+          "default": "基线假设",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Scenario Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "binding_id"
+      ],
+      "title": "ForecastCreate",
+      "type": "object"
+    },
+    "FuturePath": {
+      "additionalProperties": false,
+      "properties": {
+        "signal_key": {
+          "pattern": "^[a-z][a-z0-9.-]{1,62}/[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+          "title": "Signal Key",
+          "type": "string"
+        },
+        "unit": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 120,
+          "minItems": 1,
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "signal_key",
+        "unit",
+        "values"
+      ],
+      "title": "FuturePath",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Artifact Id"
+    },
+    "binding_id": {
+      "format": "uuid7",
+      "title": "Binding Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "delivery_attempts": {
+      "default": 0,
+      "title": "Delivery Attempts",
+      "type": "integer"
+    },
+    "delivery_error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Delivery Error Code"
+    },
+    "delivery_status": {
+      "default": "PENDING",
+      "title": "Delivery Status",
+      "type": "string"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "request": {
+      "$ref": "#/$defs/ForecastCreate"
+    },
+    "retry_of": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Retry Of"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "CANCELLED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "workflow_id": {
+      "title": "Workflow Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "space_id",
+    "binding_id",
+    "status",
+    "workflow_id",
+    "request",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "ForecastRunResponse",
+  "type": "object"
+}

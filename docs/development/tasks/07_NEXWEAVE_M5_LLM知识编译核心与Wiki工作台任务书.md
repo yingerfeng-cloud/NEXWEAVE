@@ -4,6 +4,8 @@
 > 产品版本：R1：可信知识闭环与联合试点版  
 > 建议周期：6周  
 > 执行对象：Codex  
+> 状态：2026-08-30 用户正式下发 M5；M5-0/ADR-0024、实施、本地技术验收与用户正式验收均已完成，当前停止在已验收 M5
+> 权威增量：ADR-0022—0024、`SEMANTIC_MODEL_IMPACT_MATRIX.md`、M4 正式验收实况
 > 上位基线：NEXWEAVE PRD V1.0、高保真原型 V1.0、M-1/M0后已批准架构与契约、完整开发任务总纲  
 > 阶段原则：只执行本Milestone，完成后停止
 
@@ -18,8 +20,19 @@
 ## 2. 前置条件
 
 - M4 SchemaVersion 和 Domain Pack 可用；M2 Workflow 内核稳定。
+- M4 已于 2026-08-30 正式验收，M5 已由用户单独明确下发。
+- 编码前必须按 ADR-0024 冻结 Compile 输入、稳定身份、Model Gateway 审计、Wiki 保护区和 v1/v2 Workflow 兼容语义。
 
 若前置条件不满足，必须在执行回报中列为P0阻塞，不得通过静默假设绕过。
+
+### M5-0 已冻结实现边界
+
+- CompileJob 固定 PUBLISHED SchemaVersion/composition checksum、排序后的 SourceVersion/checksum、PromptVersion 与 ModelProfile；运行中不可替换。
+- 结构化输出只使用 stable type/relation/property key。未知或歧义语义形成 `SemanticChangeProposal`/人工映射候选，不修改当前 SchemaVersion。
+- Entity/Page 按稳定身份幂等；新 Job可保留运行历史，但不得因重复输入制造重复对象。
+- WikiPageVersion 追加式；AI 只更新 generated sections，人工 protected sections 永久由人工新版本维护。
+- `nexweave.knowledge-compile.v1` 保留为历史 Kernel Stub，真实 M5 使用 v2 且所有 I/O 位于 Activity。
+- M5 候选 Claim/Evidence/Conflict/Lint 不等于 M6 审核闭环或 M7 正式 Release。
 
 ---
 
@@ -128,14 +141,14 @@
 
 ## 10. 最低验收标准
 
-- [ ] 上传资料可基于指定Schema生成Wiki草稿、实体、关系、Claim和Evidence候选。
-- [ ] 重复编译同一 SourceVersion 不产生重复实体/页面。
-- [ ] 人工保护区在重编译后保持不变。
-- [ ] 任何AI生成对象可追溯模型、Prompt、CompileJob和SourceAnchor。
-- [ ] 全局CI门禁通过；
-- [ ] 无新增P0安全、架构、证据或版本问题；
-- [ ] 用户已有修改未被覆盖；
-- [ ] 执行回报与真实代码、测试结果一致。
+- [x] 上传资料可基于指定Schema生成Wiki草稿、实体、关系、Claim和Evidence候选。
+- [x] 重复编译同一 SourceVersion 不产生重复实体/页面。
+- [x] 人工保护区在重编译后保持不变。
+- [x] 任何AI生成对象可追溯模型、Prompt、CompileJob和SourceAnchor。
+- [ ] 全局CI门禁通过（未获 commit/push 授权，远程 CI 未触发；本地同类门禁通过）；
+- [x] 无新增P0安全、架构、证据或版本问题；
+- [x] 用户已有修改未被覆盖；
+- [x] 执行回报与真实代码、测试结果一致。
 
 ---
 

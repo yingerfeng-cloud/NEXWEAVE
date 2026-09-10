@@ -1,0 +1,45 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "end": {
+      "format": "date-time",
+      "title": "End",
+      "type": "string"
+    },
+    "latest_values": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Latest Values",
+      "type": "object"
+    },
+    "point_count": {
+      "title": "Point Count",
+      "type": "integer"
+    },
+    "source_checksum": {
+      "title": "Source Checksum",
+      "type": "string"
+    },
+    "start": {
+      "format": "date-time",
+      "title": "Start",
+      "type": "string"
+    },
+    "valid": {
+      "const": true,
+      "default": true,
+      "title": "Valid",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "point_count",
+    "start",
+    "end",
+    "latest_values",
+    "source_checksum"
+  ],
+  "title": "BindingValidation",
+  "type": "object"
+}

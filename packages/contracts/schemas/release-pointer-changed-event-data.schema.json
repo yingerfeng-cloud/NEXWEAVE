@@ -1,0 +1,44 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "channel": {
+      "title": "Channel",
+      "type": "string"
+    },
+    "new_release_id": {
+      "format": "uuid7",
+      "title": "New Release Id",
+      "type": "string"
+    },
+    "old_release_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Old Release Id"
+    },
+    "pointer_id": {
+      "format": "uuid7",
+      "title": "Pointer Id",
+      "type": "string"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pointer_id",
+    "channel",
+    "new_release_id",
+    "reason"
+  ],
+  "title": "ReleasePointerChangedEventData",
+  "type": "object"
+}

@@ -1,0 +1,255 @@
+{
+  "$defs": {
+    "WikiPageVersionResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "compile_job_id": {
+          "anyOf": [
+            {
+              "format": "uuid7",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Compile Job Id"
+        },
+        "content_checksum": {
+          "title": "Content Checksum",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "format": "uuid7",
+          "title": "Created By",
+          "type": "string"
+        },
+        "edit_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Edit Reason"
+        },
+        "generated_sections": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Generated Sections",
+          "type": "object"
+        },
+        "id": {
+          "format": "uuid7",
+          "title": "Id",
+          "type": "string"
+        },
+        "markdown": {
+          "title": "Markdown",
+          "type": "string"
+        },
+        "properties": {
+          "additionalProperties": true,
+          "title": "Properties",
+          "type": "object"
+        },
+        "protected_sections": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Protected Sections",
+          "type": "object"
+        },
+        "revision": {
+          "title": "Revision",
+          "type": "integer"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "wiki_page_id": {
+          "format": "uuid7",
+          "title": "Wiki Page Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "wiki_page_id",
+        "revision",
+        "generated_sections",
+        "protected_sections",
+        "properties",
+        "markdown",
+        "content_checksum",
+        "status",
+        "created_at",
+        "created_by"
+      ],
+      "title": "WikiPageVersionResponse",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "backlinks": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Backlinks",
+      "type": "array"
+    },
+    "comments": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Comments",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "current_version": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WikiPageVersionResponse"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "current_version_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Current Version Id"
+    },
+    "evidence_candidates": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Evidence Candidates",
+      "type": "array"
+    },
+    "followed": {
+      "default": false,
+      "title": "Followed",
+      "type": "boolean"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "outbound_links": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Outbound Links",
+      "type": "array"
+    },
+    "primary_entity_id": {
+      "format": "uuid7",
+      "title": "Primary Entity Id",
+      "type": "string"
+    },
+    "schema_version_id": {
+      "format": "uuid7",
+      "title": "Schema Version Id",
+      "type": "string"
+    },
+    "slug": {
+      "title": "Slug",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "template_key": {
+      "title": "Template Key",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "updated_by": {
+      "format": "uuid7",
+      "title": "Updated By",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "space_id",
+    "schema_version_id",
+    "primary_entity_id",
+    "template_key",
+    "slug",
+    "title",
+    "status",
+    "version",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "title": "WikiPageResponse",
+  "type": "object"
+}

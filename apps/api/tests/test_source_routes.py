@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -7,8 +8,58 @@ from nexweave_api.source_routes import (
     _download_content_disposition,
     _filter_sources_by_content_type,
     _read_bounded_upload,
+    _source_response,
     _validate_controlled_type,
 )
+from nexweave_domain import new_uuid7
+
+
+def test_source_response_keeps_public_metadata_and_hides_internal_storage() -> None:
+    uid, now = new_uuid7(), datetime.now(UTC)
+    version = {
+        "id": uid,
+        "tenant_id": uid,
+        "space_id": uid,
+        "source_document_id": uid,
+        "filename": "synthetic.csv",
+        "content_type": "text/csv",
+        "size": 100,
+        "checksum": "sha256:" + "a" * 64,
+        "object_version_id": "fixed-version",
+        "classification": "INTERNAL",
+        "status": "PARSED",
+        "version": 1,
+        "active_parse_job_id": uid,
+        "latest_parse_job_id": uid,
+        "supersedes_source_version_id": None,
+        "created_at": now,
+        "created_by": uid,
+        "object_key": "private-storage-path",
+    }
+    source = {
+        "id": uid,
+        "tenant_id": uid,
+        "space_id": uid,
+        "display_name": "Synthetic",
+        "description": "",
+        "classification": "INTERNAL",
+        "source_level": None,
+        "tags": [],
+        "valid_until": None,
+        "status": "ACTIVE",
+        "version": 1,
+        "created_at": now,
+        "created_by": uid,
+        "updated_at": now,
+        "updated_by": uid,
+        "archived_at": None,
+        "versions": [version],
+    }
+    result = _source_response(source).model_dump(mode="json")
+    assert "archived_at" not in result and "object_key" not in result["versions"][0]
+    assert result["versions"][0]["object_version_id"] == "fixed-version"
+    assert result["versions"][0]["checksum"] == version["checksum"]
+    assert version["object_key"] == "private-storage-path"
 
 
 class SourceDetailsStub:

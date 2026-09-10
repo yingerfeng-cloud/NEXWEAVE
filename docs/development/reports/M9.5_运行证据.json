@@ -1,0 +1,53 @@
+{
+  "space_id": "01a07c13-d739-71bd-9cf5-186de346e09e",
+  "binding_id": "01a07c1b-f6ef-7f1a-ad92-4412de908e95",
+  "schema_id": "01a07c13-d744-78bc-b910-887ce75f1b80",
+  "entity_id": "01a07c13-d906-7367-b3d6-d9dd5b51c28e",
+  "source_id": "01a07c13-d9f8-7d91-8aa1-7060b970f052",
+  "runs": [
+    {
+      "run_id": "01a07e97-35ed-749a-8cf0-b13bf24990db",
+      "artifact_id": "01a07e97-3fb1-7288-8e89-2890257eee17",
+      "checksum": "sha256:2dd612b24ec94dedcd477b8db683ac09499d6dff65fe7d7f22b92f950cded334",
+      "scenario": "负荷保持70%",
+      "provider": "chronos2",
+      "p50_end": 58.183475494384766,
+      "events": "EVALUATED_NO_MATCH"
+    },
+    {
+      "run_id": "01a07e97-40d8-7755-b9d1-199d1d2e6180",
+      "artifact_id": "01a07e97-4183-7fca-887a-8b051b0e79d5",
+      "checksum": "sha256:3ab1f045add92e89b3e2100c1a9009da1cbcd8e88d53fe6848f1dabe4865aa59",
+      "scenario": "两小时负荷70%升至95%",
+      "provider": "chronos2",
+      "p50_end": 61.026729583740234,
+      "events": "MATCHED"
+    },
+    {
+      "run_id": "01a07e97-420e-7295-8be0-f80369057832",
+      "artifact_id": "01a07e97-4246-79af-8973-32cd170fc5a4",
+      "checksum": "sha256:028af6c22700fadccf7649eb6da4b63296993c11a793ab35117f2d94eaad0249",
+      "scenario": "持久性基准（忽略协变量）",
+      "provider": "persistence",
+      "p50_end": 58.1848,
+      "events": "NOT_EVALUATED"
+    }
+  ],
+  "data_kind": "SYNTHETIC",
+  "industrial_benchmark": false,
+  "runtime_versions": {
+    "chronos-forecasting": "2.3.1",
+    "torch": "2.13.0",
+    "transformers": "5.10.4"
+  },
+  "guards": {
+    "outsider_binding_run_artifact": "DENIED",
+    "future_input_failure": "FAILED_WITHOUT_ARTIFACT",
+    "idempotency_payload_conflict": "409",
+    "object_storage_checksum": "MATCH",
+    "immutable_tables": 3,
+    "industrial_benchmark": false
+  },
+  "dependency_audit": "No known vulnerabilities found",
+  "model_revision": "29ec3766d36d6f73f0696f85560a422f50e8498c"
+}

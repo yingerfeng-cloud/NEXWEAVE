@@ -1,0 +1,70 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "classification": {
+      "title": "Classification",
+      "type": "string"
+    },
+    "content": {
+      "additionalProperties": true,
+      "title": "Content",
+      "type": "object"
+    },
+    "content_checksum": {
+      "title": "Content Checksum",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "data_kind": {
+      "enum": [
+        "SYNTHETIC",
+        "IMPORTED_UNVERIFIED"
+      ],
+      "title": "Data Kind",
+      "type": "string"
+    },
+    "epistemic_kind": {
+      "const": "FORECAST",
+      "default": "FORECAST",
+      "title": "Epistemic Kind",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "run_id": {
+      "format": "uuid7",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "run_id",
+    "tenant_id",
+    "space_id",
+    "classification",
+    "data_kind",
+    "content_checksum",
+    "content",
+    "created_at"
+  ],
+  "title": "ForecastArtifactResponse",
+  "type": "object"
+}

@@ -1,0 +1,123 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "connector_instance_id": {
+      "format": "uuid7",
+      "title": "Connector Instance Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "requested_watermark": {
+      "additionalProperties": true,
+      "title": "Requested Watermark",
+      "type": "object"
+    },
+    "result_summary": {
+      "additionalProperties": true,
+      "title": "Result Summary",
+      "type": "object"
+    },
+    "resulting_watermark": {
+      "additionalProperties": true,
+      "title": "Resulting Watermark",
+      "type": "object"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "CREATED",
+        "RUNNING",
+        "PARTIAL_FAILED",
+        "FAILED",
+        "SUCCEEDED",
+        "CANCELED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "temporal_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Temporal Run Id"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "updated_by": {
+      "format": "uuid7",
+      "title": "Updated By",
+      "type": "string"
+    },
+    "workflow_id": {
+      "title": "Workflow Id",
+      "type": "string"
+    },
+    "workflow_task_id": {
+      "format": "uuid7",
+      "title": "Workflow Task Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "space_id",
+    "connector_instance_id",
+    "workflow_task_id",
+    "workflow_id",
+    "status",
+    "requested_watermark",
+    "resulting_watermark",
+    "result_summary",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "title": "ConnectorSyncRunResponse",
+  "type": "object"
+}

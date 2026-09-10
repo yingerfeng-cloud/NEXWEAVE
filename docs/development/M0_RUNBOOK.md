@@ -26,7 +26,7 @@ health command and a real Workflow execution, which keeps the minimum environmen
 making an administrative UI part of the platform acceptance surface.
 
 RustFS runs as non-root UID/GID `10001:10001` and writes its image-declared `/data` volume. The runtime
-is fixed to the verified official Quay multi-architecture index for `1.0.0-rc.3`; do not replace it
+is fixed to the verified official Quay multi-architecture index for `1.0.0-rc.4`; do not replace it
 with `latest`. Production promotion remains blocked until SPK-004 verifies the required S3 subset,
 recovery, image signatures/SBOM and both target architectures.
 

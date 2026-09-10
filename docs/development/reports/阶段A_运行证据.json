@@ -1,0 +1,153 @@
+{
+  "recorded_at": "2026-09-09T00:52:23.776064+00:00",
+  "implementation_version": "0.9.5-a1",
+  "scope": "R1 + M9.5 Stage A local software verification",
+  "industrial_acceptance": false,
+  "expert_acceptance": false,
+  "tests": {
+    "python_non_integration_passed": 142,
+    "integration_marker_not_run": 5,
+    "web_passed": 26,
+    "mypy_modules": 96,
+    "lint": true,
+    "web_typecheck": true,
+    "web_build": true,
+    "sdk_check": true,
+    "migration_upgrade_downgrade_reupgrade": true
+  },
+  "r1": {
+    "space_id": "01a081cc-9733-7d3f-9330-d068e17d273e",
+    "source_version_id": "01a081cc-973e-73e9-a09e-8eae0f9184e7",
+    "trace_source_version_id": "01a081cc-987d-7316-8ad2-79675b3a24c5",
+    "schema_id": "01a081cc-bd9c-7c17-bffe-5acbd934e415",
+    "compile_job_id": "01a081cc-bdd2-7f80-9b2a-6a78ed28431b",
+    "candidate_id": "01a081cc-be01-7f1b-ac75-73d6a2189e13",
+    "claim_id": "01a081cc-bf7a-725f-948c-0cf6cc488cec",
+    "data_kind": "SYNTHETIC",
+    "review_actor_kind": "SCRIPTED_TEST_ROLES",
+    "checks": [
+      "SOURCE_PARSE",
+      "KEEPALIVE_TRACE",
+      "COMPILE",
+      "REVIEW_DUTY_SEPARATION",
+      "ACCEPTED_EVIDENCE",
+      "QUALITY_GATE",
+      "IMMUTABLE_RELEASES",
+      "CITED_QUERY",
+      "QUERY_IDEMPOTENCY",
+      "REFUSAL",
+      "EXPORT",
+      "REBUILD",
+      "POINTER_ROLLBACK"
+    ],
+    "completed_at": "2026-09-08T16:14:35.404190+00:00",
+    "releases": [
+      {
+        "id": "01a081cc-c306-7737-bc0a-20518aefe37c",
+        "manifest_checksum": "sha256:795315e636dd7eb7ba33531ecb51677e75078d59890e8e202028f23daf8fd28a"
+      },
+      {
+        "id": "01a081cc-c0eb-787c-bcdc-de2fe1d60fec",
+        "manifest_checksum": "sha256:320f6471b5088fa46141a65c91b5577f0e537c21690e2ff0a3cc620acb3200f1"
+      }
+    ],
+    "rollback_release_id": "01a081cc-c0eb-787c-bcdc-de2fe1d60fec",
+    "accepted_evidence_ids": [
+      "01a081cc-bf7a-7f74-a185-07f6bd8f38f2"
+    ]
+  },
+  "forecast_drills": [
+    {
+      "drill": "crash",
+      "data_kind": "SYNTHETIC",
+      "run_id": "01a081d0-a2e3-7957-80dd-1da9c86e97f7",
+      "killed_own_worker_pid": 5628,
+      "artifact_id": "01a081d0-ec11-7257-ad8f-7b7167e11107",
+      "completed_at": "2026-09-08T16:19:08.021060+00:00"
+    },
+    {
+      "drill": "cancel",
+      "data_kind": "SYNTHETIC",
+      "run_id": "01a081d1-df61-7e0c-9656-fffb4d83842e",
+      "retry_id": "01a081d2-0892-70df-bc43-91adc831747a",
+      "artifact_id": "01a081d2-0fc3-7b30-ac90-6fd57778d1d7",
+      "completed_at": "2026-09-08T16:20:22.644695+00:00"
+    },
+    {
+      "drill": "delivery",
+      "data_kind": "SYNTHETIC",
+      "run_id": "01a081d3-33fd-7638-acc9-c85f410cf3c8",
+      "outage_status": {
+        "status": "QUEUED",
+        "delivery_status": "RETRYING",
+        "delivery_attempts": 1,
+        "delivery_error_code": "WORKFLOW_DEPENDENCY_UNAVAILABLE",
+        "artifact_id": null
+      },
+      "artifact_id": "01a081d3-675b-7b48-b557-e5b3ab44592c",
+      "completed_at": "2026-09-08T16:21:59.732344+00:00"
+    },
+    {
+      "drill": "guards",
+      "data_kind": "SYNTHETIC",
+      "permission_denials": 3,
+      "queued_cancel_id": "01a081d4-410d-7a30-a2e9-396c5edea1da",
+      "failed_retry_ids": [
+        "01a081d4-421a-7c94-875a-eb9aaad38994",
+        "01a081d4-44cf-74c8-9db3-fb3056871014"
+      ],
+      "completed_at": "2026-09-08T16:22:49.042689+00:00"
+    }
+  ],
+  "record_checks": [
+    {
+      "drill": "crash",
+      "run_id": "01a081d0-a2e3-7957-80dd-1da9c86e97f7",
+      "artifact_count": 1,
+      "checksum_matches": true,
+      "recovered_attempt": 2,
+      "previous_failure": "TIMEOUT_TYPE_HEARTBEAT"
+    },
+    {
+      "drill": "cancel",
+      "run_id": "01a081d1-df61-7e0c-9656-fffb4d83842e",
+      "artifact_count": 1,
+      "checksum_matches": true,
+      "frozen_retry_equal": true
+    },
+    {
+      "drill": "delivery",
+      "run_id": "01a081d3-33fd-7638-acc9-c85f410cf3c8",
+      "artifact_count": 1,
+      "checksum_matches": true
+    }
+  ],
+  "http_trace": {
+    "direct_http_keepalive": true,
+    "upload_bytes": 288016,
+    "source_version_id": "01a083a4-7aff-7492-a6a0-ad26a5a0a7b5",
+    "sequential_after_upload": 12,
+    "concurrent_requests": 24,
+    "trace_mismatches": 0,
+    "data_kind": "SYNTHETIC"
+  },
+  "preserved_baseline": {
+    "historical_migrations": 10,
+    "dependency_lock_files": 3,
+    "release_evidence_implementation_files": 3
+  },
+  "local_startup": {
+    "make_dev_up_completed": true,
+    "duplicate_worker_start_same_pid": true,
+    "worker_ready": true
+  },
+  "final_runtime": {
+    "worker_status": "AVAILABLE",
+    "worker_count": 1,
+    "queued": 0,
+    "running": 0,
+    "delivery_pending": 0,
+    "implementation_version": "0.9.5-a1"
+  },
+  "final_readiness": "ready"
+}

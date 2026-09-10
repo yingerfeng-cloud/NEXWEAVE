@@ -1,6 +1,6 @@
 # Domain Model Baseline
 
-> 状态：M1/M2 已验收。M3 Source/Parse 对象语义已由 ADR-0021 和校准任务书批准，但本文件中的 M3 行仍是待实现契约；当前数据库/domain 代码尚无这些业务对象。
+> 状态：M1—M8 已正式验收；M9 已正式下发。ADR-0029 不新增平台核心对象，Equipment RCA 类型只存在于声明式 Pack；GridCrew 业务对象仍未实现。
 > 通用字段：除明确的全局配置外，业务对象预留 `id`、`tenant_id`、`space_id`、`status`、`version/etag`、`created_by`、`updated_by`、`created_at`、`updated_at`。
 
 ## 1. 身份与空间
@@ -43,9 +43,14 @@
 | 对象 | 含义 / ID | 归属与版本 | 生命周期 | 关键关系 | 权威源 | AI / 人审 |
 |---|---|---|---|---|---|---|
 | SchemaDefinition | Schema 稳定身份，`schema_definition_id` | tenant/space；多版本 | ACTIVE/ARCHIVED | SchemaVersion | DB | AI 可建议草稿；人工维护 |
-| SchemaVersion | 不可覆盖的 Schema 快照，`schema_version_id` | tenant/space；显式版本 | DRAFT/TESTING/PUBLISHED/DEPRECATED | 类型、模板、规则、Release | DB | AI 可辅助；发布需批准 |
-| EntityType | 实体类型定义，`entity_type_id` | SchemaVersion 内固定 | DRAFT/PUBLISHED/DEPRECATED | Entity、PageTemplate | DB | AI 可建议；Schema 审核 |
-| RelationType | 关系类型与因果/证据约束，`relation_type_id` | SchemaVersion 内固定 | DRAFT/PUBLISHED/DEPRECATED | Relation、EntityType | DB | AI 可建议；Schema 审核 |
+| SchemaVersion | 不可覆盖的有效语义/Schema 快照，`schema_version_id`、`composition_checksum` | tenant/space；显式版本；精确 PackVersion/checksum 输入 | DRAFT/TESTING/PUBLISHED/DEPRECATED | 类型、层级、术语、映射、模板、规则、Compile、Release | DB | AI 可辅助草稿；发布需批准；R1 不另设 OntologyVersion |
+| EntityType | 实体类型版本定义，`entity_type_id` + 稳定 `type_key` | SchemaVersion 内固定；type key 跨版本识别概念 | 随 SchemaVersion | Property、Hierarchy、Entity、PageTemplate | DB | AI 可建议；Schema 审核 |
+| PropertyDefinition | 类型属性版本定义，`property_definition_id` + 稳定 `property_key` | EntityType/SchemaVersion 内固定 | 随 SchemaVersion | EntityType、字段/引用约束 | DB | AI 可建议；无独立发布生命周期 |
+| TypeHierarchyEdge | `child_type_key subTypeOf parent_type_key` | SchemaVersion 内；无环多父图 | 随 SchemaVersion | EntityType | DB | AI 可建议；循环/继承冲突阻断 |
+| RelationType | 关系类型版本定义，`relation_type_id` + 稳定 `relation_type_key` | SchemaVersion 内固定 | 随 SchemaVersion | domain/range EntityType、Relation、Evidence policy | DB | AI 可建议；Schema 审核 |
+| TypeTerm | 类型/关系类型的规范词、别名、缩写与语言范围，`type_term_id` | SchemaVersion 内固定 | 随 SchemaVersion | EntityType/RelationType | DB | AI 可建议；同名不自动等价；与 EntityAlias 分离 |
+| ConceptMapping | 跨命名空间类型映射，`concept_mapping_id` | SchemaVersion 内；EXACT/BROADER/NARROWER/RELATED | 随 SchemaVersion | source/target type key、来源、审核 | DB | AI 只建议；EXACT 需审核且不物理覆盖 |
+| SchemaCompositionReport | Pack/本地声明组合、冲突、兼容与影响报告，`schema_composition_report_id` | 候选 SchemaVersion；输入 hash/result checksum | RECORDED | PackVersion、SchemaVersion、Migration preview | DB/Object storage report | 系统生成；发布者审核；不替代 SchemaVersion |
 | PageTemplate | 页面结构和保护区，`page_template_id` | SchemaVersion 内固定 | DRAFT/PUBLISHED/DEPRECATED | WikiPageVersion | DB | AI 可建议；人工发布 |
 | LintRule | 声明式质量规则，`lint_rule_id` | SchemaVersion/Pack 版本 | DRAFT/ENABLED/DISABLED/DEPRECATED | EvaluationRun、Release gate | DB | AI 可建议；管理员批准 |
 
@@ -66,8 +71,9 @@
 
 | 对象 | 含义 / ID | 归属与版本 | 生命周期 | 关键关系 | 权威源 | AI / 人审 |
 |---|---|---|---|---|---|---|
-| CompileJob | 编译业务任务，`compile_job_id` | tenant/space；锁定输入/配置版本 | CREATED/QUEUED/RUNNING/PAUSED/PARTIAL_FAILED/FAILED/SUCCEEDED/CANCELED | SourceVersion、SchemaVersion、Prompt、Model、Workflow | Temporal 执行 + DB 投影/结果 | 系统创建；用户授权启动 |
+| CompileJob | 编译业务任务，`compile_job_id` | tenant/space；锁定 Source、PUBLISHED SchemaVersion/composition checksum、Prompt、Model | CREATED/QUEUED/RUNNING/PAUSED/PARTIAL_FAILED/FAILED/SUCCEEDED/CANCELED | SourceVersion、SchemaVersion、Prompt、Model、Workflow | Temporal 执行 + DB 投影/结果 | 系统创建；用户授权启动；运行中不得替换语义模型 |
 | CompileStep | 可审计步骤结果，`compile_step_id` | tenant/space；重复执行保留 attempt | PENDING/RUNNING/RETRYING/FAILED/SUCCEEDED/SKIPPED | CompileJob、输入输出对象 | DB 结果 + Workflow 执行 | AI 可执行抽取；非正式知识 |
+| SemanticChangeProposal | 编译/人工发现的下一语义版本变更候选，`semantic_change_proposal_id` | tenant/space；绑定来源 CompileJob/SchemaVersion | CANDIDATE/PENDING_REVIEW/ACCEPTED/REJECTED | Type/Term/Mapping draft、Review | DB | M5 起 AI 可建议；接受后仍只进入新 SchemaVersion 草稿 |
 | ReviewTask | 人工审核业务任务，`review_task_id` | tenant/space；锁定被审版本 | CREATED/ASSIGNED/CLAIMED/WAITING_INPUT/APPROVED/REJECTED/CANCELED/EXPIRED | ReviewAction、Approval、Workflow | Temporal 执行 + DB 任务/结果 | 系统创建；人工处理 |
 | ReviewAction | 不可变审核动作，`review_action_id` | tenant/space；追加式 | SUBMITTED | ReviewTask、actor、diff、reason | DB append-only | AI 禁止冒充；人工动作 |
 | Approval | 对高风险动作的授权事实，`approval_id` | tenant/space；追加式、不可覆盖 | REQUESTED/APPROVED/REJECTED/EXPIRED/REVOKED | ReviewTask、Release、actor | DB | AI 禁止；有权人员批准 |
@@ -79,7 +85,7 @@
 | 对象 | 含义 / ID | 归属与版本 | 生命周期 | 关键关系 | 权威源 | AI / 人审 |
 |---|---|---|---|---|---|---|
 | ReleaseCandidate | 待验证发布集合，`release_candidate_id` | tenant/space；锁定候选对象版本 | DRAFT/VALIDATING/PENDING_APPROVAL/APPROVED/REJECTED/DEPLOYING | ReleaseItem draft、Evaluation、Approval | DB + Workflow | 系统可生成；发布需批准 |
-| Release | 不可变正式知识快照，`release_id` | tenant/space；显式版本 | RELEASED/ROLLED_BACK/DEPRECATED | ReleaseItem、Schema、索引配置 | DB immutable manifest + 对象存储快照 | AI 禁止直接发布；人工批准 |
+| Release | 不可变正式知识快照，`release_id` | tenant/space；显式版本；固定 SchemaVersion/composition/Pack 输入 | RELEASED/ROLLED_BACK/DEPRECATED | ReleaseItem、Schema、Pack、索引配置 | DB immutable manifest + 对象存储快照 | AI 禁止直接发布；人工批准 |
 | ReleaseItem | Release 中的固定对象引用/快照，`release_item_id` | tenant/space/release；不可变 | RELEASED/DEPRECATED_WITH_RELEASE | Page/Entity/Relation/Claim/Evidence versions | DB/对象存储 | 系统固化；随 Release 审批 |
 | ReleasePointer | 当前服务版本指针，`release_pointer_id` | tenant/space/channel；乐观锁 | ACTIVE | Release | DB | AI 禁止；授权发布/回滚动作 |
 | QuerySession | 查询上下文，`query_session_id` | tenant/space；锁定 Release/权限策略 | ACTIVE/CLOSED/EXPIRED | QueryAnswer | DB | 用户/服务发起；审计 |
@@ -91,8 +97,8 @@
 | 对象 | 含义 / ID | 归属与版本 | 生命周期 | 关键关系 | 权威源 | AI / 人审 |
 |---|---|---|---|---|---|---|
 | DomainPack | Pack 稳定身份，`domain_pack_id` | 发布者/tenant；多版本 | ACTIVE/DEPRECATED | DomainPackVersion | DB/Registry metadata | AI 可辅助创建草稿；发布需签名/审核 |
-| DomainPackVersion | 不可变声明包，`domain_pack_version_id` | Pack；SemVer 候选 | DRAFT/VALIDATED/PUBLISHED/REVOKED/DEPRECATED | Schema、Template、Rule、Suite | Registry/Object storage | AI 可生成草稿；发布需审核 |
-| Installation | 空间内 Pack 安装事实，`installation_id` | tenant/space；记录版本历史 | PLANNED/INSTALLING/ACTIVE/FAILED/ROLLING_BACK/ROLLED_BACK/DISABLED | PackVersion、SchemaVersion、Workflow | DB + Workflow | 系统执行；管理员批准 |
+| DomainPackVersion | 不可变声明包，`domain_pack_version_id`、content checksum | Pack；SemVer；依赖解析前保留范围、安装时固化精确版本 | DRAFT/VALIDATED/PUBLISHED/REVOKED/DEPRECATED | 类型/属性/层级/关系/术语/映射、Template、Rule、Suite | Registry/Object storage | AI 可生成草稿；发布需签名/审核；禁止任意代码 |
+| Installation | 空间内 Pack 安装事实，`installation_id` | tenant/space；精确 PackVersion/checksum；记录版本历史 | PLANNED/INSTALLING/ACTIVE/FAILED/ROLLING_BACK/ROLLED_BACK/DISABLED | PackVersion、候选/发布 SchemaVersion、CompositionReport、Workflow | DB + Workflow | 系统执行；管理员批准；安装不自动发布 Schema |
 | Connector | 连接器定义/实例聚合，`connector_id` | tenant/space；配置版本 | DRAFT/ACTIVE/PAUSED/FAILED/REVOKED/ARCHIVED | CredentialRef、SyncRun、Source | DB；凭据在 Secret Provider | AI 禁止配置凭据；管理员批准 |
 | ConnectorSyncRun | 同步执行，`connector_sync_run_id` | tenant/space；记录 watermark | CREATED/RUNNING/PARTIAL_FAILED/FAILED/SUCCEEDED/CANCELED | Connector、SourceVersion、Workflow | Temporal + DB 结果 | 系统执行；授权策略 |
 | ModelProfile | 模型能力、路由和安全策略，`model_profile_id` | tenant/space 或平台；版本化 | DRAFT/ACTIVE/DISABLED/DEPRECATED | PromptVersion、Compile/Query | DB；密钥在 Secret Provider | AI 禁止启用；管理员批准 |
@@ -105,6 +111,9 @@
 
 - `SourceVersion` 是原始资料版本；`Evidence` 是对某个知识主张的可验证引用；`Citation` 是回答中展示和记录的 Evidence/Release 引用。
 - `Relation` 是类型化实体边；`Claim` 是有 Scope、时效、可信等级、正反证据和审核语义的可争议陈述。因果 Relation 可由 Claim/Evidence 支撑，但两者不合并。
+- `EntityType/TypeHierarchyEdge/RelationType` 是 SchemaVersion 内的语义定义；`Entity/Relation` 是知识实例。类型层级不是实例 Relation，术语同名也不等价于同一类型。
+- Semantic Model 是 SchemaVersion 的逻辑视图，不是独立聚合；Schema 合规不证明 Claim/Relation 为真，也不替代 Evidence。
+- DomainPackVersion 是不可变输入，Installation 是空间安装事实，SchemaCompositionReport 是组合审查证据，SchemaVersion 才是编译和 Release 使用的有效语义快照。
 - `ReviewTask` 管理人工工作；`ReviewAction` 是不可变动作；`Approval` 是对受控决策的授权事实；`Release` 是批准后生成的不可变正式快照。
 - NEXWEAVE 的知识 Evidence 与 GridCrew 的执行 Evidence 可互相引用，但不共享主键、数据库或生命周期。
 

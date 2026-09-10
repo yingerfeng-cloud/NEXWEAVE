@@ -31,7 +31,7 @@ from nexweave_domain.access import CLASSIFICATION_LEVEL
 
 SOURCE_COLUMNS = (
     "id, tenant_id, space_id, display_name, description, classification, source_level, tags, "
-    "valid_until, status, version, created_at, created_by, updated_at, updated_by, archived_at"
+    "valid_until, status, version, created_at, created_by, updated_at, updated_by"
 )
 VERSION_COLUMNS = (
     "id, tenant_id, space_id, source_document_id, filename, content_type, size, checksum, "
@@ -1782,7 +1782,6 @@ class SourceRepository(WorkflowRepository):
                     "version": source["version"] + 1,
                     "updated_at": now,
                     "updated_by": principal.actor_id,
-                    "archived_at": now,
                     "versions": (),
                 }
             )

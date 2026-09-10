@@ -1,0 +1,9 @@
+{
+  "signalDefinitions": [
+    {"key":"equipment.rca/bearing-temperature","typeKey":"nexweave.io/equipment","displayName":"轴承温度","unit":"degC","quantity":"temperature"},
+    {"key":"equipment.rca/vibration-rms","typeKey":"nexweave.io/equipment","displayName":"振动速度 RMS","unit":"mm/s","quantity":"vibration-velocity-rms"},
+    {"key":"equipment.rca/lube-pressure","typeKey":"nexweave.io/equipment","displayName":"润滑油压","unit":"MPa","quantity":"pressure"},
+    {"key":"equipment.rca/unit-load","typeKey":"nexweave.io/equipment","displayName":"机组负荷","unit":"%","quantity":"relative-load"}
+  ],
+  "forecastProfiles": [{"key":"equipment.rca/bearing-temperature-profile","displayName":"轴承温度条件预测","target":"equipment.rca/bearing-temperature","pastCovariates":["equipment.rca/vibration-rms","equipment.rca/lube-pressure"],"futureCovariates":["equipment.rca/unit-load"],"frequencySeconds":60,"maxHorizon":120}]
+}

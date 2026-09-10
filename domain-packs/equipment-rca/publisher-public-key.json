@@ -1,0 +1,8 @@
+{
+  "algorithm": "Ed25519",
+  "keyId": "nexweave-m9-equipment-rca-2026",
+  "keyNamespace": "equipment.rca",
+  "publicKeyBase64Url": "p9FSU-RWLbU5AuDl2RoSIAq1d4YKdUwwyMNPkwDIzRc",
+  "purpose": "Verification-only public key for equipment-rca-pack 1.0.0",
+  "privateKeyRetainedInRepository": false
+}

@@ -1,6 +1,6 @@
-# M3-calibrated State, Permission and Error Contract
+# M5-governance-calibrated State, Permission and Error Contract
 
-> Status: M1/M2 states are implemented and accepted. M3 Source/Parse states, actions and error vocabulary below are approved by ADR-0021/taskbook but not implemented; later knowledge states remain frozen vocabulary.
+> Status: M1—M7 are formally accepted; ADR-0026 M7 Quality/Release/Query/Graph states, actions and stable errors are implemented and locally technically accepted. M8+ integration state is not implemented.
 
 ## State vocabulary
 
@@ -20,6 +20,12 @@
 | UploadSession | `INITIATED`, `UPLOADING`, `COMPLETING`, `COMPLETED`, `ABORTED`, `EXPIRED` | terminal sessions cannot accept new bytes |
 | Object scan | `PENDING`, `CLEAN`, `INFECTED`, `FAILED` | only `CLEAN` bytes can be downloaded |
 | Governance | `DRAFT`, `ACTIVE`, `DISABLED`, `DEPRECATED` | PromptVersion is append-only; M1 does not execute models/connectors |
+| SchemaVersion | `DRAFT`, `TESTING`, `PUBLISHED`, `DEPRECATED` | PUBLISHED content/composition checksum/Pack inputs are immutable; R1 has no separate OntologyVersion state |
+| DomainPackVersion | `DRAFT`, `VALIDATED`, `PUBLISHED`, `REVOKED`, `DEPRECATED` | published artifact/checksum is immutable; revocation does not delete history |
+| Installation | `PLANNED`, `INSTALLING`, `ACTIVE`, `FAILED`, `ROLLING_BACK`, `ROLLED_BACK`, `DISABLED` | ACTIVE means exact PackVersion was installed and candidate/effective Schema refs recorded; it does not itself publish Schema |
+| CompileJob | `CREATED`, `QUEUED`, `RUNNING`, `PAUSED`, `PARTIAL_FAILED`, `FAILED`, `SUCCEEDED`, `CANCELED` | fixed inputs cannot change; retries/recompile create a new job instead of rewriting terminal history |
+| WikiPage | `DRAFT`, `IN_REVIEW`, `APPROVED`, `RELEASED`, `DEPRECATED` | M5 creates/edits DRAFT only; stable identity points to append-only current version |
+| WikiPageVersion | `AI_DRAFT`, `EDITING`, `PENDING_REVIEW`, `APPROVED`, `REJECTED`, `RELEASED`, `DEPRECATED` | content is immutable; M5 creates `AI_DRAFT`/`EDITING` only and does not approve or release |
 | WorkflowTask | `CREATED`, `STARTING`, `RUNNING`, `PAUSED`, `WAITING`, `WAITING_INPUT`, `CANCELLING`, `COMPENSATING`, `CANCELLED`, `SUCCEEDED`, `FAILED`, `TIMED_OUT`, `REJECTED` | Temporal advances execution; terminal tasks do not accept control except FAILED/TIMED_OUT retry |
 | WorkflowStep | `PENDING`, `RUNNING`, `RETRYING`, `PAUSED`, `WAITING`, `SUCCEEDED`, `FAILED`, `CANCELLED`, `COMPENSATED` | projection is repairable; Event history is append-only |
 
@@ -45,7 +51,11 @@ M1 concretely grants only the actions declared in `packages/domain/src/nexweave_
 
 M2 adds `workflow.create`, `workflow.read`, `workflow.control`, `workflow.review` and `workflow.reconcile`. The API intersects these role actions with active membership and the authoritative Workflow status before returning `allowed_actions`; `If-Match` and command idempotency are mandatory for mutation. A Web button, database projection value or client-supplied actor never grants a command.
 
-M3 adds approved-but-not-yet-implemented actions `source.upload`, `source.read`, `source.download`, `source.parse`, `source.invalidate` and `source.archive`. They remain subject to active tenant/space membership, Source state, classification clearance, ETag/idempotency and server-side reauthorization. Source business endpoints start/control the v2 Workflow; access to generic M2 task commands alone does not grant Source mutation.
+M3 implements actions `source.upload`, `source.read`, `source.download`, `source.parse`, `source.invalidate` and `source.archive`; they are locally verified and remain subject to active tenant/space membership, Source state, classification clearance, ETag/idempotency and server-side reauthorization. Source business endpoints start/control the v2 Workflow; access to generic M2 task commands alone does not grant Source mutation.
+
+M4 implements `schema.read`, `schema.edit`, `schema.validate`, `schema.publish`, `pack.read`, `pack.install` and `pack.rollback`. Editing terms, hierarchy or mappings requires `schema.edit`; composition/impact preview requires `schema.validate`; publishing a semantic snapshot requires `schema.publish` plus configured approval/separation. Pack install authority never implies Schema publish authority.
+
+M5 implements `compile.create`, `compile.read`, `knowledge.read`, `page.read`, `page.edit` and `page.comment`. Knowledge engineers can create/read Compile jobs and edit/comment on governed drafts; consumers receive no draft Compile/Entity/Wiki access. Page editing requires the current version, strong ETag and idempotency key, and can change only protected sections/properties/title; generated sections remain compile-owned. These permissions do not grant M6 review/conflict resolution or M7 publish authority.
 
 ## Stable error codes
 
@@ -63,6 +73,11 @@ All public HTTP errors use `application/problem+json` and the JSON Schema at `pa
 | `IDEMPOTENCY_KEY_REUSED` | 409 | same key used with different request hash |
 | `INVALID_CURSOR` | 400 | opaque cursor is malformed or its continuation anchor is unavailable |
 | `SEMANTIC_POLICY_FAILED` | 422 | Schema/Evidence/Release gate failed |
+| `SEMANTIC_MODEL_INVALID` | 422 | stable key/reference/hierarchy/term/mapping contract failed; fix declaration |
+| `SEMANTIC_MAPPING_AMBIGUOUS` | 409 | mapping or term resolves to multiple incompatible semantic targets; human resolution required |
+| `SCHEMA_BREAKING_CHANGE` | 409 | direct publish blocked pending impact report, migration plan and approval |
+| `PACK_DEPENDENCY_CONFLICT` | 409 | dependency range is missing, cyclic, ambiguous or incompatible |
+| `PACK_COMPOSITION_CONFLICT` | 409 | duplicate key, inherited constraint, endpoint or mapping definitions cannot be deterministically composed |
 | `RATE_LIMITED` | 429 | retry only after server guidance |
 | `DEPENDENCY_UNAVAILABLE` | 503 | transient provider/workflow failure; retry policy applies |
 | `BUSINESS_KEY_CONFLICT` | 409 | stable workflow business key already exists with a different creation payload |
@@ -77,6 +92,22 @@ All public HTTP errors use `application/problem+json` and the JSON Schema at `pa
 | `OCR_REQUIRED` | 422 | scanned/no-text unit requires a real OCR Provider; may be a partial-result unit |
 | `PARSE_RESULT_INVALID` | 500 | Provider result failed the trusted document contract; do not persist as success |
 | `ANCHOR_UNRESOLVED` | 409 | locator cannot be verified for the selected parse result |
+| `COMPILE_INPUT_UNAVAILABLE` | 422 | fixed Schema/Prompt/Model/Source input cannot be resolved in the authorized tenant/space |
+| `COMPILE_SOURCE_NOT_READY` | 422 | SourceVersion lacks an eligible successful parse result/anchor set |
+| `COMPILE_SCHEMA_NOT_PUBLISHED` | 422 | only a PUBLISHED SchemaVersion may be compiled |
+| `COMPILE_PROMPT_UNAVAILABLE` | 422 | fixed PromptVersion is not active/available |
+| `COMPILE_MODEL_UNAVAILABLE` | 422 | fixed ModelProfile is not active/available |
+| `MODEL_CLASSIFICATION_DENIED` | 403 | model profile classification ceiling is below an input classification |
+| `MODEL_EGRESS_DENIED` | 403 | data egress policy forbids this model route |
+| `MODEL_PROVIDER_UNAVAILABLE` | 503 | configured external provider is not available; retry only under the fixed profile or create a new job |
+| `WIKI_VERSION_NOT_CURRENT` | 409 | edit target is not the current draft version; reload before retrying |
+| `EVALUATION_SCHEMA_NOT_PUBLISHED` | 409 | suite does not bind a published SchemaVersion in the same space |
+| `RELEASE_INPUT_UNAVAILABLE` | 404 | one or more fixed candidate inputs cannot be resolved in scope |
+| `RELEASE_EVIDENCE_REQUIRED` | 409 | selected Claim/Relation lacks accepted Evidence with VALID Anchor |
+| `RELEASE_DUTY_SEPARATION` | 409 | candidate creator attempted to approve publication |
+| `RELEASE_NOT_READY` | 409 | quality/conflict/lint gate has not reached approval-ready state |
+| `RELEASE_APPROVAL_REQUIRED` | 409 | matching audited Publisher approval is absent |
+| `PRECONDITION_FAILED` | 412 | strong pointer ETag is stale or malformed |
 | `INTERNAL_ERROR` | 500 | opaque detail and trace ID; never expose stack/secrets |
 
 `detail` is safe human-readable context and may change; integrations branch only on `code` and HTTP status. Field issues use JSON Pointer locations.

@@ -1,0 +1,120 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {
+      "format": "uuid7",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "composition_checksum": {
+      "title": "Composition Checksum",
+      "type": "string"
+    },
+    "deprecated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deprecated At"
+    },
+    "deprecation_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deprecation Reason"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "index_config": {
+      "additionalProperties": true,
+      "title": "Index Config",
+      "type": "object"
+    },
+    "manifest": {
+      "additionalProperties": true,
+      "title": "Manifest",
+      "type": "object"
+    },
+    "manifest_checksum": {
+      "title": "Manifest Checksum",
+      "type": "string"
+    },
+    "model_profile_id": {
+      "format": "uuid7",
+      "title": "Model Profile Id",
+      "type": "string"
+    },
+    "prompt_version_id": {
+      "format": "uuid7",
+      "title": "Prompt Version Id",
+      "type": "string"
+    },
+    "published_at": {
+      "format": "date-time",
+      "title": "Published At",
+      "type": "string"
+    },
+    "published_by": {
+      "format": "uuid7",
+      "title": "Published By",
+      "type": "string"
+    },
+    "schema_version_id": {
+      "format": "uuid7",
+      "title": "Schema Version Id",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "space_id",
+    "candidate_id",
+    "version",
+    "status",
+    "manifest",
+    "manifest_checksum",
+    "schema_version_id",
+    "composition_checksum",
+    "prompt_version_id",
+    "model_profile_id",
+    "index_config",
+    "published_at",
+    "published_by"
+  ],
+  "title": "ReleaseResponse",
+  "type": "object"
+}

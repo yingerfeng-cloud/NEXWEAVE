@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "manifest_checksum": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Manifest Checksum",
+      "type": "string"
+    },
+    "release_id": {
+      "format": "uuid7",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "release_id",
+    "space_id",
+    "version",
+    "manifest_checksum"
+  ],
+  "title": "ReleasePublishedEventData",
+  "type": "object"
+}

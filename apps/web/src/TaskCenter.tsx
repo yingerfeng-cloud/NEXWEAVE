@@ -1,13 +1,20 @@
 import {
   type FormEvent,
-  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
 
-import { ApiError, NexweaveApi } from "./api";
+import { messageOf, NexweaveApi } from "./api";
+import {
+  EmptyState,
+  Metric,
+  PageHeader,
+  Panel,
+  StatusPill,
+  TechnicalDetails,
+} from "./design-system/ui";
 import type {
   Principal,
   WorkflowCommand,
@@ -17,13 +24,13 @@ import type {
 } from "./types";
 
 const TYPES: Array<[WorkflowType, string]> = [
-  ["SOURCE_INGESTION", "资料接入内核"],
-  ["KNOWLEDGE_COMPILE", "知识编译内核"],
-  ["HUMAN_REVIEW", "人工审核内核"],
-  ["QUALITY_EVALUATION", "质量评估内核"],
-  ["KNOWLEDGE_RELEASE", "知识发布内核"],
-  ["DOMAIN_PACK_INSTALL", "领域包安装内核"],
-  ["GRIDCREW_FEEDBACK_INGESTION", "GridCrew 反馈内核"],
+  ["SOURCE_INGESTION", "资料接入"],
+  ["KNOWLEDGE_COMPILE", "知识编译"],
+  ["HUMAN_REVIEW", "人工审核"],
+  ["QUALITY_EVALUATION", "质量评估"],
+  ["KNOWLEDGE_RELEASE", "知识发布"],
+  ["DOMAIN_PACK_INSTALL", "领域包安装"],
+  ["GRIDCREW_FEEDBACK_INGESTION", "外部反馈接入"],
 ];
 
 const COMMAND_LABEL: Record<WorkflowCommand, string> = {
@@ -57,39 +64,43 @@ export function TaskCenter({
     ["tenant_admin", "space_admin", "knowledge_engineer"].includes(role),
   );
 
-  const refresh = useCallback(async () => {
-    if (!spaceId) {
-      setTasks([]);
-      setDetail(null);
-      setLoading(false);
-      return;
-    }
-    setError("");
-    setLoading(true);
-    try {
-      const page = await api.workflowTasks(spaceId);
-      setTasks(page.items);
-      const routeId = readTaskId();
-      const target = routeId || selectedId;
-      if (target) {
-        const value = await api.workflowTask(target);
-        setDetail(value);
-        setSelectedId(target);
-      } else {
+  const refresh = useCallback(
+    async (requestedId?: string) => {
+      if (!spaceId) {
+        setTasks([]);
         setDetail(null);
+        setLoading(false);
+        return;
       }
-    } catch (nextError) {
-      setError(messageOf(nextError));
-    } finally {
-      setLoading(false);
-    }
-  }, [api, selectedId, spaceId]);
+      setError("");
+      setLoading(true);
+      try {
+        const page = await api.workflowTasks(spaceId);
+        setTasks(page.items);
+        const target = requestedId === undefined ? readTaskId() : requestedId;
+        if (target) {
+          const value = await api.workflowTask(target);
+          setDetail(value);
+          setSelectedId(target);
+        } else {
+          setDetail(null);
+          setSelectedId("");
+        }
+      } catch (nextError) {
+        setError(messageOf(nextError));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api, spaceId],
+  );
 
-  useEffect(() => void refresh(), [refresh]);
+  useEffect(() => void refresh(readTaskId()), [refresh]);
   useEffect(() => {
     const restore = () => {
-      setSelectedId(readTaskId());
-      void refresh();
+      const routeId = readTaskId();
+      setSelectedId(routeId);
+      void refresh(routeId);
     };
     window.addEventListener("popstate", restore);
     return () => window.removeEventListener("popstate", restore);
@@ -117,7 +128,8 @@ export function TaskCenter({
   );
 
   function openTask(id: string) {
-    history.pushState({}, "", `/compile/${id}`);
+    history.pushState({}, "", `/tasks/${id}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
     setSelectedId(id);
     setLoading(true);
     api
@@ -185,25 +197,27 @@ export function TaskCenter({
 
   return (
     <section className="page">
-      <header className="page-title">
-        <span>05</span>
-        <div>
-          <h1>任务中心</h1>
-          <p>
-            Temporal 是执行权威；此处展示 PostgreSQL
-            只读投影、步骤、日志和服务端允许的动作。
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        title="任务中心"
+        description="跟踪资料接入、知识编译、人工审核和发布任务的进度与待处理事项。"
+      />
       {error && (
         <div className="form-error" role="alert">
-          {error}
-          <button onClick={() => void refresh()}>重试</button>
+          <span>{error}</span>
+          <button type="button" onClick={() => void refresh()}>
+            重试
+          </button>
         </div>
+      )}
+      {!spaceId && (
+        <EmptyState
+          title="先选择知识空间"
+          description="任务列表需要读取当前知识空间的可靠执行记录。"
+        />
       )}
       <div className="metric-grid task-metrics">
         <Metric value={tasks.length} label="全部任务" detail="当前知识空间" />
-        <Metric value={counts.active} label="执行中" detail="Temporal 运行态" />
+        <Metric value={counts.active} label="执行中" detail="正在处理" />
         <Metric
           value={counts.waiting}
           label="等待处理"
@@ -216,38 +230,38 @@ export function TaskCenter({
         />
       </div>
       {canCreate && spaceId && (
-        <Panel title="启动 M2 内核任务">
+        <Panel title="启动任务">
           <form className="inline-form task-create" onSubmit={create}>
-            <select name="workflow_type" aria-label="工作流类型">
-              {TYPES.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <input
-              name="business_key"
-              aria-label="业务键"
-              placeholder="稳定业务键，例如 demo-001"
-              pattern="[A-Za-z0-9][A-Za-z0-9._:-]*"
-              required
-            />
-            <input
-              name="display_name"
-              aria-label="任务名称"
-              placeholder="任务名称"
-              required
-            />
+            <label>
+              任务类型
+              <select name="workflow_type">
+                {TYPES.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              业务标识
+              <input
+                name="business_key"
+                placeholder="例如 equipment-review-001"
+                pattern="[A-Za-z0-9][A-Za-z0-9._:-]*"
+                required
+              />
+            </label>
+            <label>
+              任务名称
+              <input name="display_name" placeholder="任务名称" required />
+            </label>
             <label className="check-field">
               <input name="start_paused" type="checkbox" /> 启动后暂停
             </label>
-            <button className="primary" disabled={working}>
+            <button className="primary" type="submit" disabled={working}>
               启动
             </button>
           </form>
-          <small className="boundary-note">
-            七类任务仅执行 M2 可靠性边界 Stub，不生成 M3+ 业务对象。
-          </small>
         </Panel>
       )}
       <div className="task-layout">
@@ -259,21 +273,22 @@ export function TaskCenter({
                 key={task.id}
                 onClick={() => openTask(task.id)}
               >
-                <span
-                  className={`workflow-status ${task.status.toLowerCase()}`}
-                >
-                  {task.status}
-                </span>
+                <StatusPill value={task.status} />
                 <strong>{task.display_name}</strong>
                 <small>{typeLabel(task.workflow_type)}</small>
                 <progress value={task.progress} max="100" />
-                <code>{task.workflow_id}</code>
+                <small>创建于 {formatDate(task.created_at)}</small>
               </button>
             ))}
             {!tasks.length && (
-              <div className="empty">
-                {loading ? "正在加载任务投影…" : "当前空间尚无工作流任务"}
-              </div>
+              <EmptyState
+                title={loading ? "正在读取任务" : "当前没有任务"}
+                description={
+                  loading
+                    ? "正在获取最新运行状态。"
+                    : "启动资料接入、知识编译或审核任务后，进度会显示在这里。"
+                }
+              />
             )}
           </div>
         </Panel>
@@ -291,7 +306,10 @@ export function TaskCenter({
             />
           ) : (
             <Panel title="任务详情">
-              <div className="empty">选择任务查看步骤、日志和可执行动作</div>
+              <EmptyState
+                title="选择一个任务"
+                description="查看处理进度、执行步骤、日志和可用操作。"
+              />
             </Panel>
           )}
         </div>
@@ -322,7 +340,7 @@ function TaskDetail({
         <div className="task-summary">
           <div>
             <span>状态</span>
-            <strong>{task.status}</strong>
+            <StatusPill value={task.status} />
           </div>
           <div>
             <span>进度</span>
@@ -333,13 +351,16 @@ function TaskDetail({
             <strong>{task.projection_in_sync ? "已同步" : "待对账"}</strong>
           </div>
           <div>
-            <span>Run ID</span>
-            <code>{task.temporal_run_id ?? "等待启动"}</code>
+            <span>人工介入</span>
+            <strong>
+              {detail.allowed_actions.length ? "可处理" : "无需介入"}
+            </strong>
           </div>
         </div>
         <div className="task-actions" aria-label="任务动作">
           {detail.allowed_actions.map((action) => (
             <button
+              type="button"
               className={
                 action === "CANCEL" || action === "REJECT"
                   ? "danger"
@@ -352,16 +373,28 @@ function TaskDetail({
               {COMMAND_LABEL[action]}
             </button>
           ))}
-          <button disabled={working} onClick={() => void onRefresh()}>
+          <button
+            type="button"
+            disabled={working}
+            onClick={() => void onRefresh()}
+          >
             刷新
           </button>
           {canReconcile && (
-            <button disabled={working} onClick={() => void onReconcile()}>
-              与 Temporal 对账
+            <button
+              type="button"
+              disabled={working}
+              onClick={() => void onReconcile()}
+            >
+              校准任务状态
             </button>
           )}
         </div>
       </Panel>
+      <TechnicalDetails>
+        <code>Workflow {task.workflow_id}</code>
+        <code> · Run {task.temporal_run_id ?? "等待启动"}</code>
+      </TechnicalDetails>
       <Panel title={`执行步骤 · ${detail.steps.length}`}>
         <ol className="step-list">
           {detail.steps.map((step) => (
@@ -371,9 +404,9 @@ function TaskDetail({
                 <strong>{step.step_key}</strong>
                 <small>{step.message}</small>
               </div>
-              <code>
-                {step.status} · attempt {step.attempt}
-              </code>
+              <span className="step-status">
+                <StatusPill value={step.status} /> · attempt {step.attempt}
+              </span>
             </li>
           ))}
         </ol>
@@ -393,47 +426,14 @@ function TaskDetail({
   );
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="panel">
-      <header>
-        <h2>{title}</h2>
-      </header>
-      <div className="panel-body">{children}</div>
-    </section>
-  );
-}
-
-function Metric({
-  value,
-  label,
-  detail,
-}: {
-  value: number;
-  label: string;
-  detail: string;
-}) {
-  return (
-    <article className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
-    </article>
-  );
-}
-
 function readTaskId() {
-  const [, id] = location.pathname.match(/^\/compile\/([^/]+)$/) ?? [];
+  const [, id] =
+    location.pathname.match(/^\/(?:tasks|compile)\/([^/]+)$/) ?? [];
   return id ?? "";
 }
 
 function typeLabel(value: WorkflowType) {
   return TYPES.find(([type]) => type === value)?.[1] ?? value;
-}
-
-function messageOf(error: unknown) {
-  if (error instanceof ApiError || error instanceof Error) return error.message;
-  return "任务中心发生未知错误，请重试。";
 }
 
 function formatDate(value: string) {

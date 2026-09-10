@@ -51,12 +51,10 @@ test("recovers a failed list and persists server-side filters in the URL", async
 
   renderSourceCenter();
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "资料目录暂时不可用",
+    "服务暂时不可用，请稍后重试",
   );
   fireEvent.click(screen.getByRole("button", { name: "重试" }));
-  expect(
-    await screen.findByText("当前空间尚无资料，可以从上方导入"),
-  ).toBeInTheDocument();
+  expect(await screen.findByText("当前知识空间还没有资料")).toBeInTheDocument();
 
   fireEvent.change(screen.getByRole("searchbox"), {
     target: { value: "规范" },
@@ -170,12 +168,14 @@ test("shows active versus latest parse and preserves OCR_REQUIRED partial detail
   });
 
   renderSourceCenter();
-  expect(await screen.findByText("OCR_REQUIRED")).toBeInTheDocument();
-  expect(screen.getByText("PARTIAL_FAILED")).toBeInTheDocument();
+  expect(await screen.findByTitle("OCR_REQUIRED")).toHaveTextContent(
+    "需要 OCR",
+  );
+  expect(screen.getByTitle("PARTIAL_FAILED")).toHaveTextContent("部分失败");
   expect(screen.getByText(/未配置 OCR Provider/)).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "重试同一配置" })).toBeEnabled();
-  expect(screen.getByText("ACTIVE PARSEJOB")).toBeInTheDocument();
-  expect(screen.getByText("LATEST PARSEJOB")).toBeInTheDocument();
+  expect(screen.getByText("当前生效")).toBeInTheDocument();
+  expect(screen.getByText("最近执行")).toBeInTheDocument();
 });
 
 function renderSourceCenter() {

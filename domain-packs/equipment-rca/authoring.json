@@ -1,0 +1,20 @@
+{
+  "types": [], "properties": [], "hierarchy": [], "relations": [], "terms": [], "mappings": [],
+  "templates": [
+    {"key": "equipment.rca/case-page", "definition": {"kind": "PAGE_TEMPLATE", "title": "Equipment RCA case", "sections": ["scope-and-symptoms", "timeline", "candidate-causes", "supporting-evidence", "counter-evidence", "verification-methods", "excluded-hypotheses", "corrective-actions", "uncertainty-and-open-items"], "protectedSections": ["expert-decision", "safety-constraints", "approval-record"]}},
+    {"key": "equipment.rca/mechanism-page", "definition": {"kind": "PAGE_TEMPLATE", "title": "Failure mechanism", "sections": ["mechanism-summary", "applicable-equipment", "preconditions", "causal-path", "supporting-evidence", "counter-evidence", "verification-methods", "limitations"]}},
+    {"key": "equipment.rca/assistant-prompt", "definition": {"kind": "PROMPT_TEMPLATE", "version": "1.0.0", "purpose": "Evidence-backed equipment RCA knowledge assistance", "instructions": ["Use only the fixed Release supplied by the caller.", "Present candidate causes, not a final diagnosis.", "Separate supporting evidence from counter-evidence.", "Give verification suggestions only when they are supported by released knowledge.", "State conflicts, uncertainty and missing evidence explicitly.", "Never issue an automatic operating or maintenance instruction."], "requiredOutput": ["candidateCauses", "supportingEvidence", "counterEvidence", "verificationSuggestions", "conflicts", "uncertainty", "citations", "engineeringJudgmentRequired"]}}
+  ],
+  "lintRules": [
+    {"key": "equipment.rca/causal-evidence-required", "definition": {"severity": "ERROR", "blocking": true, "appliesTo": ["equipment.rca/has-immediate-cause", "equipment.rca/has-root-cause", "equipment.rca/explained-by-mechanism"], "requirement": "Every causal Relation must have at least one accepted Evidence record with a VALID SourceAnchor."}},
+    {"key": "equipment.rca/counter-evidence-visible", "definition": {"severity": "ERROR", "blocking": true, "appliesTo": ["equipment.rca/case-page"], "requirement": "High or critical cases must include a counter-evidence section, including an explicit none-found statement when appropriate."}},
+    {"key": "equipment.rca/verification-required", "definition": {"severity": "ERROR", "blocking": true, "appliesTo": ["equipment.rca/root-cause"], "requirement": "A root-cause candidate must link to a verification method or record why verification is unavailable."}},
+    {"key": "equipment.rca/no-automatic-disposition", "definition": {"severity": "ERROR", "blocking": true, "appliesTo": ["equipment.rca/action"], "requirement": "Knowledge content must not represent an action as an automatically executable instruction."}},
+    {"key": "equipment.rca/identifier-not-identity", "definition": {"severity": "WARNING", "blocking": false, "appliesTo": ["equipment.rca/kks-code", "equipment.rca/component-code"], "requirement": "Operational codes are governed attributes and must not replace stable entity identity."}},
+    {"key": "equipment.rca/expert-rule-review", "definition": {"severity": "ERROR", "blocking": true, "appliesTo": ["equipment.rca/expert-rule"], "requirement": "Expert rules require named human review and provenance before Release."}}
+  ],
+  "evaluationSuites": [],
+  "ui": [
+    {"key": "equipment.rca/case-ui", "definition": {"icon": "case", "colorToken": "warning", "form": {"sections": ["facts", "evidence", "verification", "review"]}, "list": {"columns": ["title", "risk-level", "case-status", "updated-at"]}, "semanticModel": {"primaryType": "equipment.rca/case"}, "helpText": "辅助知识分析，不替代最终工程判断。"}}
+  ]
+}

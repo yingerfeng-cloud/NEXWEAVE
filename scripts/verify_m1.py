@@ -16,7 +16,7 @@ from botocore.exceptions import ClientError
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = "http://localhost:8080"
-M1_COMPATIBLE_MILESTONES = {"M1", "M2", "M3"}
+M1_COMPATIBLE_MILESTONES = {"M1", "M2", "M3", "M4"}
 
 
 def environment() -> dict[str, str]:

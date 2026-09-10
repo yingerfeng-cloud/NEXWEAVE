@@ -1,0 +1,51 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "candidate_schema_version_id": {
+      "format": "uuid7",
+      "title": "Candidate Schema Version Id",
+      "type": "string"
+    },
+    "composition_checksum": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Composition Checksum"
+    },
+    "domain_pack_version_id": {
+      "format": "uuid7",
+      "title": "Domain Pack Version Id",
+      "type": "string"
+    },
+    "installation_id": {
+      "format": "uuid7",
+      "title": "Installation Id",
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "INSTALL",
+        "UPGRADE",
+        "DISABLE",
+        "ROLLBACK"
+      ],
+      "title": "Operation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "installation_id",
+    "domain_pack_version_id",
+    "candidate_schema_version_id",
+    "operation"
+  ],
+  "title": "PackInstalledEventData",
+  "type": "object"
+}

@@ -21,6 +21,8 @@ ignore = ["S101"]
 # SQL text is intentionally kept readable in this adapter. The only formatted
 # fragments are module-private, static column allowlists; request values remain bound parameters.
 "apps/api/src/nexweave_api/source_repository.py" = ["E501", "S608"]
+"apps/api/src/nexweave_api/semantic_repository.py" = ["E501", "S608"]
+"apps/api/src/nexweave_api/knowledge_repository.py" = ["E501", "S608"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -30,7 +32,7 @@ mypy_path = ["apps/api/src", "packages/domain/src", "packages/application/src", 
 packages = ["nexweave_api", "nexweave_domain", "nexweave_application", "nexweave_contracts", "nexweave_sdk", "nexweave_worker_health", "nexweave_worker_kernel", "nexweave_worker_parser"]
 
 [[tool.mypy.overrides]]
-module = ["boto3.*", "botocore.*", "redis.*", "openpyxl.*"]
+module = ["boto3.*", "botocore.*", "redis.*", "openpyxl.*", "pandas.*", "torch.*", "chronos.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

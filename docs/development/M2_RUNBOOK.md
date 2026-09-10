@@ -100,4 +100,4 @@ make dev-down
 
 - 本地 Compose 不构成生产 HA、DR、保留策略、升级或容量认证；
 - 远程 CI 与双架构 SBOM/CVE/Cosign 已由 run `32808198635` 验证；生产部署仍须按目标环境重新验证 OIDC、Secret、HTTPS、HA/DR 与容量；
-- M3 Source/解析、M4 Schema、M5 真实 Compile、M6 Review、M7 Release 等业务仍未实现。
+- 本手册对应 M2 收口时点；当时 M3 Source/解析、M4 Schema、M5 真实 Compile、M6 Review、M7 Release 等业务尚未实现。当前阶段状态以根 `PROJECT_STATUS.md` 为准。

@@ -1,0 +1,156 @@
+{
+  "recorded_at": "2026-09-09T07:13:39.630072+00:00",
+  "stage": "M9.5/C",
+  "status": "LOCAL_TECHNICAL_VERIFIED",
+  "user_acceptance": false,
+  "industrial_acceptance": false,
+  "e2e": {
+    "completed_at": "2026-09-09T07:04:05.606832+00:00",
+    "space_id": "01a07c13-d739-71bd-9cf5-186de346e09e",
+    "artifact_id": "01a083bf-0b64-72a2-a7d4-dbfa1a8e0b72",
+    "artifact_checksum_unchanged": "sha256:e20f8a9d3479dffa7c1f96428eaf6a5417d69a7ea10b8cead379d869a3f95405",
+    "context": {
+      "artifact_id": "01a083bf-0b64-72a2-a7d4-dbfa1a8e0b72",
+      "artifact_checksum": "sha256:e20f8a9d3479dffa7c1f96428eaf6a5417d69a7ea10b8cead379d869a3f95405",
+      "release_id": "01a084fb-1fff-7ef5-9fe6-0c199fc912e5",
+      "release_checksum": "sha256:a9ab0a401f3f7c83656dd7ebf27ed5818e9e243963becb7daabfb4fdc2f9f8ee",
+      "release_deprecated": false,
+      "query_answer_id": "01a084fb-205e-701c-b7c7-63abb6eb7d6f",
+      "question": "Pump A is a synthetic reference for knowledge retrieval alongside P-101 forecasts. Check lubrication records and vibration history when reviewing temperature changes. This fictional example is not an approved procedure or industrial case.",
+      "checked_at": "2026-09-09T07:04:05.480924Z",
+      "status": "CITED_CONTEXT",
+      "epistemic_kind": "RELEASED_KNOWLEDGE_CONTEXT",
+      "items": [
+        {
+          "claim_id": "01a084fb-1d8d-7c1d-9171-e77085f03887",
+          "source_document_id": "01a084fb-1a56-7666-ac1d-79a286a274f0",
+          "statement": "Pump A is a synthetic reference for knowledge retrieval alongside P-101 forecasts. Check lubrication records and vibration history when reviewing temperature changes. This fictional example is not an approved procedure or industrial case.",
+          "citation": {
+            "id": "01a084fb-205f-796a-be5a-1e8f3f1b75bd",
+            "release_id": "01a084fb-1fff-7ef5-9fe6-0c199fc912e5",
+            "evidence_id": "01a084fb-1d8d-7337-a493-588b9bfabc31",
+            "source_version_id": "01a084fb-1a56-79fb-9d86-bab26e8b851b",
+            "source_anchor_id": "05246263-0550-7e1a-8151-768258e6a380",
+            "claim_id": "01a084fb-1d8d-7c1d-9171-e77085f03887",
+            "relation_id": null,
+            "excerpt": null,
+            "locator": {
+              "locators": [
+                {
+                  "kind": "block",
+                  "block_id": "cc6998eb-9129-7aa4-a970-f81e00b2e368"
+                },
+                {
+                  "end": 238,
+                  "kind": "character_range",
+                  "start": 0,
+                  "text_basis": "source_utf8"
+                }
+              ]
+            },
+            "status": "VALID"
+          }
+        }
+      ],
+      "explanation": "已找到当前可见的固定版本支持材料；请结合适用工况核实，不能据此确认当前对象的故障原因。",
+      "limitations": [
+        "本次引用回接独立于历史预测制品，不改变其内容。",
+        "条件预测不等于因果推断；相关材料不证明当前对象适用性。",
+        "Potential Event 不是已发生事实或故障概率；Hypothesis 仍待核实。"
+      ]
+    },
+    "second_release_id": "01a084fb-1eea-7b05-85c9-ebd92f54db6c",
+    "refusal": true,
+    "cross_space_denied": true,
+    "outsider_denied": true,
+    "anchor_preview": "PASSED",
+    "data_kind": "SYNTHETIC",
+    "review_actor_kind": "SCRIPTED_TEST_ROLES",
+    "industrial_acceptance": false
+  },
+  "invalidated_source": {
+    "source_version_id": "01a084fc-b4ca-7991-ae4a-3d5c8cc02a35",
+    "release_id": "01a084fc-ba5b-7957-9e2c-8adae09555b8",
+    "before": "CITED_CONTEXT",
+    "after": "INSUFFICIENT_EVIDENCE",
+    "active_reference_still_cited": true,
+    "artifact_unchanged": true,
+    "data_kind": "SYNTHETIC",
+    "industrial_acceptance": false
+  },
+  "deployment": {
+    "runtime": {
+      "worker_status": "AVAILABLE",
+      "worker_count": 1,
+      "queued": 0,
+      "running": 0,
+      "delivery_pending": 0,
+      "implementation_version": "0.9.5-c1"
+    },
+    "implementation_version": "0.9.5-c1",
+    "stage_c_web_asset": "/assets/index-Dqip8N1_.js",
+    "stage_c_web_markers": true,
+    "restored_active_demo_pointer": "01a084fb-1eea-7b05-85c9-ebd92f54db6c",
+    "keyword_query": {
+      "question": "lubrication vibration",
+      "query_answer_id": "01a08501-b418-7297-aec0-7eeb9b394190",
+      "citations": 1
+    }
+  },
+  "demo": {
+    "space_id": "01a07c13-d739-71bd-9cf5-186de346e09e",
+    "artifact_id": "01a083bf-0b64-72a2-a7d4-dbfa1a8e0b72",
+    "release_id": "01a084fb-1fff-7ef5-9fe6-0c199fc912e5",
+    "release_version": "7.0.1788937445",
+    "question": "lubrication vibration",
+    "data_kind": "SYNTHETIC"
+  },
+  "verification": {
+    "python_passed": 157,
+    "python_integration_deselected": 5,
+    "web_passed": 31,
+    "web_final_component_passed": 3,
+    "lint_format_types_build": "PASSED",
+    "typed_python_modules": 98,
+    "full_browser_click_and_visual_e2e": "NOT_RUN",
+    "historical_migration_versions_unchanged": 11,
+    "new_migrations": 0,
+    "new_third_party_dependencies": 0,
+    "new_timeseries_model_runs": 0
+  },
+  "changed_files_since_stage_c_start": [
+    "AGENTS.md",
+    "ARCHITECTURE_BASELINE.md",
+    "CHANGELOG.md",
+    "OPEN_QUESTIONS.md",
+    "PROJECT_STATUS.md",
+    "README.md",
+    "apps/api/src/nexweave_api/app.py",
+    "apps/api/src/nexweave_api/forecast_knowledge.py",
+    "apps/api/src/nexweave_api/forecast_routes.py",
+    "apps/api/tests/test_app.py",
+    "apps/api/tests/test_stage_c_knowledge.py",
+    "apps/web/src/ForecastKnowledge.test.tsx",
+    "apps/web/src/ForecastKnowledge.tsx",
+    "apps/web/src/LivingKnowledge.tsx",
+    "apps/web/src/api.ts",
+    "apps/web/src/livingTypes.ts",
+    "docs/INDEX.md",
+    "docs/architecture/adr/ADR-0035-stage-c-released-knowledge-context.md",
+    "docs/architecture/adr/README.md",
+    "docs/development/STAGE_C_RUNBOOK.md",
+    "docs/development/reports/NEXWEAVE_阶段C_知识回接执行报告.md",
+    "docs/development/reports/阶段C_运行证据.json",
+    "docs/development/tasks/11E_NEXWEAVE_阶段C_已发布知识回接.md",
+    "docs/governance/REQUIREMENTS_TRACEABILITY_MATRIX.md",
+    "packages/contracts/openapi/nexweave-platform-v1.openapi.json",
+    "packages/contracts/schemas/forecast-knowledge-context.schema.json",
+    "packages/contracts/schemas/forecast-knowledge-request.schema.json",
+    "packages/contracts/src/nexweave_contracts/forecast.py",
+    "packages/contracts/src/nexweave_contracts/runtime.py",
+    "packages/contracts/src/nexweave_contracts/schema_export.py",
+    "scripts/verify_stage_c.py",
+    "scripts/verify_stage_c_invalidated.py"
+  ],
+  "stop_boundary": "Stage C; no M10, no commit/push"
+}

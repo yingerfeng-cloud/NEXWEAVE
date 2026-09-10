@@ -1,0 +1,81 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "base_version_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Base Version Id"
+    },
+    "conflict_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Conflict Id"
+    },
+    "draft_version_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Draft Version Id"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "markdown_diff": {
+      "title": "Markdown Diff",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "DRAFT_CREATED",
+        "CONFLICT"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "wiki_page_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Wiki Page Id"
+    }
+  },
+  "required": [
+    "id",
+    "status",
+    "markdown_diff"
+  ],
+  "title": "ObsidianImportResponse",
+  "type": "object"
+}

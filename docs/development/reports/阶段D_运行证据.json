@@ -1,0 +1,242 @@
+{
+  "scope": "11F / ADR-0036; local technical verification only",
+  "date": "2026-09-10",
+  "version": "0.9.5-d1",
+  "http": {
+    "completed_at": "2026-09-10T01:36:36.568581+00:00",
+    "query_answer_id": "01a088f5-a9c7-77c4-84f8-88fc670b64bf",
+    "historical_answer_id": "01a084fc-bab4-7275-ac7a-4001ee2a2de7",
+    "historical_read_status": "REFUSED",
+    "historical_read_filtered": true,
+    "replay_conflicts": 5,
+    "graph_member_node": "01a084fb-1c31-7083-bf0b-cf0c6443053c",
+    "graph_nonmember_denials": 2,
+    "graph_date_rejections": 2,
+    "stage_c_context": "PASSED",
+    "runtime": {
+      "worker_status": "AVAILABLE",
+      "worker_count": 1,
+      "queued": 0,
+      "running": 0,
+      "delivery_pending": 0,
+      "implementation_version": "0.9.5-d1"
+    },
+    "data_kind": "SYNTHETIC",
+    "industrial_acceptance": false
+  },
+  "postgres": {
+    "graph_checks": 6,
+    "mixed_source_reclassification_checks": 2,
+    "positive_edges": 1,
+    "nonmember_denials": 2,
+    "fixed_release_evidence": true,
+    "invalid_source_hidden": true,
+    "node_clearance_denied": true,
+    "fixture_scope": "SESSION_LOCAL_TEMP_TABLES_ROLLED_BACK"
+  },
+  "browser": {
+    "surface": "Codex in-app browser, actual localhost application",
+    "csv_rows": 1440,
+    "binding_precheck": "PASSED",
+    "editing_invalidates_precheck": true,
+    "wrong_unit_rejected": true,
+    "binding_saved": false,
+    "comparison_verified_on": "2026-09-09",
+    "comparison_quantile_deltas_displayed": {
+      "P10": 1.338,
+      "P50": 2.843,
+      "P90": 3.919
+    },
+    "comparison_is_causal": false,
+    "knowledge_context": "PASSED",
+    "source_preview": "VALID; block and chars matched; synthetic source visible",
+    "graph_positive": {
+      "nodes": 1,
+      "edges": 0
+    },
+    "graph_release_switch_clears_result": true,
+    "graph_nonmember_rejected": true,
+    "root_relative_navigation_fixed": true,
+    "screenshots_archived": false
+  },
+  "gates": {
+    "python_passed": 162,
+    "integration_deselected": 5,
+    "web_passed": 33,
+    "python_typecheck_files": 99,
+    "secret_pattern_scan": "PASSED",
+    "web_lint_typecheck_build": "PASSED",
+    "python_lint_format": "PASSED",
+    "changed_frontend_format": "PASSED"
+  },
+  "migration_files_unchanged": 11,
+  "new_migrations": 0,
+  "new_dependencies": 0,
+  "new_model_runs_in_stage_d": 0,
+  "industrial_acceptance": false,
+  "entered_m10": false,
+  "git_commit_or_push": false,
+  "changes_relative_to_stage_start": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "12b3324490511b2f7cd9d8d48152b74cbcc786220e895b7b7446bfd13e12f53f",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "ARCHITECTURE_BASELINE.md",
+      "sha256": "4ab8c3129d62652034fd49143c582544dc83b7ba13c1afb329269feaab973a8a",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "771025c06ae259d4cd591542599a771c048ca81c83c5724c4ebbdbb3c0f2e0b9",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "OPEN_QUESTIONS.md",
+      "sha256": "fed809f4c9db2085c35febe7bbb12fe3f38465e18e55f36b511a6f16e13cbdcd",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "PRODUCT_BASELINE.md",
+      "sha256": "cd02d04e522ffb6df603a6df0eefb1a2f4a01ef4c96089097835dff88c83471a",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "PROJECT_STATUS.md",
+      "sha256": "f08b8b6d67bcb2b4a8d02f1ff4ad2006321ab778047dc0633559bda257bc9eec",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "README.md",
+      "sha256": "f31f268c5b38301047833f2b503dbe1994b00fb3f657abdc4dce152d24ab86b6",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "apps/api/src/nexweave_api/app.py",
+      "sha256": "0214b42cc41c92d0d80188ac0e943a436ed90b244f90e3a8dcb46ff3b9cde8aa",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "apps/api/src/nexweave_api/release_graph.py",
+      "sha256": "e02fa9a126b17b08277198b3745756ce9ae027bceefa5ac9fbfc506183075bff",
+      "change": "added_in_stage_d"
+    },
+    {
+      "path": "apps/api/src/nexweave_api/release_repository.py",
+      "sha256": "5aaae3ad251ace5aed2e58392cdec9864d4bc337988e0c241e0d7e5c1e64dce4",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "apps/api/src/nexweave_api/release_routes.py",
+      "sha256": "9def6ee616cf27928daa89c5cc2d7bf4dc5961273f7350b61f5692bd1600e437",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "apps/api/tests/test_app.py",
+      "sha256": "5495581f26b7177385f42105bbdc532022258c1a53492e1b478f49627e567679",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "apps/api/tests/test_stage_d_reads.py",
+      "sha256": "6609c06ee5bc79834561a5c2090e8a07873d774a32f7d8d8cd48dde2f2555694",
+      "change": "added_in_stage_d"
+    },
+    {
+      "path": "apps/web/src/App.tsx",
+      "sha256": "f45e0cab5d05d08b99e018eb7ca69a5dd35f8923e3f73d29d08fba73b8eb989f",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "apps/web/src/AppNavigation.test.tsx",
+      "sha256": "a0fa6c64bab3e58065bb95d9191f90491a24eee9d7505d31908fadd511566396",
+      "change": "added_in_stage_d"
+    },
+    {
+      "path": "apps/web/src/M7Knowledge.test.tsx",
+      "sha256": "1cea926e13f23dee832dcf25eb2548e4f7089f963712727f491481023222fe7b",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "apps/web/src/M7Knowledge.tsx",
+      "sha256": "519a221e5b2b52cf2ee7fc41b7d4028f5cb7c0c44696749d6adf5900aca102db",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "docs/INDEX.md",
+      "sha256": "f05e1c806ad140990ea50f485b0424636945fca29c0f9bd988c303c0b1b8dbd2",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "docs/architecture/adr/ADR-0036-stage-d-trusted-read-boundary.md",
+      "sha256": "f92e9c4c541a4582876483133c0e14cd56cf38338842ebcd80c0119add0c0457",
+      "change": "added_in_stage_d"
+    },
+    {
+      "path": "docs/architecture/adr/README.md",
+      "sha256": "895dad1c38a18aa9a7b33347b7dee276d78e4ec04f3bad4a1b10c3adb3bcd3d1",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "docs/development/STAGE_D_RUNBOOK.md",
+      "sha256": "e0722344518ab78ec7a2957bacfdc2940daac476bad66d58c836dce14ff50d94",
+      "change": "added_in_stage_d"
+    },
+    {
+      "path": "docs/development/reports/NEXWEAVE_阶段D_验收与可信边界执行报告.md",
+      "sha256": "bed737879841202d8525c4722097c94fbe4402d0f62d1c7cf5a2f439d0bc536e",
+      "change": "added_in_stage_d"
+    },
+    {
+      "path": "docs/development/tasks/11F_NEXWEAVE_阶段D_验收与可信边界收口.md",
+      "sha256": "95d92585948cdfd8d7c44426deb3e28355119a4f0fc5a052d4772cb67ce7e49b",
+      "change": "added_in_stage_d"
+    },
+    {
+      "path": "docs/development/tasks/manifest.json",
+      "sha256": "d817a1dacaa25cbf89b049152e772ff2c3c989e8809b8adc5d44a04598b7caaf",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "docs/governance/REQUIREMENTS_TRACEABILITY_MATRIX.md",
+      "sha256": "ec3e7a958c6422c1fdd82d094aa12c2228fcf708a4b7ad07feca475a3862752b",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "packages/contracts/openapi/nexweave-platform-v1.openapi.json",
+      "sha256": "dcd5192d15b92cace58b52a4d93f5cab1b990c90d2158e0f64e5788ffaefe39c",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "packages/contracts/schemas/query-answer.schema.json",
+      "sha256": "c6708ccf6108eb91f4f7eba2ca77be66e304c04568e6146370ad7200ab3fa9d5",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "packages/contracts/src/nexweave_contracts/release.py",
+      "sha256": "3ea718d705ae326baaf1661e24b77f0796cd0160d623d85f0ffc1f0b47607ae3",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "packages/contracts/src/nexweave_contracts/runtime.py",
+      "sha256": "bec46d087646922f9f002f24effa2ee49f050c9fb22e8b34ee41d40917c6c089",
+      "change": "modified_from_stage_d_start"
+    },
+    {
+      "path": "scripts/verify_stage_d.py",
+      "sha256": "4e39c51eb46a7cf27ab9025bba39961c6d4de887589aec642bac4b6da589fd67",
+      "change": "added_in_stage_d"
+    },
+    {
+      "path": "scripts/verify_stage_d_graph.py",
+      "sha256": "c47f29beffd35df0c63fcff84eaacea9b583caf3623c0a1b0fdf55bb434dc651",
+      "change": "added_in_stage_d"
+    }
+  ],
+  "limits": [
+    "Synthetic software tests only; no industrial benchmark or expert threshold approval",
+    "Browser positive Release has no relation; edges verified with temporary PostgreSQL fixtures",
+    "No exhaustive role/concurrency/load certification; see report",
+    "No screenshot artifact; browser results based on actual accessibility observations"
+  ]
+}

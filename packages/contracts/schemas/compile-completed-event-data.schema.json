@@ -1,0 +1,67 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "compile_job_id": {
+      "format": "uuid7",
+      "title": "Compile Job Id",
+      "type": "string"
+    },
+    "composition_checksum": {
+      "title": "Composition Checksum",
+      "type": "string"
+    },
+    "model_profile_id": {
+      "format": "uuid7",
+      "title": "Model Profile Id",
+      "type": "string"
+    },
+    "output_versions": {
+      "additionalProperties": {
+        "items": {
+          "format": "uuid7",
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "title": "Output Versions",
+      "type": "object"
+    },
+    "prompt_version_id": {
+      "format": "uuid7",
+      "title": "Prompt Version Id",
+      "type": "string"
+    },
+    "schema_version_id": {
+      "format": "uuid7",
+      "title": "Schema Version Id",
+      "type": "string"
+    },
+    "source_version_ids": {
+      "items": {
+        "format": "uuid7",
+        "type": "string"
+      },
+      "title": "Source Version Ids",
+      "type": "array"
+    },
+    "stats": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Stats",
+      "type": "object"
+    }
+  },
+  "required": [
+    "compile_job_id",
+    "schema_version_id",
+    "composition_checksum",
+    "prompt_version_id",
+    "model_profile_id",
+    "source_version_ids",
+    "output_versions",
+    "stats"
+  ],
+  "title": "CompileCompletedEventData",
+  "type": "object"
+}

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     env: str = "development"
     log_level: str = "INFO"
-    build_version: str = "0.4.0-m3"
+    build_version: str = "0.9.5-a1"
     database_url: str = "postgresql+asyncpg://nexweave:local@localhost:5432/nexweave"
     object_store_endpoint: str = "http://localhost:9000"
     object_store_health_url: str = "http://localhost:9000/health"
@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     local_dev_subject: str = "local-admin"
     local_dev_tenant_slug: str = "local"
     local_dev_session_seconds: int = Field(default=3600, ge=300, le=86_400)
+    forecast_reconcile_interval: float = Field(default=2.0, ge=0.1, le=60)
+    forecast_task_queue: str = "nexweave-m95-forecast"
+    forecast_model_path: str = ".nexweave-data/models/chronos-2"
+    forecast_model_revision: str = "29ec3766d36d6f73f0696f85560a422f50e8498c"
     model_gateway_endpoint: str = ""
     secret_provider: str = Field(default="local-env-m1-only")
     health_timeout_seconds: float = Field(default=3.0, gt=0, le=30)

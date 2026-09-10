@@ -54,7 +54,7 @@ def main() -> None:
             "# Generated for local M2 Compose only. This file is ignored by Git.",
             "NEXWEAVE_ENV=development",
             "NEXWEAVE_LOG_LEVEL=INFO",
-            "NEXWEAVE_BUILD_VERSION=0.3.0-m2",
+            "NEXWEAVE_BUILD_VERSION=0.9.5-a1",
             "NEXWEAVE_POSTGRES_DB=nexweave",
             "NEXWEAVE_POSTGRES_USER=nexweave",
             f"NEXWEAVE_POSTGRES_PASSWORD={postgres_password}",

@@ -8,6 +8,7 @@ from nexweave_api.app import create_app
 from nexweave_api.errors import ApiProblem
 from nexweave_api.health import ComponentHealth, ReadinessReport
 from nexweave_api.m1_routes import _paginate
+from nexweave_api.openapi_export import render_openapi
 from nexweave_api.settings import Settings
 from nexweave_api.workflow_gateway import _merge_temporal_state
 
@@ -34,7 +35,7 @@ async def client_for(probe: StubProbe) -> AsyncIterator[httpx.AsyncClient]:
 
 
 @pytest.mark.asyncio
-async def test_platform_endpoints_report_m3_without_exposing_later_business_routes() -> None:
+async def test_platform_endpoints_report_current_implementation() -> None:
     report = ReadinessReport(
         status="ready",
         components={"postgresql": ComponentHealth(status="up")},
@@ -49,7 +50,9 @@ async def test_platform_endpoints_report_m3_without_exposing_later_business_rout
 
     assert live.status_code == 200
     assert ready.status_code == 200
-    assert version.json()["milestone"] == "M3"
+    assert version.json()["milestone"] == "M9.5"
+    assert version.json()["phase"] == "D"
+    assert version.json()["implementation_version"] == "0.9.5-d1"
     assert "local@" not in str(diagnostics.json())
     assert missing_business_route.status_code == 404
     assert probe.closed is True
@@ -121,3 +124,16 @@ def test_closed_temporal_status_overrides_stale_workflow_query_snapshot() -> Non
     assert state["status"] == "FAILED"
     assert state["run_id"] == "authoritative-run"
     assert state["temporal_status"] == "TERMINATED"
+
+
+def test_openapi_exposes_the_bounded_wiki_link_graph_contract() -> None:
+    operation = render_openapi()["paths"]["/api/v1/spaces/{space_id}/wiki-link-graph"]["get"]
+
+    assert operation["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith(
+        "/WikiLinkGraphResponse"
+    )
+    assert {parameter["name"] for parameter in operation["parameters"]} >= {
+        "focus_page_id",
+        "max_depth",
+        "node_limit",
+    }

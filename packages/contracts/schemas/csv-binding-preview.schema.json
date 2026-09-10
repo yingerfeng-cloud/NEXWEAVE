@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "checksum": {
+      "title": "Checksum",
+      "type": "string"
+    },
+    "columns": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Columns",
+      "type": "array"
+    },
+    "row_count": {
+      "maximum": 20000,
+      "minimum": 32,
+      "title": "Row Count",
+      "type": "integer"
+    },
+    "sample_rows": {
+      "items": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "maxItems": 5,
+      "title": "Sample Rows",
+      "type": "array"
+    },
+    "source_version_id": {
+      "format": "uuid7",
+      "title": "Source Version Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_version_id",
+    "checksum",
+    "columns",
+    "sample_rows",
+    "row_count"
+  ],
+  "title": "CsvBindingPreview",
+  "type": "object"
+}

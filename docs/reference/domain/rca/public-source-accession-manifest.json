@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "nexweave.public-source-accession.v1",
+  "batchId": "M9-PUBLIC-RCA-CANDIDATE-2026-09-01",
+  "acquiredAt": "2026-09-01",
+  "sourceAuthority": "National Transportation Safety Board (NTSB)",
+  "classification": "PUBLIC",
+  "localStagingDirectory": ".nexweave-data/m9-public-sources",
+  "gitTrackedRawFiles": false,
+  "pilotEvidence": false,
+  "modelUse": {
+    "externalModelAllowed": false,
+    "defaultProfile": "local-no-network",
+    "reason": "Document-level rights, third-party content and expert scope must be approved before model use."
+  },
+  "rightsBasis": {
+    "policyUrl": "https://www.ntsb.gov/about/Pages/Website-Policies.aspx",
+    "summary": "NTSB staff-created reports are generally public domain unless otherwise noted; embedded third-party text, photographs, illustrations and other materials require separate rights review.",
+    "allowedInitialUse": "Text and table extraction from NTSB-authored content for local technical evaluation.",
+    "excludedByDefault": "Third-party photographs, illustrations, maps, manufacturer excerpts, docket attachments, logos and seals."
+  },
+  "sources": [
+    {
+      "sourceId": "NTSB-AAR-18-01",
+      "title": "Uncontained Engine Failure and Subsequent Fire, American Airlines Flight 383",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/AAR1801.pdf",
+      "localFile": "ntsb-aar-18-01-flight-383.pdf",
+      "bytes": 3274711,
+      "pages": 105,
+      "sha256": "d66d2ce17cceeffb5e87d9a5470d000e92d6b0943192ef7a5f2621746c5134fa",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 105,
+        "keyConclusionPage": 90,
+        "lowTextPages": [39],
+        "excludedVisualPages": [22, 25]
+      }
+    },
+    {
+      "sourceId": "NTSB-MAB-17-21",
+      "title": "Engine Room Fire Aboard Cruise Ship Carnival Liberty",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/MAB1721.pdf",
+      "localFile": "ntsb-mab-17-21-carnival-liberty.pdf",
+      "bytes": 1894000,
+      "pages": 17,
+      "sha256": "a57d6d22cbe940d03c289833cc888ab757a87f92ff4181754023ae8375fbf0b9",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 17,
+        "keyConclusionPage": 15,
+        "lowTextPages": [],
+        "excludedVisualPages": [8, 15]
+      }
+    },
+    {
+      "sourceId": "NTSB-MAB-18-01",
+      "title": "Grounding of Bulk Carrier Nenita",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/MAB1801.pdf",
+      "localFile": "ntsb-mab-18-01-nenita.pdf",
+      "bytes": 1237363,
+      "pages": 11,
+      "sha256": "c1b7b1c42b2aed6ee2e7b74511c4d1ac6893ada19ac054bf07ed40681f375ee7",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 11,
+        "keyConclusionPage": 10,
+        "lowTextPages": [],
+        "excludedVisualPages": [5, 6]
+      }
+    },
+    {
+      "sourceId": "NTSB-MAB-19-02",
+      "title": "Diesel Generator Failure Aboard Offshore Supply Vessel Red Dawn",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/MAB1902.pdf",
+      "localFile": "ntsb-mab-19-02-red-dawn.pdf",
+      "bytes": 697571,
+      "pages": 7,
+      "sha256": "9326f185d989077b76c6f0e7489b1289775d76bbb2606118224acc2f927eaea8",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 7,
+        "keyConclusionPage": 6,
+        "lowTextPages": [],
+        "excludedVisualPages": [5]
+      }
+    },
+    {
+      "sourceId": "NTSB-MAB-21-26",
+      "title": "Diesel Generator Engine Failure Aboard Offshore Supply Vessel Ocean Intervention",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/MAB2126.pdf",
+      "localFile": "ntsb-mab-21-26-ocean-intervention.pdf",
+      "bytes": 1096363,
+      "pages": 11,
+      "sha256": "7c083da9e36a6f6ab926a580c3c0f84424c971c60911a07002cc5c3a96813817",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 11,
+        "keyConclusionPage": 10,
+        "lowTextPages": [],
+        "excludedVisualPages": [1, 2, 5, 6, 7]
+      }
+    },
+    {
+      "sourceId": "NTSB-MIR-22-06",
+      "title": "Diesel Generator Engine Failure Aboard Ferry Wenatchee",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/MIR2206.pdf",
+      "localFile": "ntsb-mir-22-06-wenatchee.pdf",
+      "bytes": 1323934,
+      "pages": 14,
+      "sha256": "6caef466998b034d14c9aa73d3548d8586487c3b5ff0c519f81bc315a33b1a9a",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 14,
+        "keyConclusionPage": 13,
+        "lowTextPages": [],
+        "excludedVisualPages": [1, 2, 3, 5, 7, 9, 10]
+      }
+    },
+    {
+      "sourceId": "NTSB-PAR-12-01",
+      "title": "Enbridge Incorporated Hazardous Liquid Pipeline Rupture and Release, Marshall, Michigan",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/PAR1201.pdf",
+      "localFile": "ntsb-par-12-01-marshall-pipeline.pdf",
+      "bytes": 9573910,
+      "pages": 164,
+      "sha256": "5b98ffb81f440ad94825102fbc1534afc01fc6d6eb7587204d2754abe886f19c",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 164,
+        "keyConclusionPage": 136,
+        "lowTextPages": [143, 144, 145, 146, 147, 149, 150, 152, 153, 154, 157, 162, 163, 164],
+        "excludedVisualPages": [143, 144, 145, 146, 147, 149, 150, 152, 153, 154, 157, 162, 163, 164]
+      }
+    },
+    {
+      "sourceId": "NTSB-PIR-22-02",
+      "title": "Enbridge Inc. Natural Gas Transmission Pipeline Rupture and Fire, Danville, Kentucky",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/PIR22002.pdf",
+      "localFile": "ntsb-pir-22-02-danville-pipeline.pdf",
+      "bytes": 2640232,
+      "pages": 65,
+      "sha256": "d9a696aaf4a14a6dd88667f941f409aa5987f20ed92e4d9b916e9bcb044d21e1",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 65,
+        "keyConclusionPage": 55,
+        "lowTextPages": [],
+        "excludedVisualPages": [5, 26, 33]
+      }
+    },
+    {
+      "sourceId": "NTSB-RIR-24-05",
+      "title": "Norfolk Southern Railway Derailment and Hazardous Materials Release, East Palestine, Ohio",
+      "url": "https://www.ntsb.gov/investigations/AccidentReports/Reports/RIR2405%20CORRECTED.pdf",
+      "localFile": "ntsb-rir-24-05-east-palestine.pdf",
+      "bytes": 6559547,
+      "pages": 216,
+      "sha256": "8dd310ba15cb5c6a0dede7e7166ea2999ae63a22a8ffca267d40fba92463391f",
+      "admissionStatus": "ADMITTED_LOCAL_TEXT_ONLY_WITH_ELEMENT_EXCLUSIONS",
+      "parseReview": {
+        "textExtractablePages": 216,
+        "keyConclusionPage": 185,
+        "lowTextPages": [29, 48, 69],
+        "excludedVisualPages": [5, 6, 17, 45, 62, 77, 86, 97]
+      }
+    }
+  ]
+}

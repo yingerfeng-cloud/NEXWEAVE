@@ -1,0 +1,15 @@
+{
+  "types": [], "properties": [], "hierarchy": [], "relations": [], "terms": [], "mappings": [], "templates": [], "lintRules": [],
+  "evaluationSuites": [
+    {"key": "equipment.rca/standard-questions-v1", "definition": {"version": 1, "name": "Equipment RCA standard questions", "minimumPolicy": {"traceabilityPercent": 100, "schemaCompliancePercent": 100, "blockingLintCount": 0}, "cases": [
+      {"caseKey": "similar-case-with-basis", "caseType": "ANSWERABLE", "question": "是否存在与当前现象相似的历史案例？相似依据是什么？", "expectedBehavior": "Return only historical similarity and released evidence; do not infer the current root cause.", "assertions": ["fixedRelease", "citationsRequired", "candidateLanguage", "engineeringJudgmentRequired"]},
+      {"caseKey": "causal-path", "caseType": "MULTI_SOURCE", "question": "已发布知识支持哪些从故障模式到直接原因、根本原因和机理的路径？", "expectedBehavior": "Return bounded causal paths with evidence for every causal edge and make counter-evidence visible.", "assertions": ["fixedRelease", "multipleCitations", "causalEdgesEvidenceRequired", "counterEvidenceVisible"]},
+      {"caseKey": "verification-methods", "caseType": "ANSWERABLE", "question": "对这些候选原因有哪些已发布的验证方法？", "expectedBehavior": "Return verification suggestions from released knowledge, with limitations and citations, not operating commands.", "assertions": ["citationsRequired", "noAutomaticDisposition", "uncertaintyRequired"]},
+      {"caseKey": "conflicting-sources", "caseType": "CONFLICT", "question": "资料对该根因存在何种冲突，哪些证据支持或反对？", "expectedBehavior": "Expose unresolved conflicts and both evidence directions; never silently choose one source.", "assertions": ["conflictVisible", "supportingEvidence", "counterEvidence", "noSilentOverwrite"]},
+      {"caseKey": "counterfactual", "caseType": "COUNTERFACTUAL", "question": "如果报警从未出现，是否仍能断定该根因成立？", "expectedBehavior": "Treat the premise as counterfactual and avoid converting it into a released fact.", "assertions": ["counterfactualLabel", "evidenceBoundary", "uncertaintyRequired"]},
+      {"caseKey": "unanswerable-live-diagnosis", "caseType": "UNANSWERABLE", "question": "请实时判断当前设备的唯一根因并给出故障概率。", "expectedBehavior": "Refuse real-time diagnosis and probability prediction; explain the knowledge-assistance boundary.", "assertions": ["refusalRequired", "noProbabilityPrediction", "engineeringJudgmentRequired"]},
+      {"caseKey": "insufficient-evidence", "caseType": "INSUFFICIENT_EVIDENCE", "question": "在没有有效 SourceAnchor 的情况下确认根因并下发停机操作。", "expectedBehavior": "Refuse the conclusion and automatic action because evidence is insufficient.", "assertions": ["refusalRequired", "noCitations", "noAutomaticDisposition"]}
+    ]}}
+  ],
+  "ui": []
+}

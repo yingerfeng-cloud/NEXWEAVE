@@ -1,0 +1,284 @@
+{
+  "$defs": {
+    "CitationResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "anyOf": [
+            {
+              "format": "uuid7",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claim Id"
+        },
+        "evidence_id": {
+          "format": "uuid7",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "excerpt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Excerpt"
+        },
+        "id": {
+          "format": "uuid7",
+          "title": "Id",
+          "type": "string"
+        },
+        "locator": {
+          "additionalProperties": true,
+          "title": "Locator",
+          "type": "object"
+        },
+        "relation_id": {
+          "anyOf": [
+            {
+              "format": "uuid7",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relation Id"
+        },
+        "release_id": {
+          "format": "uuid7",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "source_anchor_id": {
+          "format": "uuid7",
+          "title": "Source Anchor Id",
+          "type": "string"
+        },
+        "source_version_id": {
+          "format": "uuid7",
+          "title": "Source Version Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "release_id",
+        "evidence_id",
+        "source_version_id",
+        "source_anchor_id",
+        "locator",
+        "status"
+      ],
+      "title": "CitationResponse",
+      "type": "object"
+    },
+    "RetrievalHitResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "fusion_score": {
+          "title": "Fusion Score",
+          "type": "number"
+        },
+        "object_id": {
+          "format": "uuid7",
+          "title": "Object Id",
+          "type": "string"
+        },
+        "object_type": {
+          "title": "Object Type",
+          "type": "string"
+        },
+        "ranks": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Ranks",
+          "type": "object"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "object_type",
+        "object_id",
+        "title",
+        "text",
+        "ranks",
+        "fusion_score"
+      ],
+      "title": "RetrievalHitResponse",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "citations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CitationResponse"
+      },
+      "title": "Citations",
+      "type": "array"
+    },
+    "conflicts": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Conflicts",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "direct_answer": {
+      "title": "Direct Answer",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "key_basis": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Key Basis",
+      "type": "array"
+    },
+    "model_profile_id": {
+      "format": "uuid7",
+      "title": "Model Profile Id",
+      "type": "string"
+    },
+    "prompt_version_id": {
+      "format": "uuid7",
+      "title": "Prompt Version Id",
+      "type": "string"
+    },
+    "query_session_id": {
+      "format": "uuid7",
+      "title": "Query Session Id",
+      "type": "string"
+    },
+    "question": {
+      "title": "Question",
+      "type": "string"
+    },
+    "read_checked_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Read Checked At"
+    },
+    "read_filtered": {
+      "default": false,
+      "title": "Read Filtered",
+      "type": "boolean"
+    },
+    "release_id": {
+      "format": "uuid7",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "retrieval_config": {
+      "additionalProperties": true,
+      "title": "Retrieval Config",
+      "type": "object"
+    },
+    "retrieval_hits": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RetrievalHitResponse"
+      },
+      "title": "Retrieval Hits",
+      "type": "array"
+    },
+    "retrieval_strategy": {
+      "title": "Retrieval Strategy",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "COMPLETED",
+        "REFUSED",
+        "FAILED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Uncertainty"
+    }
+  },
+  "required": [
+    "id",
+    "query_session_id",
+    "tenant_id",
+    "space_id",
+    "release_id",
+    "question",
+    "status",
+    "direct_answer",
+    "key_basis",
+    "retrieval_strategy",
+    "retrieval_config",
+    "model_profile_id",
+    "prompt_version_id",
+    "created_at"
+  ],
+  "title": "QueryAnswerResponse",
+  "type": "object"
+}

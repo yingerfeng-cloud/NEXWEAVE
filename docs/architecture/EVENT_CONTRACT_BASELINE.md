@@ -1,6 +1,6 @@
 # Event Contract Baseline
 
-> M0 已冻结 envelope、版本与幂等语义。M1/M2 已在业务事务内写入对应事实的 transactional Outbox；M3 Source/Parse 事件目录已校准但尚未实现。Broker、发布与消费仍未实现。
+> M0 已冻结 envelope、版本与幂等语义。M1—M7 已正式验收；M7 evaluation/release/pointer/deprecation payload Schema 与事务 Outbox 已实现并本地验证。Broker、外部发布与消费仍未实现。
 
 ## 1. Envelope
 
@@ -50,8 +50,8 @@
 | `io.nexweave.parse.completed.v1` | Parse Workflow | Compile/UI | parse job, source version, result version | M3 |
 | `io.nexweave.parse.partial-failed.v1` | Parse Workflow | Compile/UI/Alert | job, result version, failure summary | M3 |
 | `io.nexweave.parse.failed.v1` | Parse Workflow | UI/Alert | job, stable error, retryable | M3 |
-| `io.nexweave.schema.published.v1` | Schema | Compile/Pack/UI | schema/version/compatibility | M4 |
-| `io.nexweave.pack.installed.v1` | Pack Workflow | Schema/Audit | pack version, installation, space | M4 |
+| `io.nexweave.schema.published.v1` | Schema | Compile/Pack/UI | schema/version/composition checksum/compatibility/minimal exact PackVersion refs | M4；表示不可变有效语义快照已发布 |
+| `io.nexweave.pack.installed.v1` | Pack Workflow | Schema/Audit | exact pack version/checksum, installation, space, candidate schema/report refs | M4；不表示 Schema 已发布 |
 | `io.nexweave.compile.completed.v1` | Compile Workflow | Review/Quality/UI | job, output versions, stats | M5 |
 | `io.nexweave.conflict.detected.v1` | Compile/Conflict | Review/Notification | conflict, severity, affected refs | M5/M6 |
 | `io.nexweave.review.requested.v1` | Review Workflow | Notification/UI | task, assignee policy, due time | M6 |
@@ -67,4 +67,4 @@
 
 生产端以业务事务 + Outbox 防止“业务成功但事件丢失”；发布端按 event ID 重试；消费端保存 consumer/event ID 或等价幂等事实。所有外部 Webhook 使用签名、时间戳、重放窗口和 delivery ID，并将最终状态写入双平台审计。
 
-事件 JSON Schema 位于 `packages/contracts/schemas/event-envelope.schema.json`，M1 payload schema 位于 `space-changed-event-data`、`membership-changed-event-data` 和 `platform-entity-changed-event-data`；M2 新增 `workflow-task-event-data.schema.json`。M2 的逐步骤 `WorkflowTaskEvent` 是数据库内追加查询日志，公共 Outbox 只发最小 `workflow.task-changed.v1` 事实，不携带敏感输入。M3 实现时须新增 Source/Parse payload schema；当前目录只表示批准契约，不得声称 Outbox 已产生。Broker、保留周期、重放、死信、顺序、分区键与 GridCrew 字段映射在首次引入 Broker/M8 集成前冻结；现阶段不虚构具体中间件能力。
+事件 JSON Schema 位于 `packages/contracts/schemas/`，M1—M7 已提交对应 payload schemas。M2 的逐步骤 `WorkflowTaskEvent` 是数据库内追加查询日志，公共 Outbox 只发最小事实，不携带敏感输入。M4 Schema/Pack 与 M7 Release 事件只携带最小 checksum/引用。Broker、保留周期、重放、死信、顺序、分区键与 GridCrew 字段映射在首次引入 Broker/M8 集成前冻结；现阶段不虚构具体中间件能力。

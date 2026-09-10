@@ -103,6 +103,14 @@ def _fields(model: type[Any], value: dict[str, Any]) -> dict[str, Any]:
     return {name: value.get(name) for name in model.model_fields}
 
 
+def _source_response(value: dict[str, Any]) -> SourceDocumentResponse:
+    public = _fields(SourceDocumentResponse, value)
+    public["versions"] = [
+        _fields(SourceVersionResponse, version) for version in value.get("versions", ())
+    ]
+    return SourceDocumentResponse.model_validate(public)
+
+
 def _validate_controlled_type(filename: str, content_type: str, content: bytes) -> None:
     expected_suffix = _MIME_SUFFIX.get(content_type)
     suffix = PurePath(filename).suffix.lower()
@@ -588,7 +596,7 @@ async def get_source(
         classification=result["classification"],
     )
     response.headers["ETag"] = f'"v{result["version"]}"'
-    return SourceDocumentResponse.model_validate(result)
+    return _source_response(result)
 
 
 @router.post("/sources/{source_id}/archive", response_model=SourceDocumentResponse)
@@ -616,7 +624,7 @@ async def archive_source(
         trace_id=_trace_id(request),
     )
     response.headers["ETag"] = f'"v{result["version"]}"'
-    return SourceDocumentResponse.model_validate(result)
+    return _source_response(result)
 
 
 @router.get("/sources/{source_id}/versions/{version_id}", response_model=SourceVersionResponse)

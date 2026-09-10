@@ -12,11 +12,11 @@ from nexweave_domain import (
 )
 
 
-def test_all_seven_workflow_types_have_distinct_bounded_step_plans() -> None:
-    assert len(WorkflowType) == 7
+def test_all_workflow_types_have_distinct_bounded_step_plans() -> None:
+    assert len(WorkflowType) == 8
     assert set(WORKFLOW_STEP_PLAN) == set(WorkflowType)
     assert all(len(plan) == 3 for plan in WORKFLOW_STEP_PLAN.values())
-    assert len({step for plan in WORKFLOW_STEP_PLAN.values() for step in plan}) == 21
+    assert len({step for plan in WORKFLOW_STEP_PLAN.values() for step in plan}) == 24
 
 
 def test_stable_workflow_id_uses_type_tenant_and_business_key() -> None:

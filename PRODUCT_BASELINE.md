@@ -1,6 +1,6 @@
 # NEXWEAVE Product Baseline
 
-> 状态：M-1 产品基线已验收并持续有效；M1/M2 已验收，M3 已正式下发，执行前任务书/治理校准已完成并进入正式实施
+> 状态：M-1 产品基线持续有效；M1—M8 已正式验收；用户于 2026-09-01 正式下发 M9。Equipment RCA Pack、9 份公开资料准入和 4 份代表性 Source→Compile 技术试点已按 ADR-0029/0030 完成；GridCrew 联合试点延期。M9 当前以 NEXWEAVE 独立公开资料技术试点为边界，专家、阈值和真实评审/Release 证据仍为 P0。
 > 来源：PRD V1.0、高保真原型 V1.0、完整分阶段开发总纲 V1.0  
 > Release 权威解释：用户已确认统一采用总纲，R1 = M0—M9
 
@@ -30,6 +30,12 @@ NEXWEAVE Standard Platform
 
 平台内核定义通用语义和治理规则；Domain Pack 定义领域语义；Business App 负责业务场景和最终业务动作。三层不得反向侵入。
 
+### 3.1 语义模型定位
+
+NEXWEAVE 在 Schema 与 Domain Pack 内提供轻量 Semantic Model：稳定类型身份、属性、类型层级、关系约束、术语和跨 Pack 映射。R1 不新增独立 Ontology 产品域或 `OntologyVersion`；不可变 `SchemaVersion` 是解析后有效语义模型的唯一版本权威。Schema 合规不替代 Claim/Relation 的 Evidence 与审核。
+
+产品界面可在 Schema Studio 中提供“语义模型”视图，但不建设 RDF/OWL/SPARQL 编辑器、描述逻辑推理机或以图数据库为权威的完整本体平台。
+
 ## 4. 用户与责任
 
 | 角色 | 主要责任 |
@@ -51,7 +57,7 @@ NEXWEAVE Standard Platform
 | `NXW-SOURCE` | 资料中心 | Raw 导入、版本、解析、预览和 SourceAnchor |
 | `NXW-COMPILE` | 编译中心 | 可恢复、可追踪、可重放的知识编译任务 |
 | `NXW-WIKI` | Wiki | 页面、结构化属性、版本、diff、人工保护区 |
-| `NXW-SCHEMA` | Schema Studio | Schema/模板/规则配置、版本和兼容检查 |
+| `NXW-SCHEMA` | Schema Studio | 语义模型、Schema/模板/规则配置、版本、Pack 组合和兼容检查 |
 | `NXW-CLAIM` | 主张与证据 | Claim/Evidence、正反证据和原文定位 |
 | `NXW-GRAPH` | 关系图谱 | 证据约束的 Relation 展示与遍历 |
 | `NXW-CONFLICT` | 冲突中心 | 冲突发现、分派、处置和发布阻断 |
@@ -74,6 +80,8 @@ KnowledgeSpace → DomainPack/SchemaVersion → SourceVersion → Parse
 
 AI 只生成候选知识。未经过 Evidence、审核、质量门禁和 Release 的内容不得成为正式知识。
 
+Domain Pack 声明先经确定性组合形成不可变 SchemaVersion；CompileJob 和 Release 只引用该有效快照。编译中发现的新概念只能形成下一 SchemaVersion 的变更候选，不能修改当前发布模型。
+
 ## 7. MVP 必须完成的 14 项能力
 
 1. 创建知识空间；
@@ -91,7 +99,7 @@ AI 只生成候选知识。未经过 Evidence、审核、质量门禁和 Release
 13. 基于正式版本的可信问答；
 14. 安装 Equipment RCA 示例领域包。
 
-R1 总纲在 MVP 上增加可靠 Workflow、身份权限、审计、连接器、GridCrew 只读集成及真实 RCA 联合试点。
+R1 总纲原计划在 MVP 上增加可靠 Workflow、身份权限、审计、连接器、GridCrew 只读集成及真实 RCA 联合试点。用户于 2026-09-01 通过 ADR-0030 将 GridCrew 开发和联合试点延期；当前 R1/M9 只验收 NEXWEAVE 独立的公开资料 Equipment RCA 技术试点，不得将延期描述为已完成。
 
 ## 8. R1 暂不建设或不作正式验收
 
@@ -129,3 +137,7 @@ PRD V1.0 第 17 章中的“R1：产品化增强”属于早期路线命名。�
 - M0-Lite 是补充验证轨道，不是正式 Release。
 
 该解释不改写原始 PRD，只消除后续需求追踪和验收歧义。
+
+## R1 / M9.5 阶段 D 收口（2026-09-10）
+
+现有 Wiki 运行态的绑定预检、条件预测比较、固定发布材料回接和原文追溯完成关键路径浏览器验证。Query/发布图谱按当前可见性提供冻结知识，页面明确区分派生预测与正式依据。该完成度仅表示合成开发环境的软件可用性；工业模型效果、阈值批准与设备适用性仍未验收，停止在 D，不进入 M10。

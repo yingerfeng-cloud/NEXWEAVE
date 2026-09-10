@@ -107,7 +107,7 @@ M-1 只验收资料、治理、基线、契约草案、追踪、ADR/Spike 和开
 
 ## 14. M3 实施、审查修复与本地 P0 门禁证据（2026-08-27—2026-08-29）
 
-- 独立审查发现的权限、同一 Source 密级一致性、ParseJob 并发终态、版本替代竞争、结果清单、定位器、上传终态、取消与 Parser 凭据隔离问题已修复；M3 代码仍未由用户验收；
+- 独立审查发现的权限、同一 Source 密级一致性、ParseJob 并发终态、版本替代竞争、结果清单、定位器、上传终态、取消与 Parser 凭据隔离问题已修复；M3 代码已由用户于 2026-08-29 正式验收；
 - Python format/Ruff、strict mypy（60 source files）、70 项非集成测试（另有 4 项集成测试按标记排除）通过；契约与快照 22 项、Web 11 项、TypeScript SDK、Web production build、Prettier/ESLint/typecheck 通过；
 - 在自动生成并于结束时删除的一次性真实 PostgreSQL 数据库中完成 `0001 → 0004 → 0003 → 0004`，核验 M3 的 10 张表、6 个数据库保护 trigger 和单一替代版本约束；未对开发数据库执行 destructive downgrade；
 - 新建的 Temporal v1/v2 history Replay 与 v2 integration 通过；没有取得已验收 M2 的归档 history，因此不声称完成归档历史兼容证明；
@@ -116,4 +116,47 @@ M-1 只验收资料、治理、基线、契约草案、追踪、ADR/Spike 和开
 - 2026-08-29 改用可复现的本地打包路径：基于已接受的 Python 3.12.13/Debian 12 digest，安装官方 Debian 精确包 `clamav-daemon/freshclam=1.4.3+dfsg-1~deb12u2`；ClamAV 运行版本为 1.4.3，FreshClam 签名为 daily 28106、main 63、bytecode 339。
 - `docker compose up --build --detach --wait` 后全部服务 running，配置了 healthcheck 的 API、Web、PostgreSQL、Redis、RustFS、Temporal、Parser sandbox 和 ClamAV 均 healthy；三个 Worker 未配置容器 healthcheck，但保持 running 并被后续 E2E 实际调用。`.venv/bin/python scripts/verify_m1.py` 通过真实干净文件与完整 EICAR 检测、感染保留及下载拒绝链路，`.venv/bin/python scripts/verify_m3.py` 通过 TXT/DOCX/XLSX、扫描 PDF `OCR_REQUIRED`、幂等 complete、reparse、失效、批次与事务 Outbox 链路，同时覆盖独立 Parser sandbox IPC。
 - Trivy 0.74.0 使用当前 GHCR 官方漏洞库扫描本地 ARM64 `nexweave-clamav:1.4.3-deb12u2`，Debian 与 Python 元数据均为 0 个可修复 HIGH/CRITICAL；Secret、Compose、定向 format/Ruff/mypy、16 项相关非集成回归与 `git diff --check` 复核通过。
-- 当前已知本地 M3 P0 为零。本结论不替代用户验收，也不声称已取得远程双架构构建/SBOM/Cosign、已验收 M2 归档 history Replay、真实 OCR、生产 HA/DR 或外部 CI 回执。
+- 当前已知本地 M3 P0 为零；GitHub Actions run `33253911959` 的 10 个作业全部通过，远程双架构构建、CycloneDX SBOM、CVE 阻断和 Cosign 签名/验证证据已上传；用户于 2026-08-29 正式验收 M3。仍未取得已验收 M2 归档 history Replay；无真实 OCR；生产 HA/DR 仍属后续门禁。
+- RustFS RC4 与刷新后的 Web 镜像均完成 amd64/arm64 SBOM 和漏洞 JSON 归档，两个架构的可修复 HIGH/CRITICAL 均为 0，未使用 ignore 例外。
+
+## 15. M4 实施、独立审查与本地技术验收证据（2026-08-30）
+
+- M4-0 由 Accepted ADR-0023 冻结：stable key、JSON-only JCS canonical、Ed25519 trust/revocation、preview-only migration DSL 和声明式 UI allowlist 均已同步公共契约；OQ-PACK-UI-001 已关闭。
+- Ruff format/lint、strict mypy（66 source files）、94 项非集成 Python 测试、22 项契约/快照测试和 13 项 Web 测试通过；TypeScript/SDK/production build 与 OpenAPI/JSON Schema 防漂移通过。
+- 一次性真实 PostgreSQL 完成 `0001→0005→0004→0005`，验证 M4 表/约束并保留 M0—M3 sentinel；开发数据库保持 `0005_m4` head。
+- Compose 全栈健康；M4 E2E 通过签名/篡改拒绝、精确依赖、确定性组合、DRAFT 候选、独立发布、升级、禁用、回滚、签名撤销和跨空间隔离。发布 checksum 为 `sha256:a71aca50382c18ca54c12f196337d7939ab49bcc35812685548d38a9c85f9931`。
+- Temporal v1 Stub 与 v2 Pack business histories 在真实本地 Temporal 上共同 replay 通过；M0、M1、M2、M3 全部真实回归脚本随后通过。
+- 动态签名失败 fixture 的依赖不可解析时，真实 v2 Workflow 进入 FAILED，Installation 投影和脱敏 `PACK_DEPENDENCY_CONFLICT` 审计一致；未产生候选 Schema。
+- 收口后 M4 全链验收连续运行两次均通过；撤销演练使用隔离动态目标，不污染后续运行，证明本地验收可重复。
+- M4 无新增依赖；Secret scan、`pip check`、Python/JavaScript production dependency audit、Compose config、`git diff --check` 和架构边界检查通过。未在无 commit/push 授权下伪称远程 CI、双架构镜像或签名回执。
+- 独立复核发现并修复 Workflow input UUID JSON 序列化和组合报告重复插入两个 P0 集成缺陷；修复后全链重跑通过。当前 M4 本地 P0 为零，用户于 2026-08-30 正式验收 M4；停止在 M4，M5 未下发。
+
+## 16. M5 实施与本地技术验收证据（2026-08-30）
+
+- M5-0 由 ADR-0024 冻结：固定 PUBLISHED SchemaVersion/composition、SourceVersion/checksum、PromptVersion、ModelProfile，稳定 Entity/Page 身份，候选语义，人工保护区和 v1/v2 Workflow 兼容。
+- Ruff、strict mypy（71 source files）、全量 Python 106 项、OpenAPI/JSON Schema snapshot、TypeScript SDK、Web Prettier/ESLint/typecheck、13 项测试与 production build 通过。
+- 一次性真实 PostgreSQL 完成 `0001→0006→0005→0006`，核验全部 M5 表与 immutable triggers，并保留 M0—M4 sentinel；开发数据库保持 `0006_m5` head。
+- Compose M5 E2E 通过真实 TXT Source/Parse、独立发布 Schema、固定 Compile 输入、Temporal v2、ModelInvocation、稳定 Entity/Page、Relation/Claim/SourceAnchor-backed EvidenceCandidate、ConflictCandidate、Wiki link/backlink、追加版本、人工保护区、评论/关注、审计/Trace 和 Consumer 草稿拒绝。
+- 验收 Provider 是明确无网络的 `nexweave.local-structured/1`，估算成本为零且记录 invocation checksum/units/latency；没有配置或冒充外部 LLM。
+- 真实 E2E 暴露并修复 Workflow actor、嵌套 SQL row、restricted JSON tuple/UUID、Source locator、Wiki/entity 契约和幂等重编译问题；收口后完整 M5 E2E 通过。
+- Secret pattern scan 通过；无新增依赖。远程 CI、双架构镜像与签名未在缺少 commit/push 授权时触发，作为 P1 在正式验收时披露并继续跟踪；用户已正式验收 M5，当前停止在已验收 M5，M6 未下发。
+
+## 17. M7 实施与本地技术验收证据（2026-08-31）
+
+- ADR-0026、domain/contract/OpenAPI/SDK、additive `0008_m7`、QualityEvaluation/KnowledgeRelease v2 与 API 驱动 Web 页面已同步，无生成物漂移。
+- 真实 PostgreSQL `0001→0008→0007→0008` 通过，验证 pgvector/FTS、M7 表、不可变触发器和既有哨兵数据。
+- 隔离真实 E2E 通过固定 Suite 门禁、独立 Publisher、两个不可变 Release、固定 Release 引用复现、证据不足拒答、导出、投影重建和强 ETag 指针回滚；共享验收空间未改动，临时数据库/dump 已清理。
+- Python 112 项（含真实 Temporal）、Web 15 项、Web/SDK typecheck 与 production build、Ruff、strict mypy、OpenAPI/JSON Schema 防漂移、Secret scan 和 `git diff --check` 通过。
+- 最终 API/Worker/Web 镜像已本地重建，全部定义 healthcheck 的 Compose 服务 healthy。无新增第三方依赖；远程 CI、双架构镜像、外部模型、规模性能与生产 HA/DR 不由本地结果冒充。
+- 用户于 2026-08-31 正式验收 M7；已披露 P1/P2 不因验收而被改写或伪称关闭，当前停止在已验收 M7。
+
+## 18. M9 公开资料技术试点与 P0 修复证据（2026-09-02）
+
+- 9 份/610 页 NTSB 报告完成 checksum、逐页文本、关键结论页版面与第三方视觉元素排除复核；原 PDF 保持 Git 忽略。
+- 四份代表性报告经真实 Raw/SourceVersion 上传；带加密标志的 Raw 被解析策略拒绝并审计，排除指定页的文本派生 SourceVersion 解析成功，没有放宽安全策略。
+- 隔离租户真实注册 `core-pack@1.0.0` 和签名 `equipment-rca-pack@1.0.0`；安装为 `ACTIVE`，PUBLISHED SchemaVersion composition checksum 为 `sha256:5ccbf47f553d31d97857fe23c1a22f654ea49ca76e3ace372466756be2b6891e`。
+- 四个 CompileJob 均成功，形成 368 ClaimCandidate、377 EvidenceCandidate、9 RelationCandidate；外部模型调用为零，正式 Claim/ReviewCase/Release 均为零。
+- 真实运行暴露并修复 Web 代理 1 MB 上传限制及 M4 Pack evaluationSuites 写入 M7 `created_by` 非空列的兼容缺陷；修复后经 Web 入口和隔离租户重跑通过。
+- `make check`：Python 120 passed/5 deselected、契约 27 passed、Web 22 passed，Ruff/mypy/ESLint/TypeScript/SDK/production build 全部通过；一次性迁移 `0001→0009→0008→0007→0009` 通过。
+- Compose 的 API、Web、PostgreSQL、Redis、RustFS、Temporal、Parser sandbox、ClamAV healthy，三个 Worker running；临时隔离 API 容器已停止并自动移除。
+- 当前剩余 M9 P0 仅为外部专家身份/职责、批准阈值和真实 Review→Evaluation→Release→Query 证据。GridCrew 继续按 ADR-0030 延期，不属于 P0。

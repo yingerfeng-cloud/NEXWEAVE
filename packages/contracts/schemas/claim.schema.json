@@ -1,0 +1,121 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {
+      "format": "uuid7",
+      "title": "Candidate Id",
+      "type": "string"
+    },
+    "confidence_level": {
+      "title": "Confidence Level",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "object_value": {
+      "additionalProperties": true,
+      "title": "Object Value",
+      "type": "object"
+    },
+    "predicate_key": {
+      "title": "Predicate Key",
+      "type": "string"
+    },
+    "provenance": {
+      "additionalProperties": true,
+      "title": "Provenance",
+      "type": "object"
+    },
+    "schema_version_id": {
+      "format": "uuid7",
+      "title": "Schema Version Id",
+      "type": "string"
+    },
+    "scope": {
+      "additionalProperties": true,
+      "title": "Scope",
+      "type": "object"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "statement": {
+      "title": "Statement",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "subject_entity_id": {
+      "format": "uuid7",
+      "title": "Subject Entity Id",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "valid_from": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Valid From"
+    },
+    "valid_until": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Valid Until"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "space_id",
+    "candidate_id",
+    "schema_version_id",
+    "subject_entity_id",
+    "predicate_key",
+    "object_value",
+    "statement",
+    "scope",
+    "confidence_level",
+    "status",
+    "provenance",
+    "created_at",
+    "created_by"
+  ],
+  "title": "ClaimResponse",
+  "type": "object"
+}

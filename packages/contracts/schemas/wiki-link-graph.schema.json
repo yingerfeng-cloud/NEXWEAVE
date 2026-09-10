@@ -1,0 +1,150 @@
+{
+  "$defs": {
+    "WikiLinkGraphEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid7",
+          "title": "Id",
+          "type": "string"
+        },
+        "link_kind": {
+          "title": "Link Kind",
+          "type": "string"
+        },
+        "source_page_id": {
+          "format": "uuid7",
+          "title": "Source Page Id",
+          "type": "string"
+        },
+        "target_page_id": {
+          "format": "uuid7",
+          "title": "Target Page Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "source_page_id",
+        "target_page_id",
+        "link_kind"
+      ],
+      "title": "WikiLinkGraphEdge",
+      "type": "object"
+    },
+    "WikiLinkGraphNode": {
+      "additionalProperties": false,
+      "properties": {
+        "backlink_count": {
+          "minimum": 0,
+          "title": "Backlink Count",
+          "type": "integer"
+        },
+        "id": {
+          "format": "uuid7",
+          "title": "Id",
+          "type": "string"
+        },
+        "outbound_count": {
+          "minimum": 0,
+          "title": "Outbound Count",
+          "type": "integer"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "template_key": {
+          "title": "Template Key",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "updated_at": {
+          "format": "date-time",
+          "title": "Updated At",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "template_key",
+        "status",
+        "version",
+        "updated_at",
+        "outbound_count",
+        "backlink_count"
+      ],
+      "title": "WikiLinkGraphNode",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "edges": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/WikiLinkGraphEdge"
+      },
+      "title": "Edges",
+      "type": "array"
+    },
+    "focus_page_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Focus Page Id"
+    },
+    "max_depth": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Max Depth",
+      "type": "integer"
+    },
+    "node_limit": {
+      "maximum": 500,
+      "minimum": 10,
+      "title": "Node Limit",
+      "type": "integer"
+    },
+    "nodes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/WikiLinkGraphNode"
+      },
+      "title": "Nodes",
+      "type": "array"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "truncated": {
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "space_id",
+    "max_depth",
+    "node_limit"
+  ],
+  "title": "WikiLinkGraphResponse",
+  "type": "object"
+}

@@ -118,3 +118,21 @@ test("sends strong ETags for archive, reparse, retry and invalidation commands",
 function etag(init?: RequestInit) {
   return new Headers(init?.headers).get("If-Match");
 }
+
+test("space picker follows pagination so new spaces are reachable", async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ items: [{ id: "old" }], next_cursor: "page/2" }),
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ items: [{ id: "new" }], next_cursor: null }),
+      ),
+    );
+  const result = await new NexweaveApi("test-token").spaces();
+  expect(result.items.map((item) => item.id)).toEqual(["old", "new"]);
+  expect(fetchMock.mock.calls[1][0]).toBe("/api/v1/spaces?cursor=page%2F2");
+});

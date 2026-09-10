@@ -9,8 +9,9 @@ from temporalio.client import Client
 from temporalio.worker import Worker
 
 from nexweave_api.database import Database
+from nexweave_api.integration_repository import IntegrationRepository
+from nexweave_api.object_storage import S3ObjectStorage
 from nexweave_api.settings import Settings
-from nexweave_api.workflow_repository import WorkflowRepository
 from nexweave_worker_kernel.activities import KernelActivities
 from nexweave_worker_kernel.workflows import WORKFLOW_CLASSES
 
@@ -25,7 +26,9 @@ async def run() -> None:
         namespace=settings.temporal_namespace,
     )
     database = Database(settings)
-    activities = KernelActivities(WorkflowRepository(database))
+    activities = KernelActivities(
+        IntegrationRepository(database), S3ObjectStorage(settings), settings.object_upload_max_bytes
+    )
     workflow_worker = Worker(
         client,
         task_queue=settings.temporal_workflow_task_queue,
@@ -38,6 +41,15 @@ async def run() -> None:
             activities.record_projection_transition,
             activities.execute_kernel_step,
             activities.compensate_kernel_step,
+            activities.execute_pack_installation,
+            activities.fail_pack_installation,
+            activities.execute_compile,
+            activities.fail_compile,
+            activities.execute_evaluation,
+            activities.validate_release,
+            activities.publish_release,
+            activities.read_connector_and_register_raw,
+            activities.complete_connector_sync,
         ],
     )
     LOGGER.info(

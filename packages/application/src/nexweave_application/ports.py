@@ -110,3 +110,69 @@ class WorkflowGatewayPort(Protocol):
     async def cancel(self, *, workflow_id: str) -> None: ...
 
     async def inspect(self, *, workflow_id: str) -> dict[str, Any]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class ModelGatewayRequest:
+    model_profile_id: str
+    prompt_version_id: str
+    classification: str
+    schema_snapshot: dict[str, Any]
+    segments: tuple[dict[str, Any], ...]
+    budget_units: int
+
+
+@dataclass(frozen=True, slots=True)
+class ModelGatewayResult:
+    provider_request_id: str
+    structured_output: dict[str, Any]
+    input_checksum: str
+    output_checksum: str
+    input_units: int
+    output_units: int
+    latency_ms: int
+    estimated_cost_microunits: int
+
+
+class ModelGatewayPort(Protocol):
+    async def structured_output(self, request: ModelGatewayRequest) -> ModelGatewayResult: ...
+
+    async def embedding(
+        self, *, model_profile_id: str, texts: tuple[str, ...]
+    ) -> tuple[tuple[float, ...], ...]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class RetrievalHit:
+    object_type: str
+    object_id: str
+    title: str
+    text: str
+    score: float
+    ranks: dict[str, int]
+
+
+class SearchProviderPort(Protocol):
+    async def keyword_search(
+        self, *, release_id: str, query: str, filters: dict[str, Any], limit: int
+    ) -> tuple[RetrievalHit, ...]: ...
+
+
+class VectorProviderPort(Protocol):
+    async def semantic_search(
+        self, *, release_id: str, query: str, filters: dict[str, Any], limit: int
+    ) -> tuple[RetrievalHit, ...]: ...
+
+
+class GraphQueryPort(Protocol):
+    async def traverse(
+        self,
+        *,
+        release_id: str,
+        start_entity_id: str,
+        max_depth: int,
+        mode: str,
+        target_entity_id: str | None,
+        causal_only: bool,
+        as_of: str | None,
+    ) -> dict[str, Any]: ...

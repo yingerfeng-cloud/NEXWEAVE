@@ -8,6 +8,7 @@ from typing import Any
 from temporalio.client import Client
 from temporalio.common import WorkflowIDReusePolicy
 from temporalio.exceptions import WorkflowAlreadyStartedError
+from temporalio.service import RPCError, RPCStatusCode
 
 from nexweave_api.errors import ApiProblem
 from nexweave_api.settings import Settings
@@ -44,9 +45,15 @@ class TemporalWorkflowGateway:
                 workflow_name,
                 payload,
                 id=workflow_id,
-                task_queue=self._settings.temporal_workflow_task_queue,
+                task_queue=(
+                    self._settings.forecast_task_queue
+                    if workflow_name in {"nexweave.forecast.v1", "nexweave.forecast.v2"}
+                    else self._settings.temporal_workflow_task_queue
+                ),
                 id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
-                run_timeout=timedelta(minutes=30),
+                run_timeout=timedelta(minutes=20)
+                if workflow_name == "nexweave.forecast.v2"
+                else timedelta(days=30),
                 task_timeout=timedelta(seconds=10),
                 static_summary=f"NEXWEAVE {payload['workflow_type']} workflow",
             )
@@ -101,9 +108,15 @@ class TemporalWorkflowGateway:
                 workflow_name,
                 payload,
                 id=workflow_id,
-                task_queue=self._settings.temporal_workflow_task_queue,
+                task_queue=(
+                    self._settings.forecast_task_queue
+                    if workflow_name in {"nexweave.forecast.v1", "nexweave.forecast.v2"}
+                    else self._settings.temporal_workflow_task_queue
+                ),
                 id_reuse_policy=WorkflowIDReusePolicy.ALLOW_DUPLICATE_FAILED_ONLY,
-                run_timeout=timedelta(minutes=30),
+                run_timeout=timedelta(minutes=20)
+                if workflow_name == "nexweave.forecast.v2"
+                else timedelta(days=30),
                 task_timeout=timedelta(seconds=10),
                 static_summary=f"NEXWEAVE retry {payload['workflow_type']} workflow",
             )
@@ -134,6 +147,16 @@ class TemporalWorkflowGateway:
         try:
             await client.get_workflow_handle(workflow_id).cancel()
         except Exception as exc:
+            raise _temporal_problem(exc) from exc
+
+    async def forecast_status(self, workflow_id: str) -> str | None:
+        client = await self._connected_client()
+        try:
+            description = await client.get_workflow_handle(workflow_id).describe()
+            return description.status.name if description.status else "RUNNING"
+        except RPCError as exc:
+            if exc.status == RPCStatusCode.NOT_FOUND:
+                return None
             raise _temporal_problem(exc) from exc
 
     async def _connected_client(self) -> Client:

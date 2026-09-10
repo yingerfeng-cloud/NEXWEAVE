@@ -36,7 +36,7 @@ ADR-0017 已选择 RustFS/S3，但尚未固定 SourceVersion Raw 对象的不可
 ### 容器供应链
 
 - CI 在主分支构建 API、Worker、Web 的 `linux/amd64` 与 `linux/arm64` 镜像，生成 CycloneDX SBOM，使用固定 Trivy 版本阻断所有“已有修复版本”的 HIGH/CRITICAL 漏洞，并通过 GitHub OIDC/Cosign 对不可变 digest 签名；
-- RustFS 候选镜像只能从 ADR-0017 固定的 Quay index digest 原样复制；CI 必须确认目标 digest 不变、双架构存在、两种架构的 SBOM/CVE 门禁通过，才能签名并添加 `1.0.0-rc.3-approved` 标签；
+- RustFS 候选镜像只能从 ADR-0017 固定的 Quay index digest 原样复制；CI 必须确认目标 digest 不变、双架构存在、两种架构的 SBOM/CVE 门禁通过，才能签名并添加对应版本的 `-approved` 标签；
 - 该签名表示 NEXWEAVE 对精确上游字节的内部准入，不是 RustFS 上游发布者签名，也不能补造上游 provenance；运行时和发布系统必须按 digest 验证 NEXWEAVE CI 身份，不能只信任可变标签；
 - M0 本地 Compose 继续使用官方 Quay digest，避免把本地开发绑定到私有制品库。生产/试点推广使用经签名的批准镜像，并保留 SBOM、漏洞报告、签名验证和 CI run 证据。
 
@@ -54,3 +54,5 @@ ADR-0017 已选择 RustFS/S3，但尚未固定 SourceVersion Raw 对象的不可
 - M1/M3 实现 SourceVersion/ObjectStorage Adapter 时，须将上述 key、幂等、状态、授权和补偿规则写入契约与真实集成测试，不得在 M0 用 Mock 冒充业务功能。
 
 2026-08-24 外部回执：GitHub Actions run `32702688049` 对提交 `e03efd9949914740761ecca9a1a6380ddee891c1` 的六个 job 全部成功；四类镜像的双架构 SBOM/CVE artifacts 已生成，Cosign GitHub OIDC 身份签名及回读验证通过。
+
+2026-08-29 安全修订：远程 Trivy 0.74.0 数据库发现 RustFS RC3 与 Nginx Alpine 层的可修复 HIGH `CVE-2026-14456`（OpenSSL `3.5.7-r0`，修复版 `3.5.8-r0`）。RustFS 已升级为官方 RC4 固定多架构索引，Web runtime 在固定 Nginx 基础上执行 `apk upgrade --no-cache`；新版本必须重新取得双架构 SBOM/CVE/Cosign 回执。

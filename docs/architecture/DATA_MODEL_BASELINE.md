@@ -1,6 +1,6 @@
 # Data Model Baseline
 
-> M0 冻结逻辑数据边界，M1/M2 已分别由 `0002`/`0003` 实现并验收。M3 Source/Parse 逻辑语义已由 ADR-0021 校准，但 `0004` 和下列 Source 表尚未建立。
+> M0 冻结逻辑数据边界，M1/M2/M3 已由 `0002`—`0004` 实现并验收。ADR-0022/0023 的 M4 语义模型与 Pack 数据边界已由 additive `0005_m4` 实现；ADR-0024 的 M5 Compile/Knowledge/Wiki 数据边界已由 additive `0006_m5` 实现、通过本地迁移技术验收并正式验收。
 
 ## 1. 核心表域
 
@@ -8,9 +8,9 @@
 |---|---|
 | 身份/空间 | `tenant`, `organization`, `user_identity`, `service_identity`, `knowledge_space`, `space_member`, `permission_policy` |
 | 原始资料 | `source_document`, `source_version`, `source_upload_session`, `source_import_batch`, `source_invalidation`, `parse_job`, `parse_failure_unit`, `document_segment`, `source_anchor` |
-| Schema | `schema_definition`, `schema_version`, `entity_type`, `relation_type`, `page_template`, `lint_rule` |
+| Schema/语义模型 | `schema_definition`, `schema_version`, `entity_type`, `property_definition`, `type_hierarchy_edge`, `relation_type`, `type_term`, `concept_mapping`, `schema_composition_report`, `page_template`, `lint_rule` |
 | 知识 | `wiki_page`, `wiki_page_version`, `entity`, `entity_alias`, `relation`, `claim`, `evidence`, `conflict` |
-| 编译/审核 | `compile_job`, `compile_step`, `review_task`, `review_action`, `approval` |
+| 编译/审核 | `compile_job`, `compile_step`, `semantic_change_proposal`, `review_task`, `review_action`, `approval` |
 | 通用工作流投影 | `workflow_task`, `workflow_step`, `workflow_task_event` |
 | 质量/发布 | `evaluation_suite`, `evaluation_run`, `release_candidate`, `release`, `release_item`, `release_pointer` |
 | 查询 | `query_session`, `query_answer`, `citation` |
@@ -71,8 +71,11 @@ M2 Task/Step/Event 均包含稳定 UUIDv7 与 tenant/space 范围；Task 写入�
 ## 5. 版本与不可变约束
 
 - `SchemaVersion`、`WikiPageVersion`、`PromptVersion`、`DomainPackVersion`、`Release` 和 `ReleaseItem` 追加式，不原地覆盖。
+- `SchemaVersion` 保存规范化语义快照、`composition_checksum`、算法版本和精确 PackVersion/checksum 输入；R1 不建立独立 OntologyVersion 表。
+- EntityType/RelationType 使用跨版本稳定 key；PropertyDefinition、TypeHierarchyEdge、TypeTerm、ConceptMapping 随 SchemaVersion 固化，不拥有独立发布生命周期。
 - Wiki 稳定 ID 与内容版本分离；人工保护区在重编译中必须保持。
 - Release manifest 固定对象版本、Schema、Prompt/Model 和索引配置；发布后不可修改。
+- Release manifest 同时固定 Schema composition checksum 和精确 PackVersion/checksum；Pack 升级/禁用不改变历史 Release。
 - 回滚创建/更新 `ReleasePointer`，不修改历史 Release。
 - AI 对象保存 `compile_job_id`、`compile_step_id`、`model_profile_id`、`prompt_version_id` 和输入 SourceVersion 集合。
 - 人工修改保存 actor、时间、diff、理由和所基于的旧版本。
@@ -102,7 +105,12 @@ erDiagram
   PARSE_JOB ||--o{ DOCUMENT_SEGMENT : produces
   SCHEMA_DEFINITION ||--o{ SCHEMA_VERSION : versions
   SCHEMA_VERSION ||--o{ ENTITY_TYPE : defines
+  ENTITY_TYPE ||--o{ PROPERTY_DEFINITION : owns
+  SCHEMA_VERSION ||--o{ TYPE_HIERARCHY_EDGE : orders
   SCHEMA_VERSION ||--o{ RELATION_TYPE : defines
+  SCHEMA_VERSION ||--o{ TYPE_TERM : labels
+  SCHEMA_VERSION ||--o{ CONCEPT_MAPPING : maps
+  SCHEMA_VERSION ||--o{ SCHEMA_COMPOSITION_REPORT : validated_by
   WIKI_PAGE ||--o{ WIKI_PAGE_VERSION : versions
   ENTITY_TYPE ||--o{ ENTITY : types
   ENTITY ||--o{ RELATION : source
@@ -117,6 +125,7 @@ erDiagram
   QUERY_ANSWER ||--o{ CITATION : cites
   DOMAIN_PACK ||--o{ DOMAIN_PACK_VERSION : versions
   DOMAIN_PACK_VERSION ||--o{ INSTALLATION : installed_as
+  INSTALLATION }o--|| SCHEMA_VERSION : produces_candidate
 ```
 
 ## 9. PostgreSQL、pgvector 与图边界
@@ -133,6 +142,33 @@ erDiagram
 - 不得在 domain/application 中写 PostgreSQL 专用 SQL；
 - 达梦/CUD4.0 适配当前建议置于 Provider/交付壳，R2 再做正式认证。
 
-## 11. 后续冻结项
+## 11. M4 语义模型逻辑约束
 
-ADR-0021 已冻结 Source/Parse/Anchor 逻辑语义；具体 `0004` 物理列、索引和 parser adapter 仍需在 M3 实现并以真实迁移证据验收。Broker 事件保留、Release manifest 存储、知识投影索引版本、生产 RLS 运维模型及知识大数据迁移/回滚策略仍按对应 Milestone 冻结。M2 通用任务投影由 ADR-0020 与 `0003` 实现；生产 Temporal history retention/升级与大规模投影分区仍需部署证据。
+- 稳定 key 不以显示名称、翻译、文件路径或数据库行 ID 替代；Pack 发布后不得在同一 major 内复用 key 表达不同概念。
+- TypeHierarchyEdge 必须无环；多父继承属性/约束不兼容时组合失败，不允许按安装顺序覆盖。
+- RelationType 的 domain/range 必须在同一候选 SchemaVersion 中解析；ConceptMapping 不物理合并来源定义。
+- 相同 Pack 输入、本地声明和规范化算法必须产生相同 composition checksum；数据库排序、插入时间或 Worker 调度不得影响结果。
+- Pack 安装生成 DRAFT SchemaVersion 和 CompositionReport；Schema 发布是独立授权动作。升级/禁用/回滚不修改历史版本或知识。
+- M4 物理列、索引、复合唯一键和 revision 已由 `0005_m4` 冻结并通过真实 PostgreSQL up/down/up；`0001`—`0004` 未修改。
+
+## 12. M5 Compile / Knowledge / Wiki 物理约束
+
+- `compile_jobs` 固定已发布 SchemaVersion/composition checksum、PromptVersion、ModelProfile、模式、scope、normalization version 与输入 fingerprint；`compile_job_sources` 以稳定顺序固定 SourceVersion/checksum/ParseJob，不接受运行中换参。
+- `compile_steps` 与 `model_invocations` 保存步骤尝试、输入/输出 checksum、结构化能力、单位、延迟、估算成本与脱敏错误；模型调用事实追加保存。
+- `knowledge_entities` 与 `knowledge_entity_versions` 分离稳定身份和不可变内容版本；相同 schema/type/normalization key 重编译复用稳定 Entity，不静默覆盖版本。
+- `wiki_pages` 与 `wiki_page_versions` 分离页面身份和版本；生成区、人工保护区与属性分别存储。编译只有内容变化时追加版本，人工编辑永远追加新版本。
+- `candidate_relations`、`claims`、`evidence_candidates`、`semantic_change_proposals`、`conflict_candidates` 和 `compile_lint_results` 均是候选/治理事实，不等于 M6 审核通过或 M7 Release。
+- `wiki_page_links`、`wiki_comments`、`wiki_follows` 支撑链接/反链、追加评论和用户订阅；Evidence 侧栏只返回经授权的候选元数据，不返回 Raw 摘录。
+- `0006_m5` 只做 additive 迁移并为 Compile 输入、ModelInvocation、EntityVersion、WikiPageVersion 与 EvidenceCandidate 增加不可变保护；`0001`—`0005` 未修改。
+
+## 13. M6/M7 正式知识、发布与查询物理约束
+
+- `0007_m6` 将审核通过的 Claim/Evidence、ConflictCase/Decision 和 ReviewPolicy/Case/Task/Action 固化为正式/追加事实；候选表不因此改义。
+- `0008_m7` 新增 EvaluationCase/Run/Result、ReleaseCandidate/Item/Lint/Approval、Release/Item、Pointer/History、Deprecation、Relation、FTS/pgvector 投影和 QuerySession/Answer/Citation。
+- Release/ReleaseItem、审批、评测结果、指针历史、废止与问答引用由数据库不可变触发器保护；修正创建新事实，不做原地覆盖。
+- `release_search_documents` 是可删除重建的投影；权威输入始终是不可变 Release/ReleaseItem。Query 外键固定单一 Release。
+- `0008` 已通过真实 PostgreSQL `0001→0008→0007→0008`，M0—M4 哨兵数据保持；未修改历史迁移。
+
+## 14. 后续冻结项
+
+ADR-0021—0026 已分别由 `0004`—`0008` 落实。Broker 保留、M8 Connector/GridCrew 字段映射、生产 RLS、HA/DR 和大数据分区/迁移仍在对应后续 Milestone 冻结。生产 Temporal history retention/升级仍需部署证据。

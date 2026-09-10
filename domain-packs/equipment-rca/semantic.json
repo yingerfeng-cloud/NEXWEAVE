@@ -1,0 +1,71 @@
+{
+  "types": [
+    {"key": "equipment.rca/component", "displayName": "Component", "abstract": false},
+    {"key": "equipment.rca/symptom", "displayName": "Symptom", "abstract": false},
+    {"key": "equipment.rca/alarm", "displayName": "Alarm", "abstract": false},
+    {"key": "equipment.rca/failure-mode", "displayName": "Failure mode", "abstract": false},
+    {"key": "equipment.rca/immediate-cause", "displayName": "Immediate cause", "abstract": false},
+    {"key": "equipment.rca/root-cause", "displayName": "Root cause", "abstract": false},
+    {"key": "equipment.rca/mechanism", "displayName": "Failure mechanism", "abstract": false},
+    {"key": "equipment.rca/verification", "displayName": "Verification method", "abstract": false},
+    {"key": "equipment.rca/exclusion", "displayName": "Excluded hypothesis", "abstract": false},
+    {"key": "equipment.rca/action", "displayName": "Corrective or preventive action", "abstract": false},
+    {"key": "equipment.rca/case", "displayName": "RCA case", "abstract": false},
+    {"key": "equipment.rca/expert-rule", "displayName": "Expert rule", "abstract": false}
+  ],
+  "properties": [
+    {"key": "equipment.rca/component-code", "typeKey": "equipment.rca/component", "dataType": "STRING", "required": false, "minCount": 0, "maxCount": 1, "enum": [], "referenceTypeKey": null, "default": null, "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/kks-code", "typeKey": "nexweave.io/equipment", "dataType": "STRING", "required": false, "minCount": 0, "maxCount": 1, "enum": [], "referenceTypeKey": null, "default": null, "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/observed-at", "typeKey": "equipment.rca/symptom", "dataType": "DATETIME", "required": false, "minCount": 0, "maxCount": 1, "enum": [], "referenceTypeKey": null, "default": null, "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/alarm-code", "typeKey": "equipment.rca/alarm", "dataType": "STRING", "required": false, "minCount": 0, "maxCount": 1, "enum": [], "referenceTypeKey": null, "default": null, "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/risk-level", "typeKey": "equipment.rca/case", "dataType": "STRING", "required": true, "minCount": 1, "maxCount": 1, "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"], "referenceTypeKey": null, "default": null, "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/case-status", "typeKey": "equipment.rca/case", "dataType": "STRING", "required": true, "minCount": 1, "maxCount": 1, "enum": ["DRAFT", "UNDER_REVIEW", "APPROVED", "CLOSED"], "referenceTypeKey": null, "default": "DRAFT", "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/verification-result", "typeKey": "equipment.rca/verification", "dataType": "STRING", "required": false, "minCount": 0, "maxCount": 1, "enum": ["NOT_RUN", "SUPPORTED", "REFUTED", "INCONCLUSIVE"], "referenceTypeKey": null, "default": "NOT_RUN", "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/action-class", "typeKey": "equipment.rca/action", "dataType": "STRING", "required": false, "minCount": 0, "maxCount": 1, "enum": ["CORRECTIVE", "PREVENTIVE", "MONITORING"], "referenceTypeKey": null, "default": null, "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/rule-condition", "typeKey": "equipment.rca/expert-rule", "dataType": "STRING", "required": true, "minCount": 1, "maxCount": 1, "enum": [], "referenceTypeKey": null, "default": null, "unique": false, "mergeStrategy": "MANUAL"},
+    {"key": "equipment.rca/rule-conclusion", "typeKey": "equipment.rca/expert-rule", "dataType": "STRING", "required": true, "minCount": 1, "maxCount": 1, "enum": [], "referenceTypeKey": null, "default": null, "unique": false, "mergeStrategy": "MANUAL"}
+  ],
+  "hierarchy": [
+    {"child": "equipment.rca/component", "parent": "nexweave.io/equipment"}
+  ],
+  "relations": [
+    {"key": "equipment.rca/contains-component", "domain": "nexweave.io/equipment", "range": "equipment.rca/component", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": false, "temporal": false, "evidenceRequired": true},
+    {"key": "equipment.rca/exhibits-symptom", "domain": "nexweave.io/equipment", "range": "equipment.rca/symptom", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": false, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/raises-alarm", "domain": "nexweave.io/equipment", "range": "equipment.rca/alarm", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": false, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/has-failure-mode", "domain": "nexweave.io/equipment", "range": "equipment.rca/failure-mode", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": false, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/has-immediate-cause", "domain": "equipment.rca/failure-mode", "range": "equipment.rca/immediate-cause", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": true, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/has-root-cause", "domain": "equipment.rca/immediate-cause", "range": "equipment.rca/root-cause", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": true, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/explained-by-mechanism", "domain": "equipment.rca/failure-mode", "range": "equipment.rca/mechanism", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": true, "temporal": false, "evidenceRequired": true},
+    {"key": "equipment.rca/verified-by", "domain": "equipment.rca/root-cause", "range": "equipment.rca/verification", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": false, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/refuted-by", "domain": "equipment.rca/root-cause", "range": "equipment.rca/exclusion", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": false, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/addressed-by", "domain": "equipment.rca/root-cause", "range": "equipment.rca/action", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": false, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/documents-equipment", "domain": "equipment.rca/case", "range": "nexweave.io/equipment", "direction": "DIRECTED", "minCount": 1, "maxCount": null, "inverseOf": null, "causal": false, "temporal": true, "evidenceRequired": true},
+    {"key": "equipment.rca/governed-by-rule", "domain": "equipment.rca/case", "range": "equipment.rca/expert-rule", "direction": "DIRECTED", "minCount": 0, "maxCount": null, "inverseOf": null, "causal": false, "temporal": true, "evidenceRequired": true}
+  ],
+  "terms": [
+    {"targetKey": "equipment.rca/component", "language": "en", "term": "Component", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/component", "language": "zh-CN", "term": "部件", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/symptom", "language": "en", "term": "Symptom", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/symptom", "language": "zh-CN", "term": "现象", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/alarm", "language": "en", "term": "Alarm", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/alarm", "language": "zh-CN", "term": "报警", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/failure-mode", "language": "en", "term": "Failure mode", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/failure-mode", "language": "en", "term": "Fault mode", "kind": "ALIAS", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/failure-mode", "language": "zh-CN", "term": "故障模式", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/immediate-cause", "language": "zh-CN", "term": "直接原因", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/root-cause", "language": "en", "term": "Root cause", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/root-cause", "language": "en", "term": "RCA", "kind": "ABBREVIATION", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/root-cause", "language": "zh-CN", "term": "根本原因", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/mechanism", "language": "zh-CN", "term": "故障机理", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/verification", "language": "zh-CN", "term": "验证方法", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/exclusion", "language": "zh-CN", "term": "排除项", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/action", "language": "zh-CN", "term": "纠正预防措施", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/case", "language": "zh-CN", "term": "设备根因分析案例", "kind": "PREFERRED", "scope": "GLOBAL"},
+    {"targetKey": "equipment.rca/expert-rule", "language": "zh-CN", "term": "专家规则", "kind": "PREFERRED", "scope": "GLOBAL"}
+  ],
+  "mappings": [],
+  "templates": [],
+  "lintRules": [],
+  "evaluationSuites": [],
+  "ui": []
+}

@@ -27,6 +27,7 @@
         "QUALITY_EVALUATION",
         "KNOWLEDGE_RELEASE",
         "DOMAIN_PACK_INSTALL",
+        "CONNECTOR_SYNC",
         "GRIDCREW_FEEDBACK_INGESTION"
       ],
       "title": "WorkflowType",

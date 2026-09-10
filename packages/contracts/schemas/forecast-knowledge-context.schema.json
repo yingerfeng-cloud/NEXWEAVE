@@ -1,0 +1,209 @@
+{
+  "$defs": {
+    "CitationResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "anyOf": [
+            {
+              "format": "uuid7",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Claim Id"
+        },
+        "evidence_id": {
+          "format": "uuid7",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "excerpt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Excerpt"
+        },
+        "id": {
+          "format": "uuid7",
+          "title": "Id",
+          "type": "string"
+        },
+        "locator": {
+          "additionalProperties": true,
+          "title": "Locator",
+          "type": "object"
+        },
+        "relation_id": {
+          "anyOf": [
+            {
+              "format": "uuid7",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relation Id"
+        },
+        "release_id": {
+          "format": "uuid7",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "source_anchor_id": {
+          "format": "uuid7",
+          "title": "Source Anchor Id",
+          "type": "string"
+        },
+        "source_version_id": {
+          "format": "uuid7",
+          "title": "Source Version Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "release_id",
+        "evidence_id",
+        "source_version_id",
+        "source_anchor_id",
+        "locator",
+        "status"
+      ],
+      "title": "CitationResponse",
+      "type": "object"
+    },
+    "ForecastKnowledgeItem": {
+      "additionalProperties": false,
+      "properties": {
+        "citation": {
+          "$ref": "#/$defs/CitationResponse"
+        },
+        "claim_id": {
+          "format": "uuid7",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "source_document_id": {
+          "format": "uuid7",
+          "title": "Source Document Id",
+          "type": "string"
+        },
+        "statement": {
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id",
+        "source_document_id",
+        "statement",
+        "citation"
+      ],
+      "title": "ForecastKnowledgeItem",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_checksum": {
+      "title": "Artifact Checksum",
+      "type": "string"
+    },
+    "artifact_id": {
+      "format": "uuid7",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "checked_at": {
+      "format": "date-time",
+      "title": "Checked At",
+      "type": "string"
+    },
+    "epistemic_kind": {
+      "const": "RELEASED_KNOWLEDGE_CONTEXT",
+      "default": "RELEASED_KNOWLEDGE_CONTEXT",
+      "title": "Epistemic Kind",
+      "type": "string"
+    },
+    "explanation": {
+      "title": "Explanation",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/ForecastKnowledgeItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "query_answer_id": {
+      "format": "uuid7",
+      "title": "Query Answer Id",
+      "type": "string"
+    },
+    "question": {
+      "title": "Question",
+      "type": "string"
+    },
+    "release_checksum": {
+      "title": "Release Checksum",
+      "type": "string"
+    },
+    "release_deprecated": {
+      "title": "Release Deprecated",
+      "type": "boolean"
+    },
+    "release_id": {
+      "format": "uuid7",
+      "title": "Release Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "CITED_CONTEXT",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "artifact_checksum",
+    "release_id",
+    "release_checksum",
+    "release_deprecated",
+    "query_answer_id",
+    "question",
+    "checked_at",
+    "status",
+    "items",
+    "explanation",
+    "limitations"
+  ],
+  "title": "ForecastKnowledgeContext",
+  "type": "object"
+}

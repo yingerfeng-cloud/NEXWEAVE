@@ -1,6 +1,6 @@
 # NEXWEAVE Architecture Baseline
 
-> 状态：M0 终局架构仍冻结；M1/M2 已由 ADR-0019/0020 实现并验收。用户已正式下发 M3，ADR-0021 与校准任务书仅冻结 Source/Parse 执行语义；当前未实现 M3 业务对象、Parser 或 v2 Workflow。
+> 状态：M0 终局架构仍冻结；M1—M8 已正式验收。用户于 2026-09-01 正式下发 M9；ADR-0029/0030 冻结 Equipment RCA Pack、公开资料和 GridCrew 延期边界。9 份资料准入、真实 Pack 安装及 4 份 Source→Compile 技术试点已完成；专家、阈值和真实评审/Release 证据仍为 P0，未验收前不得进入 M10。
 
 ## 1. 不可变原则
 
@@ -30,6 +30,8 @@
 - Domain Pack 仅通过安全声明、模板、术语、Prompt、规则、评测和样例扩展。
 - Pack 不得修改平台核心数据库结构、依赖内部实现或执行任意代码。
 - Pack 具有独立 ID、版本、依赖、兼容范围、签名和安装记录。
+- R1 的语义模型是 SchemaVersion 的逻辑视图和完整快照，不新增独立 OntologyVersion、第二套发布权威或 `/ontologies` 资源。
+- 跨 Pack 类型复用、层级、术语和映射必须显式声明并确定性组合；同名、翻译、向量相似或 LLM 判断不得触发静默合并。
 
 ### 集成与执行
 
@@ -95,7 +97,7 @@ R1 冻结为 Python 3.12/FastAPI 模块化单体 API + 独立 Temporal Worker + 
 | Identity & Access | OIDC、服务身份、RBAC/ABAC、租户/空间隔离 | 前端代替授权 |
 | Workspace | KnowledgeSpace、成员、策略 | 领域专用对象 |
 | Source & Parsing | Raw、SourceVersion、ParseJob、Segment、SourceAnchor | 修改原始内容 |
-| Schema | SchemaDefinition/Version、类型、模板、兼容检查 | 运行任意 Pack 代码 |
+| Schema & Semantic Model | SchemaDefinition/Version、稳定类型 key、属性、层级、关系、术语、映射、模板、Pack 组合与兼容检查 | 独立 OntologyVersion 双权威、运行任意 Pack 代码或把语义合规当事实证据 |
 | Compile | 候选提取、消歧、页面决策、轨迹 | 直接发布正式知识 |
 | Wiki | 页面草稿、版本、diff、人工保护区 | 覆盖历史版本 |
 | Claim & Evidence | 主张、正反证据、锚点有效性 | 以模型置信度替代证据 |
@@ -114,6 +116,7 @@ R1 冻结为 Python 3.12/FastAPI 模块化单体 API + 独立 Temporal Worker + 
 | 业务对象、审核、批准、发布结果 | 关系数据库 | Markdown/YAML、搜索/向量/图投影 |
 | 长流程执行事实 | Temporal Workflow | 数据库任务查询投影 |
 | 正式知识版本 | 不可变 Release manifest 与 ReleaseItem | 当前服务指针、导出包、索引 |
+| 有效语义模型 | 不可变 SchemaVersion + composition checksum + 精确 PackVersion/checksum 输入 | UI 类型树、导出 RDF/JSON、搜索/图投影、Prompt |
 | 搜索/向量/图 | 可由固定 Release 重建的投影 | 不得成为事实源 |
 | 问答记录 | QuerySession/QueryAnswer/Citation + 固定 Release | UI 会话状态 |
 
@@ -131,11 +134,12 @@ Raw (immutable SourceVersion)
 
 - Draft 查询必须是显式、授权的调试行为。
 - Release 只引用固定对象版本、SchemaVersion、PromptVersion、ModelProfile 和索引配置。
+- Release 中的 SchemaVersion 固化规范化语义快照、composition checksum 和精确 PackVersion/checksum；Pack 升级、禁用或回滚不得改变历史 Release。
 - 回滚只切换服务指针，不篡改历史 Release。
 
 ## 7. Port / Gateway 边界
 
-M0 冻结：Persistence、ObjectStorage、Workflow、Cache、Parser、OCR、ModelGateway、Embedding、Search、Vector、GraphQuery、Identity、Audit、Connector、Notification。M1 已实现 `IdentityProviderPort`、`ObjectStoragePort` 和 `MalwareScannerPort`；M2 已实现厂商无关 `WorkflowGatewayPort` 及 Temporal adapter。M3 任务书已校准 `ParserPort/OcrPort` 边界，但当前尚未实现。领域、契约和应用端口包不得依赖厂商 Adapter。
+M0 冻结：Persistence、ObjectStorage、Workflow、Cache、Parser、OCR、ModelGateway、Embedding、Search、Vector、GraphQuery、Identity、Audit、Connector、Notification。M1 已实现 `IdentityProviderPort`、`ObjectStoragePort` 和 `MalwareScannerPort`；M2 已实现厂商无关 `WorkflowGatewayPort` 及 Temporal adapter；M3 已实现 `ParserPort/OcrPort` 边界、v2 Workflow 与隔离 Parser adapter 并完成本地验证。语义模型组合是 M4 的纯领域/应用能力，不引入本体厂商 SDK 或 Ontology Provider。领域、契约和应用端口包不得依赖厂商 Adapter。
 
 ## 8. GridCrew 集成位置
 
@@ -193,10 +197,68 @@ domain-pack ✕ platform internals/arbitrary executable code
 - Web/API：服务端授权的任务创建、查询、控制和对账 API，真实任务中心与 typed SDK。页面状态与数据库投影均不成为第二套执行引擎；
 - 验证：真实 Temporal 覆盖七类运行、重试、重复 Update、人工批准、暂停恢复、取消补偿、Worker 重启、投影修复和历史 replay；官方时间跳跃测试已在本地和 GitHub Actions run `32808198635` 独立门禁通过。
 
-## 14. M3 已校准、未实现边界
+## 14. M3 已实现并正式验收边界
 
-- 用户已正式下发 M3；当前只完成任务书、ADR 与治理对齐，不包含业务代码或迁移；
+- 用户已正式下发并于 2026-08-29 验收 M3；Source/Parse 业务代码、迁移、本地回归、真实 ClamAV-backed Compose E2E 与远程供应链门禁已完成；
 - M2 `nexweave.source-ingestion.v1` 保持 Kernel Stub/Replay 语义，不能转写为扫描/解析成功；
 - ADR-0021 冻结每次 reparse 新建 ParseJob、retry 同配置、partial/failure、active/latest 指针、SourceVersion 替代、Anchor 重定位与扫描 PDF `OCR_REQUIRED`；
-- M3 后续业务 Workflow 使用 `nexweave.source-ingestion.v2`，Parser/OCR I/O 仍只允许位于幂等 Activity/adapter；
-- 当前仍无 SourceDocument/SourceVersion/ParseJob/Segment/Parser/OCR/预览业务实现，不得将本节解释为功能完成。
+- M3 业务 Workflow 使用 `nexweave.source-ingestion.v2`，Parser/OCR I/O 只允许位于幂等 Activity/adapter；
+- 当前无真实 OCR Provider；扫描 PDF 只诚实声明 `OCR_REQUIRED/PARTIAL`。归档 M2 history Replay、真实 OCR 和生产 HA/DR 仍未声称完成。
+
+## 15. M4 语义模型已实现边界
+
+- ADR-0022 冻结 Semantic Model 以 SchemaVersion 为唯一有效版本权威，不新增 OntologyVersion；
+- SchemaVersion 固化 EntityType/PropertyDefinition/TypeHierarchyEdge/RelationType/TypeTerm/ConceptMapping、组合输入和 checksum；
+- Domain Pack 依赖 DAG 按确定性顺序组合；不兼容重复 key、循环、映射歧义和破坏性变化阻断发布，禁止后安装覆盖先安装；
+- Pack 安装只生成 DRAFT SchemaVersion，Schema 发布需独立授权；历史 Schema/Pack/Release 不因升级、禁用或回滚而修改；
+- M4 已正式下发并实现 SchemaVersion 单一权威、语义定义、签名 Pack 组合、安装生命周期、API/SDK/UI 和 additive `0005_m4`；本地技术验收已通过。
+- M4 已正式验收；其 Schema/Pack 继续作为 M5 固定编译输入，不得以候选知识冒充 Release。
+
+## 16. M5 受治理编译与 Wiki 已实现边界
+
+- ADR-0024 冻结 CompileJob 的 PUBLISHED SchemaVersion/composition、SourceVersion/checksum、PromptVersion、ModelProfile 与归一化版本；运行中不可替换。
+- `nexweave.knowledge-compile.v1` 保持历史 Stub，真实业务使用 v2；模型/数据库 I/O 仅位于可重试 Activity。
+- `ModelGatewayPort` 隔离供应商；当前仅启用可回放、无网络的 `nexweave.local-structured/1` 验收 Provider，未配置外部 LLM adapter，不能宣称真实外部 LLM 能力。
+- Entity/Page 稳定身份、候选 Claim/Relation/Evidence/Conflict/Lint、Wiki 自动生成区/人工保护区和追加式版本由 additive `0006_m5` 实现。
+- M5 输出始终为候选/DRAFT；后续正式化只能经过已验收的 M6 Review/Evidence gate，再进入 M7 Release，不能回写或把候选直接当作正式知识。
+
+## 17. M6 正式知识与审核已实现边界
+
+- ADR-0025 与 additive `0007_m6` 实现正式 Claim/Evidence、ConflictCase 和分阶段 HumanReview v2；Evidence gate、职责分离和历史事实不可变由服务与数据库共同执行。
+- M6 已正式验收，其输出是 M7 ReleaseCandidate 的唯一正式知识输入，不允许候选知识绕过审核。
+
+## 18. M7 质量、发布、图谱与问答已实现边界
+
+- ADR-0026 与 additive `0008_m7` 实现 EvaluationSuite/Run、ReleaseCandidate/Item、独立审批、不可变 Release/Item、Pointer/History、Relation、QuerySession/Answer/Citation 和可重建检索投影。
+- `nexweave.quality-evaluation.v2` 与 `nexweave.knowledge-release.v2` 固定输入并将 I/O 留在幂等 Activity；v1 历史定义不改写。
+- Query 必须指定单一正式 Release；权限、密级、accepted Evidence 与 VALID Anchor 在服务端过滤，证据不足返回拒答。向量相似度仅用于召回，不等同事实置信度。
+- 回滚只以强 ETag 推进 ReleasePointer，不修改历史 Release；JSON/Markdown 导出与检索投影可由 ReleaseItem 重建。
+- M7 已完成隔离真实 E2E、本地技术验收并由用户正式验收。
+
+## 19. M8 Connector、Obsidian 与 Wiki 图谱已实现边界
+
+- ADR-0027 与 additive `0009_m8_connector_obsidian` 实现受控只读 Connector、CredentialRef、显式 allowlist、Watermark 和 Raw→SourceVersion 路径；Obsidian 回导只生成草稿或 Conflict。
+- ADR-0028 实现有界、受权限控制的 Wiki 双向链接导航投影，并与 M7 固定 Release Relation Graph 分离。
+- M8 已正式验收；GridCrew 对端集成按用户指令延期，不能视为已实现。
+
+## 20. M9 Equipment RCA Pack 执行边界
+
+- ADR-0029 规定 RCA 概念、术语、KKS/设备编码、模板、Prompt、Lint、问题集和 UI 元数据只能进入声明式 Pack，不得进入平台核心。
+- M9 技术 Pack 复用既有 M4 Pack、M7 Evaluation/Release/Query 契约，不新增第二套对象、状态、数据库或发布权威。
+- 未提供真实脱敏资料、专家和 GridCrew 对端时，只允许明确标记的合成技术 fixture；不得形成真实试点、专家确认或联合 Demo 结论。
+
+## 阶段 A 增量运行基线（2026-09-09）
+
+依据 11C 与 ADR-0033，新增 ForecastRun 同事务投递记录、Temporal v2 活动心跳与对账、当前授权下的取消及冻结输入重跑、可选 worker 租约与统一启动。请求 ASGI 外层隔离上一个请求的 OpenTelemetry context。`0011_m95a` 不修改 R1 Evidence、Release、SourceAnchor、Schema/Pack 原始签名或历史迁移。v1 Workflow 保留历史兼容；整机恢复与生产服务化限制见阶段 A 手册。停止在 R1/M9.5 稳定基础，不进入阶段 B 或 M10。
+
+## 阶段 B 增量自主运行基线（2026-09-09）
+
+用户已明确下发 B，覆盖上一阶段的停止边界。依据 11D / ADR-0034，受控 CSV 预览和绑定预检复用 Connector、Schema 权威及源权限；保存再次校验并保持不可变 Binding。同窗口场景比较限定相同历史、语义、模型 revision 与时间轴，不表达因果关系。新增最小对象选择投影，修复源失效/归档读取门禁及 Source 公开响应投影，不改变 Evidence、Release、Workflow、模型版本或旧迁移。B 已完成本地技术验证，停止在 B，不进入 C/M10。
+
+## 阶段 C 增量知识回接基线（2026-09-09）
+
+用户已明确下发 C，覆盖上一阶段停止边界。11E / ADR-0035 引入独立读时 Forecast knowledge-context：复用既有 Release Query/Gateway，选定同空间固定 Release 后，仅从冻结 Claim/Evidence 恢复当前仍可见有效的依据，展示原文定位与版本哈希；不返回未经支持的检索摘要。组合结果不写回 Forecast/Evidence/Release，不构成因果推断或设备适用性判断。无新迁移/依赖，旧图谱隔离疑点单独保留。C 已完成本地技术验证，停止在 C，不进入 M10。
+
+## 阶段 D 固定发布读取收口（2026-09-10）
+
+依据 11F / ADR-0036，Query 新建及历史读取按当前授权/证据有效性输出冻结 Claim；多来源主张遵循当前最高密级。历史读取只生成响应投影，不改旧记录。Graph 从发布快照读取并执行成员、同发布证据与来源门禁，预算溢出拒绝或明确截断。R1 Evidence/Release/Workflow 与 Forecast 存储语义保持。无新迁移/依赖；关键浏览器路径完成本地技术验证，停止 D，不进入 M10。

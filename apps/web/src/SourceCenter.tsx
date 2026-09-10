@@ -8,7 +8,14 @@ import {
   useState,
 } from "react";
 
-import { ApiError, NexweaveApi } from "./api";
+import { messageOf, NexweaveApi } from "./api";
+import {
+  EmptyState as Empty,
+  ErrorState,
+  LoadingState as Loading,
+  Metric,
+  Panel,
+} from "./design-system/ui";
 import type {
   AnchorStatus,
   DataClassification,
@@ -133,7 +140,11 @@ export function SourceCenter({
   }
   return (
     <SourcePage title="资料页面不存在" description="该资料中心路径无法识别。">
-      <button className="primary" onClick={() => navigate("/sources")}>
+      <button
+        type="button"
+        className="primary"
+        onClick={() => navigate("/sources")}
+      >
         返回资料中心
       </button>
     </SourcePage>
@@ -157,6 +168,7 @@ function SourceListPage({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
   const filters = useMemo(() => readSourceFilters(pathKey), [pathKey]);
   const batchId = useMemo(
     () => new URL(pathKey, location.origin).searchParams.get("batch_id") ?? "",
@@ -201,7 +213,19 @@ function SourceListPage({
   return (
     <SourcePage
       title="资料中心"
-      description="不可变 Raw、版本化解析与可复现定位。列表、筛选和上传结果均来自 M3 API。"
+      description="集中管理资料来源、解析状态、证据定位与版本历史。"
+      actions={
+        canUpload && (
+          <button
+            type="button"
+            className="primary"
+            aria-expanded={importOpen}
+            onClick={() => setImportOpen((value) => !value)}
+          >
+            {importOpen ? "收起导入" : "+ 导入资料"}
+          </button>
+        )
+      }
     >
       <div className="metric-grid source-metrics">
         <Metric value={sources.length} label="当前页资料" detail="稳定游标" />
@@ -209,13 +233,13 @@ function SourceListPage({
         <Metric
           value={counts.registered}
           label="待激活"
-          detail="REGISTERED"
+          detail="资料已登记，等待激活"
           tone="warning"
         />
         <Metric
           value={counts.archived}
           label="已归档"
-          detail="Raw 与历史仍保留"
+          detail="原始文件与历史仍保留"
         />
       </div>
 
@@ -244,9 +268,9 @@ function SourceListPage({
             资料状态
             <select name="status" defaultValue={filters.status}>
               <option value="">全部状态</option>
-              <option value="REGISTERED">REGISTERED</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="ARCHIVED">ARCHIVED</option>
+              <option value="REGISTERED">已登记</option>
+              <option value="ACTIVE">已生效</option>
+              <option value="ARCHIVED">已归档</option>
             </select>
           </label>
           <label>
@@ -254,7 +278,9 @@ function SourceListPage({
             <select name="classification" defaultValue={filters.classification}>
               <option value="">全部密级</option>
               {CLASSIFICATIONS.map((value) => (
-                <option key={value}>{value}</option>
+                <option key={value} value={value}>
+                  {classificationLabel(value)}
+                </option>
               ))}
             </select>
           </label>
@@ -267,7 +293,7 @@ function SourceListPage({
         </form>
       </Panel>
 
-      {canUpload && (
+      {canUpload && importOpen && (
         <UploadPanel
           api={api}
           initialBatchId={batchId}
@@ -299,6 +325,7 @@ function SourceListPage({
                     <tr key={source.id}>
                       <td>
                         <button
+                          type="button"
                           className="source-link"
                           onClick={() => onNavigate(`/sources/${source.id}`)}
                         >
@@ -314,10 +341,10 @@ function SourceListPage({
                       </td>
                       <td>
                         <span className="version-cell">
-                          {source.source_level || "未设置来源等级"}
+                          <span>{source.source_level || "未设置来源等级"}</span>
                           <small>
                             {source.tags.length
-                              ? source.tags.join(" · ")
+                              ? `标签：${source.tags.join(" · ")}`
                               : "无标签"}
                           </small>
                         </span>
@@ -331,16 +358,33 @@ function SourceListPage({
           </div>
         ) : (
           <Empty
-            text={
+            title={
               hasFilters(filters)
-                ? "没有符合当前筛选的资料"
-                : "当前空间尚无资料，可以从上方导入"
+                ? "没有符合条件的资料"
+                : "当前知识空间还没有资料"
+            }
+            description={
+              hasFilters(filters)
+                ? "调整或清除筛选条件，查看其他资料。"
+                : "导入第一份可信来源，平台会继续完成识别、解析和证据定位。"
+            }
+            primaryAction={
+              canUpload && !hasFilters(filters) ? (
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => setImportOpen(true)}
+                >
+                  导入第一份资料
+                </button>
+              ) : undefined
             }
           />
         )}
         {nextCursor && (
           <div className="pagination">
             <button
+              type="button"
               onClick={() => {
                 const query = new URLSearchParams(location.search);
                 query.set("cursor", nextCursor);
@@ -352,8 +396,6 @@ function SourceListPage({
           </div>
         )}
       </Panel>
-
-      <FutureBoundary />
     </SourcePage>
   );
 }
@@ -488,7 +530,7 @@ function UploadPanel({
           const checksum = await sha256(file);
           update(file.name, {
             stage: "UPLOADING",
-            detail: `校验值 ${shortHash(checksum)} · 正在上传 Raw`,
+            detail: `校验值 ${shortHash(checksum)} · 正在上传原始文件`,
           });
           session = await api.createSourceUpload(spaceId, {
             filename: file.name,
@@ -512,7 +554,7 @@ function UploadPanel({
           );
           update(file.name, {
             stage: "PROCESSING",
-            detail: "Raw 已上传，服务端正在复核并登记解析任务",
+            detail: "原始文件已上传，服务端正在复核并登记解析任务",
           });
           const result = await api.completeSourceUpload(
             session.id,
@@ -521,7 +563,7 @@ function UploadPanel({
           );
           update(file.name, {
             stage: "PROCESSING",
-            detail: `ParseJob ${shortId(result.parse_job_id)} 已进入 ${result.version_status}`,
+            detail: `解析任务 ${shortId(result.parse_job_id)} 已进入 ${sourceStatusLabel(result.version_status)}`,
             result,
           });
         } catch (nextError) {
@@ -602,7 +644,9 @@ function UploadPanel({
             defaultValue={replacement?.classification ?? "INTERNAL"}
           >
             {CLASSIFICATIONS.map((value) => (
-              <option key={value}>{value}</option>
+              <option key={value} value={value}>
+                {classificationLabel(value)}
+              </option>
             ))}
           </select>
         </label>
@@ -647,7 +691,9 @@ function UploadPanel({
               .map(([key, value]) => `${key} ${value}`)
               .join(" · ") || "逐项执行中"}
           </small>
-          <button onClick={() => void refreshBatch()}>刷新批次结果</button>
+          <button type="button" onClick={() => void refreshBatch()}>
+            刷新批次结果
+          </button>
         </div>
       )}
       {outcomes.length > 0 && (
@@ -661,6 +707,7 @@ function UploadPanel({
               </div>
               {outcome.result && (
                 <button
+                  type="button"
                   onClick={() =>
                     onNavigate(`/sources/${outcome.result?.source_id}`)
                   }
@@ -674,8 +721,8 @@ function UploadPanel({
       )}
       <p className="truth-note">
         {replacement
-          ? "替代会创建新的 SourceVersion、对象 key 与 ParseJob；旧 Raw、解析和 Anchor 仍被保留。"
-          : "complete 只表示 Raw 已登记并创建真实 ParseJob；解析完成、部分失败与 OCR_REQUIRED 以服务端状态为准。"}
+          ? "替代会创建新的资料版本和解析任务；旧文件、解析结果与证据定位仍被保留。"
+          : "完成上传表示原始文件已登记并创建解析任务；最终状态以服务端处理结果为准。"}
       </p>
     </Panel>
   );
@@ -725,7 +772,7 @@ function SourceDetailPage({
   useEffect(() => void load(), [load]);
 
   async function archive() {
-    if (!source || !confirm("归档资料不会删除 Raw 与历史解析。确认继续？"))
+    if (!source || !confirm("归档资料不会删除原始文件与历史解析。确认继续？"))
       return;
     setWorking(true);
     setError("");
@@ -783,11 +830,16 @@ function SourceDetailPage({
               {source.description || "暂无来源说明"}
             </p>
             <div className="source-actions" aria-label="资料允许动作">
-              <button onClick={() => void load()} disabled={working}>
+              <button
+                type="button"
+                onClick={() => void load()}
+                disabled={working}
+              >
                 刷新状态
               </button>
               {canManage && source.status !== "ARCHIVED" && (
                 <button
+                  type="button"
                   className="danger"
                   onClick={() => void archive()}
                   disabled={working}
@@ -834,6 +886,7 @@ function SourceDetailPage({
                   return (
                     <li key={version.id}>
                       <button
+                        type="button"
                         className="version-main"
                         onClick={() =>
                           onNavigate(
@@ -851,8 +904,8 @@ function SourceDetailPage({
                       </button>
                       <code title={version.checksum}>{version.checksum}</code>
                       <div className="parse-pointer-grid">
-                        <ParsePointer label="ACTIVE PARSEJOB" job={active} />
-                        <ParsePointer label="LATEST PARSEJOB" job={latest} />
+                        <ParsePointer label="当前解析任务" job={active} />
+                        <ParsePointer label="最近解析任务" job={latest} />
                       </div>
                       {latest?.failure_units.length ? (
                         <FailureUnits items={latest.failure_units} />
@@ -868,7 +921,10 @@ function SourceDetailPage({
                 })}
               </ol>
             ) : (
-              <Empty text="尚无已登记的 SourceVersion" />
+              <Empty
+                title="还没有资料版本"
+                description="上传或替代资料后，新的不可变版本会出现在这里。"
+              />
             )}
           </Panel>
         </>
@@ -1038,8 +1094,8 @@ function VersionDetailPage({
 
   return (
     <SourcePage
-      title={version?.filename ?? "SourceVersion"}
-      description="Raw 永不原地修改；每次 reparse 创建新的 ParseJob，失败不会破坏已有 active 结果。"
+      title={version?.filename ?? "资料版本"}
+      description="原始文件不会原地修改；每次重新解析都会创建独立任务，失败不会破坏已有生效结果。"
       back={{ label: "返回资料详情", path: `/sources/${sourceId}` }}
       onNavigate={onNavigate}
     >
@@ -1050,11 +1106,12 @@ function VersionDetailPage({
         <>
           <div className="tabs" role="tablist" aria-label="版本详情视图">
             {[
-              ["raw", "Raw 元数据"],
-              ["parse", "Parse 历史"],
-              ["segments", `Segments · ${segments.length}`],
+              ["raw", "原始文件"],
+              ["parse", "解析历史"],
+              ["segments", `内容片段 · ${segments.length}`],
             ].map(([value, label]) => (
               <button
+                type="button"
                 key={value}
                 role="tab"
                 aria-selected={tab === value}
@@ -1065,6 +1122,7 @@ function VersionDetailPage({
               </button>
             ))}
             <button
+              type="button"
               onClick={() =>
                 onNavigate(`/source-versions/${version.id}/preview`)
               }
@@ -1074,7 +1132,7 @@ function VersionDetailPage({
           </div>
 
           {tab === "raw" && (
-            <Panel title="不可变 Raw">
+            <Panel title="不可变原始文件">
               <div className="source-summary">
                 <Fact label="状态">
                   <Status value={version.status} />
@@ -1087,7 +1145,7 @@ function VersionDetailPage({
                 <Fact label="对象版本">
                   {version.object_version_id || "存储未返回版本 ID"}
                 </Fact>
-                <Fact label="SourceVersion 聚合版本">v{version.version}</Fact>
+                <Fact label="资料聚合版本">v{version.version}</Fact>
                 <Fact label="登记时间">{formatDate(version.created_at)}</Fact>
                 <Fact label="登记 actor">{shortId(version.created_by)}</Fact>
               </div>
@@ -1096,8 +1154,12 @@ function VersionDetailPage({
                 <code>{version.checksum}</code>
               </div>
               <div className="source-actions">
-                <button disabled={working} onClick={() => void download()}>
-                  受控下载 Raw
+                <button
+                  type="button"
+                  disabled={working}
+                  onClick={() => void download()}
+                >
+                  受控下载原始文件
                 </button>
               </div>
             </Panel>
@@ -1105,10 +1167,10 @@ function VersionDetailPage({
 
           {tab === "parse" && (
             <>
-              <Panel title="active / latest ParseJob">
+              <Panel title="当前 / 最近解析任务">
                 <div className="parse-pointer-grid">
-                  <ParsePointer label="ACTIVE PARSEJOB" job={activeJob} />
-                  <ParsePointer label="LATEST PARSEJOB" job={latestJob} />
+                  <ParsePointer label="当前生效" job={activeJob} />
+                  <ParsePointer label="最近执行" job={latestJob} />
                 </div>
                 {latestJob?.failure_units.length ? (
                   <FailureUnits items={latestJob.failure_units} />
@@ -1116,6 +1178,7 @@ function VersionDetailPage({
                 {canManage && canRetry && (
                   <div className="source-actions">
                     <button
+                      type="button"
                       className="primary"
                       disabled={working}
                       onClick={() => void retry(latestJob)}
@@ -1131,6 +1194,7 @@ function VersionDetailPage({
                   ) && (
                     <div className="source-actions">
                       <button
+                        type="button"
                         className="danger"
                         disabled={working}
                         onClick={() => void cancelParse(latestJob)}
@@ -1142,30 +1206,34 @@ function VersionDetailPage({
               </Panel>
               {canManage && version.status !== "SUPERSEDED" && (
                 <Panel title="重新解析">
-                  <form className="inline-form" onSubmit={reparse}>
-                    <label>
-                      Parser
-                      <input
-                        name="parser_id"
-                        defaultValue="nexweave.parser.builtin"
-                        required
-                      />
-                    </label>
-                    <label>
-                      Parser 版本
-                      <input
-                        name="parser_version"
-                        defaultValue="1.0.0"
-                        required
-                      />
-                    </label>
-                    <button className="primary" disabled={working}>
-                      创建新 ParseJob
-                    </button>
-                  </form>
+                  <details className="technical-details">
+                    <summary>高级设置</summary>
+                    <div>
+                      <form className="inline-form" onSubmit={reparse}>
+                        <label>
+                          解析器
+                          <input
+                            name="parser_id"
+                            defaultValue="nexweave.parser.builtin"
+                            required
+                          />
+                        </label>
+                        <label>
+                          解析器版本
+                          <input
+                            name="parser_version"
+                            defaultValue="1.0.0"
+                            required
+                          />
+                        </label>
+                        <button className="primary" disabled={working}>
+                          创建新的解析任务
+                        </button>
+                      </form>
+                    </div>
+                  </details>
                   <p className="truth-note">
-                    当前未选择 OCR Provider；扫描页将如实显示 OCR_REQUIRED /
-                    PARTIAL_FAILED。
+                    当前未选择文字识别服务；扫描页会显示“需要 OCR”或“部分完成”。
                   </p>
                 </Panel>
               )}
@@ -1173,7 +1241,7 @@ function VersionDetailPage({
           )}
 
           {tab === "segments" && (
-            <Panel title={`active ParseJob Segments · ${segments.length}`}>
+            <Panel title={`当前解析内容 · ${segments.length}`}>
               {segments.length ? (
                 <div className="segment-list">
                   {segments.map((segment) => (
@@ -1198,8 +1266,8 @@ function VersionDetailPage({
                 <Empty
                   text={
                     activeJob?.status === "PARTIAL_FAILED"
-                      ? "部分解析尚未返回可展示 Segment，请查看失败单元"
-                      : "当前 active ParseJob 尚无可展示 Segment"
+                      ? "部分解析尚未返回可展示内容，请查看失败单元"
+                      : "当前解析任务还没有可展示的内容片段"
                   }
                 />
               )}
@@ -1239,8 +1307,7 @@ function VersionDetailPage({
                 </button>
               </form>
               <p className="truth-note">
-                失效会追加事实并撤销 Anchor 内容访问，不会删除 Raw、Segment
-                或历史审计。
+                失效会追加事实并撤销证据定位的内容访问，不会删除原始文件、内容片段或历史审计。
               </p>
             </Panel>
           )}
@@ -1299,17 +1366,19 @@ function PreviewPage({
       back={{ label: "返回资料列表", path: "/sources" }}
       onNavigate={onNavigate}
     >
-      <Panel title="Anchor 定位">
+      <Panel title="证据位置">
         <form className="inline-form" onSubmit={locate}>
           <label>
-            Anchor ID
+            证据位置标识
             <input
               name="anchor_id"
               defaultValue={anchorId}
-              placeholder="留空查看 active ParseJob 安全预览"
+              placeholder="留空查看当前解析结果的安全预览"
             />
           </label>
-          <button className="primary">定位并重新授权</button>
+          <button type="submit" className="primary">
+            定位并重新授权
+          </button>
         </form>
       </Panel>
       {error && <ErrorState message={error} onRetry={load} />}
@@ -1321,7 +1390,7 @@ function PreviewPage({
             <div className="preview-status">
               <Status value={preview.anchor_status || "NO_ANCHOR"} />
               <p>{anchorExplanation(preview.anchor_status)}</p>
-              <code>ParseJob {preview.parse_job_id}</code>
+              <code>解析任务 {shortId(preview.parse_job_id)}</code>
             </div>
             {preview.locator_results.length ? (
               <ol className="locator-results">
@@ -1359,60 +1428,35 @@ function SourcePage({
   back,
   onNavigate,
   children,
+  actions,
 }: {
   title: string;
   description: string;
   back?: { label: string; path: string };
   onNavigate?: (path: string) => void;
   children: ReactNode;
+  actions?: ReactNode;
 }) {
   return (
     <section className="page source-page">
       {back && onNavigate && (
-        <button className="back-link" onClick={() => onNavigate(back.path)}>
+        <button
+          type="button"
+          className="back-link"
+          onClick={() => onNavigate(back.path)}
+        >
           ← {back.label}
         </button>
       )}
       <header className="page-title">
-        <span>03 / M3</span>
         <div>
           <h1 tabIndex={-1}>{title}</h1>
           <p>{description}</p>
         </div>
+        {actions && <div className="page-actions">{actions}</div>}
       </header>
       {children}
     </section>
-  );
-}
-
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="panel">
-      <header>
-        <h2>{title}</h2>
-      </header>
-      <div className="panel-body">{children}</div>
-    </section>
-  );
-}
-
-function Metric({
-  value,
-  label,
-  detail,
-  tone = "",
-}: {
-  value: number;
-  label: string;
-  detail: string;
-  tone?: string;
-}) {
-  return (
-    <article className={`metric ${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{detail}</small>
-    </article>
   );
 }
 
@@ -1426,7 +1470,60 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function Status({ value }: { value: string }) {
-  return <span className={`source-status ${statusTone(value)}`}>{value}</span>;
+  return (
+    <span
+      className={`source-status ${statusTone(value)}`}
+      title={value}
+      aria-label={sourceStatusLabel(value)}
+    >
+      {sourceStatusLabel(value)}
+      <span className="sr-only" aria-hidden="true">
+        {value}
+      </span>
+    </span>
+  );
+}
+
+function sourceStatusLabel(value: string) {
+  return (
+    {
+      REGISTERED: "已登记",
+      ACTIVE: "已生效",
+      ARCHIVED: "已归档",
+      UPLOADING: "上传中",
+      PARSING: "解析中",
+      PARSED: "已解析",
+      PARTIAL: "部分完成",
+      PARTIAL_FAILED: "部分失败",
+      FAILED: "解析失败",
+      OCR_REQUIRED: "需要 OCR",
+      SUPERSEDED: "已被替代",
+      INVALIDATED: "已失效",
+      QUEUED: "排队中",
+      CANCELED: "已取消",
+      STORED: "已存储",
+      VALID: "有效",
+      STALE: "已过期",
+      CHECKSUM: "校验中",
+      NO_ANCHOR: "未指定定位",
+      UNRESOLVED: "未决",
+      REVOKED: "已撤销",
+      INTERNAL: "内部",
+      CONFIDENTIAL: "机密",
+      HIGHLY_RESTRICTED: "高度受限",
+    }[value] ?? value
+  );
+}
+
+function classificationLabel(value: DataClassification | string) {
+  return (
+    {
+      PUBLIC: "公开",
+      INTERNAL: "内部",
+      CONFIDENTIAL: "机密",
+      HIGHLY_RESTRICTED: "高度受限",
+    }[value] ?? value
+  );
 }
 
 function ParsePointer({ label, job }: { label: string; job?: ParseJob }) {
@@ -1472,51 +1569,6 @@ function FailureUnits({ items }: { items: ParseJob["failure_units"] }) {
         ))}
       </ol>
     </div>
-  );
-}
-
-function ErrorState({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry?: () => void | Promise<void>;
-}) {
-  return (
-    <div className="form-error" role="alert">
-      <span>{message}</span>
-      {onRetry && <button onClick={() => void onRetry()}>重试</button>}
-    </div>
-  );
-}
-
-function Loading({ text }: { text: string }) {
-  return (
-    <div className="source-loading" aria-live="polite">
-      <i />
-      <span>{text}</span>
-    </div>
-  );
-}
-
-function Empty({ text }: { text: string }) {
-  return <div className="empty">{text}</div>;
-}
-
-function FutureBoundary() {
-  return (
-    <section className="future-boundary" aria-label="后续阶段边界">
-      <div>
-        <span>M4+ BOUNDARY</span>
-        <strong>自动编译与 Connector 当前不可用</strong>
-        <small>
-          M3 只建立 Raw、Parse、Segment 与
-          SourceAnchor，不生成知识或连接外部系统。
-        </small>
-      </div>
-      <button disabled>解析后自动编译</button>
-      <button disabled>管理 Connector</button>
-    </section>
   );
 }
 
@@ -1614,7 +1666,7 @@ function inferContentType(filename: string) {
 function batchStageLabel(status: string) {
   return (
     {
-      UPLOADING: "正在上传 Raw",
+      UPLOADING: "正在上传原始文件",
       PROCESSING: "已登记，解析执行中",
       SUCCEEDED: "解析成功",
       PARTIAL: "部分解析；请查看失败单元",
@@ -1673,11 +1725,11 @@ function locatorLabel(locator: Locator) {
 }
 
 function anchorExplanation(status?: AnchorStatus | null) {
-  if (!status) return "未指定 Anchor，展示当前 active ParseJob 的净化内容。";
+  if (!status) return "未指定证据位置，展示当前解析结果的净化内容。";
   const explanations: Record<AnchorStatus, string> = {
-    VALID: "所有必需绑定仍可在固定 SourceVersion 与 ParseJob 中验证。",
+    VALID: "所有必需绑定仍可在固定资料版本与解析任务中验证。",
     STALE: "旧定位已无法在原解析结果中完整验证；历史绑定仍被保留。",
-    UNRESOLVED: "系统无法安全定位该 Anchor，未使用全文猜测替代。",
+    UNRESOLVED: "系统无法安全定位该证据位置，未使用全文猜测替代。",
     REVOKED: "资料已失效或访问被撤销，正文展示受限。",
   };
   return explanations[status];
@@ -1709,9 +1761,4 @@ function formatDate(value: string | Date) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(new Date(value));
-}
-
-function messageOf(error: unknown) {
-  if (error instanceof ApiError || error instanceof Error) return error.message;
-  return "资料中心发生未知错误，请重试。";
 }

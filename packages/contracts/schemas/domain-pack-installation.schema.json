@@ -1,0 +1,175 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "candidate_schema_version_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Candidate Schema Version Id"
+    },
+    "composition_report_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Composition Report Id"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "domain_pack_version_id": {
+      "format": "uuid7",
+      "title": "Domain Pack Version Id",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "operation": {
+      "enum": [
+        "INSTALL",
+        "UPGRADE",
+        "DISABLE",
+        "ROLLBACK"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "previous_installation_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Previous Installation Id"
+    },
+    "requested_semantic_version": {
+      "title": "Requested Semantic Version",
+      "type": "string"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Run Id"
+    },
+    "schema_definition_id": {
+      "format": "uuid7",
+      "title": "Schema Definition Id",
+      "type": "string"
+    },
+    "space_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Space Id"
+    },
+    "status": {
+      "enum": [
+        "PLANNED",
+        "INSTALLING",
+        "ACTIVE",
+        "FAILED",
+        "ROLLING_BACK",
+        "ROLLED_BACK",
+        "DISABLED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "updated_by": {
+      "format": "uuid7",
+      "title": "Updated By",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "workflow_id": {
+      "title": "Workflow Id",
+      "type": "string"
+    },
+    "workflow_task_id": {
+      "anyOf": [
+        {
+          "format": "uuid7",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Workflow Task Id"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "version",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by",
+    "domain_pack_version_id",
+    "schema_definition_id",
+    "requested_semantic_version",
+    "operation",
+    "previous_installation_id",
+    "workflow_task_id",
+    "workflow_id",
+    "run_id",
+    "candidate_schema_version_id",
+    "composition_report_id",
+    "status"
+  ],
+  "title": "DomainPackInstallationResponse",
+  "type": "object"
+}

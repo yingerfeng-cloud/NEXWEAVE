@@ -1,0 +1,299 @@
+{
+  "$defs": {
+    "CompileSourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "input_order": {
+          "minimum": 0,
+          "title": "Input Order",
+          "type": "integer"
+        },
+        "parse_job_id": {
+          "format": "uuid7",
+          "title": "Parse Job Id",
+          "type": "string"
+        },
+        "source_checksum": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Source Checksum",
+          "type": "string"
+        },
+        "source_version_id": {
+          "format": "uuid7",
+          "title": "Source Version Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_version_id",
+        "source_checksum",
+        "parse_job_id",
+        "input_order"
+      ],
+      "title": "CompileSourceRef",
+      "type": "object"
+    },
+    "CompileStepResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt": {
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completed At"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "id": {
+          "format": "uuid7",
+          "title": "Id",
+          "type": "string"
+        },
+        "input_checksum": {
+          "title": "Input Checksum",
+          "type": "string"
+        },
+        "output_summary": {
+          "additionalProperties": true,
+          "title": "Output Summary",
+          "type": "object"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "step_key": {
+          "title": "Step Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "step_key",
+        "input_checksum",
+        "status",
+        "attempt",
+        "output_summary"
+      ],
+      "title": "CompileStepResponse",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "composition_checksum": {
+      "title": "Composition Checksum",
+      "type": "string"
+    },
+    "cost_summary": {
+      "additionalProperties": true,
+      "title": "Cost Summary",
+      "type": "object"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "format": "uuid7",
+      "title": "Created By",
+      "type": "string"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "error_detail": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Detail"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "input_fingerprint": {
+      "title": "Input Fingerprint",
+      "type": "string"
+    },
+    "mode": {
+      "title": "Mode",
+      "type": "string"
+    },
+    "model_profile_id": {
+      "format": "uuid7",
+      "title": "Model Profile Id",
+      "type": "string"
+    },
+    "normalization_version": {
+      "title": "Normalization Version",
+      "type": "string"
+    },
+    "progress": {
+      "title": "Progress",
+      "type": "integer"
+    },
+    "prompt_version_id": {
+      "format": "uuid7",
+      "title": "Prompt Version Id",
+      "type": "string"
+    },
+    "result_summary": {
+      "additionalProperties": true,
+      "title": "Result Summary",
+      "type": "object"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "schema_version_id": {
+      "format": "uuid7",
+      "title": "Schema Version Id",
+      "type": "string"
+    },
+    "scope": {
+      "additionalProperties": true,
+      "title": "Scope",
+      "type": "object"
+    },
+    "sources": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CompileSourceRef"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "steps": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CompileStepResponse"
+      },
+      "title": "Steps",
+      "type": "array"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "updated_by": {
+      "format": "uuid7",
+      "title": "Updated By",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "integer"
+    },
+    "workflow_id": {
+      "title": "Workflow Id",
+      "type": "string"
+    },
+    "workflow_task_id": {
+      "format": "uuid7",
+      "title": "Workflow Task Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "tenant_id",
+    "space_id",
+    "schema_version_id",
+    "composition_checksum",
+    "prompt_version_id",
+    "model_profile_id",
+    "workflow_task_id",
+    "workflow_id",
+    "mode",
+    "status",
+    "input_fingerprint",
+    "normalization_version",
+    "scope",
+    "progress",
+    "cost_summary",
+    "result_summary",
+    "version",
+    "created_at",
+    "created_by",
+    "updated_at",
+    "updated_by"
+  ],
+  "title": "CompileJobResponse",
+  "type": "object"
+}

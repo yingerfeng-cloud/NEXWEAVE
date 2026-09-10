@@ -1,0 +1,163 @@
+{
+  "$defs": {
+    "SignalColumn": {
+      "additionalProperties": false,
+      "properties": {
+        "column": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Column",
+          "type": "string"
+        },
+        "signal_key": {
+          "pattern": "^[a-z][a-z0-9.-]{1,62}/[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+          "title": "Signal Key",
+          "type": "string"
+        },
+        "unit": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "signal_key",
+        "column",
+        "unit"
+      ],
+      "title": "SignalColumn",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "classification": {
+      "title": "Classification",
+      "type": "string"
+    },
+    "columns": {
+      "items": {
+        "$ref": "#/$defs/SignalColumn"
+      },
+      "maxItems": 9,
+      "minItems": 1,
+      "title": "Columns",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "data_kind": {
+      "enum": [
+        "SYNTHETIC",
+        "IMPORTED_UNVERIFIED"
+      ],
+      "title": "Data Kind",
+      "type": "string"
+    },
+    "entity_id": {
+      "format": "uuid7",
+      "title": "Entity Id",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid7",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 255,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "operating_context": {
+      "default": "工况尚未核实",
+      "maxLength": 1000,
+      "title": "Operating Context",
+      "type": "string"
+    },
+    "profile_key": {
+      "pattern": "^[a-z][a-z0-9.-]{1,62}/[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+      "title": "Profile Key",
+      "type": "string"
+    },
+    "quality_column": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Quality Column"
+    },
+    "schema_version_id": {
+      "format": "uuid7",
+      "title": "Schema Version Id",
+      "type": "string"
+    },
+    "snapshot": {
+      "additionalProperties": true,
+      "title": "Snapshot",
+      "type": "object"
+    },
+    "source_version_id": {
+      "format": "uuid7",
+      "title": "Source Version Id",
+      "type": "string"
+    },
+    "space_id": {
+      "format": "uuid7",
+      "title": "Space Id",
+      "type": "string"
+    },
+    "status": {
+      "const": "ACTIVE",
+      "default": "ACTIVE",
+      "title": "Status",
+      "type": "string"
+    },
+    "tenant_id": {
+      "format": "uuid7",
+      "title": "Tenant Id",
+      "type": "string"
+    },
+    "timestamp_column": {
+      "default": "timestamp",
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Timestamp Column",
+      "type": "string"
+    },
+    "version": {
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "entity_id",
+    "schema_version_id",
+    "source_version_id",
+    "profile_key",
+    "columns",
+    "data_kind",
+    "id",
+    "tenant_id",
+    "space_id",
+    "classification",
+    "snapshot",
+    "created_at"
+  ],
+  "title": "BindingResponse",
+  "type": "object"
+}

@@ -1,0 +1,11 @@
+{
+  "fixtureClassification": "SYNTHETIC",
+  "pilotEvidence": false,
+  "title": "Synthetic cooling-pump vibration case",
+  "equipment": {"displayName": "Training Pump P-001", "equipmentCode": "SYN-P-001", "kksCode": "SYNTHETIC-ONLY"},
+  "observations": ["Synthetic vibration increase after a simulated alignment change", "Synthetic bearing-temperature alarm"],
+  "candidateCauses": ["Synthetic coupling misalignment", "Synthetic lubrication degradation"],
+  "counterEvidence": ["Synthetic oil inspection did not show particulate contamination"],
+  "verificationSuggestions": ["Compare synthetic alignment records", "Review synthetic vibration-spectrum evidence"],
+  "safetyNotice": "Training fixture only. It is not operating guidance and must not be used for a real device."
+}

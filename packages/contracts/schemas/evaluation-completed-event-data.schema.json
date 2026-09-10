@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "evaluation_run_id": {
+      "format": "uuid7",
+      "title": "Evaluation Run Id",
+      "type": "string"
+    },
+    "gate_passed": {
+      "title": "Gate Passed",
+      "type": "boolean"
+    },
+    "metrics": {
+      "additionalProperties": true,
+      "title": "Metrics",
+      "type": "object"
+    },
+    "suite_id": {
+      "format": "uuid7",
+      "title": "Suite Id",
+      "type": "string"
+    },
+    "target_id": {
+      "format": "uuid7",
+      "title": "Target Id",
+      "type": "string"
+    },
+    "target_type": {
+      "title": "Target Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "evaluation_run_id",
+    "target_type",
+    "target_id",
+    "suite_id",
+    "gate_passed",
+    "metrics"
+  ],
+  "title": "EvaluationCompletedEventData",
+  "type": "object"
+}

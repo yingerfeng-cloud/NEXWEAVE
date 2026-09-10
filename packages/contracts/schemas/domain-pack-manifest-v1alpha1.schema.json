@@ -1,0 +1,212 @@
+{
+  "$defs": {
+    "DomainPackCompatibility": {
+      "additionalProperties": false,
+      "properties": {
+        "dependencies": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/DomainPackDependency"
+          },
+          "maxItems": 32,
+          "title": "Dependencies",
+          "type": "array"
+        },
+        "platform": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Platform",
+          "type": "string"
+        },
+        "semanticContract": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Semanticcontract",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "semanticContract"
+      ],
+      "title": "DomainPackCompatibility",
+      "type": "object"
+    },
+    "DomainPackContentEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "pattern": "^[a-z0-9][a-z0-9._/-]{0,191}$",
+          "title": "Path",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "title": "DomainPackContentEntry",
+      "type": "object"
+    },
+    "DomainPackDependency": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z][a-z0-9-]{1,62}-pack$",
+          "title": "Id",
+          "type": "string"
+        },
+        "versionRange": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Versionrange",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "versionRange"
+      ],
+      "title": "DomainPackDependency",
+      "type": "object"
+    },
+    "DomainPackMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "maxLength": 4000,
+          "title": "Description",
+          "type": "string"
+        },
+        "id": {
+          "pattern": "^[a-z][a-z0-9-]{1,62}-pack$",
+          "title": "Id",
+          "type": "string"
+        },
+        "keyNamespace": {
+          "pattern": "^[a-z][a-z0-9.-]{1,62}$",
+          "title": "Keynamespace",
+          "type": "string"
+        },
+        "publisher": {
+          "maxLength": 255,
+          "minLength": 1,
+          "title": "Publisher",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "publisher",
+        "keyNamespace",
+        "description"
+      ],
+      "title": "DomainPackMetadata",
+      "type": "object"
+    },
+    "DomainPackSecurity": {
+      "additionalProperties": false,
+      "properties": {
+        "executableContent": {
+          "const": false,
+          "title": "Executablecontent",
+          "type": "boolean"
+        },
+        "signature": {
+          "$ref": "#/$defs/DomainPackSignature"
+        }
+      },
+      "required": [
+        "executableContent",
+        "signature"
+      ],
+      "title": "DomainPackSecurity",
+      "type": "object"
+    },
+    "DomainPackSignature": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "Ed25519",
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "keyId": {
+          "pattern": "^[A-Za-z0-9._-]{1,128}$",
+          "title": "Keyid",
+          "type": "string"
+        },
+        "value": {
+          "pattern": "^[A-Za-z0-9_-]{86}$",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "keyId",
+        "value"
+      ],
+      "title": "DomainPackSignature",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "nexweave.io/domain-pack/v1alpha1",
+      "title": "Apiversion",
+      "type": "string"
+    },
+    "canonicalizationAlgorithm": {
+      "const": "RFC8785-JCS/1",
+      "title": "Canonicalizationalgorithm",
+      "type": "string"
+    },
+    "compatibility": {
+      "$ref": "#/$defs/DomainPackCompatibility"
+    },
+    "content": {
+      "additionalProperties": {
+        "$ref": "#/$defs/DomainPackContentEntry"
+      },
+      "maxProperties": 64,
+      "minProperties": 1,
+      "title": "Content",
+      "type": "object"
+    },
+    "kind": {
+      "const": "NexweaveDomainPack",
+      "title": "Kind",
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "#/$defs/DomainPackMetadata"
+    },
+    "security": {
+      "$ref": "#/$defs/DomainPackSecurity"
+    }
+  },
+  "required": [
+    "apiVersion",
+    "kind",
+    "canonicalizationAlgorithm",
+    "metadata",
+    "compatibility",
+    "content",
+    "security"
+  ],
+  "title": "DomainPackManifestV1Alpha1",
+  "type": "object"
+}

@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "execution": {
+      "const": "LOCAL_CPU",
+      "default": "LOCAL_CPU",
+      "title": "Execution",
+      "type": "string"
+    },
+    "known_future_covariates": {
+      "title": "Known Future Covariates",
+      "type": "boolean"
+    },
+    "max_history": {
+      "default": 8192,
+      "title": "Max History",
+      "type": "integer"
+    },
+    "max_horizon": {
+      "default": 120,
+      "title": "Max Horizon",
+      "type": "integer"
+    },
+    "model_revision": {
+      "title": "Model Revision",
+      "type": "string"
+    },
+    "past_covariates": {
+      "title": "Past Covariates",
+      "type": "boolean"
+    },
+    "provider_id": {
+      "title": "Provider Id",
+      "type": "string"
+    },
+    "quantiles": {
+      "items": {
+        "type": "number"
+      },
+      "title": "Quantiles",
+      "type": "array"
+    }
+  },
+  "required": [
+    "provider_id",
+    "model_revision",
+    "past_covariates",
+    "known_future_covariates",
+    "quantiles"
+  ],
+  "title": "TimeSeriesCapabilities",
+  "type": "object"
+}

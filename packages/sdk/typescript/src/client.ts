@@ -31,6 +31,7 @@ export type WorkflowType =
   | "QUALITY_EVALUATION"
   | "KNOWLEDGE_RELEASE"
   | "DOMAIN_PACK_INSTALL"
+  | "CONNECTOR_SYNC"
   | "GRIDCREW_FEEDBACK_INGESTION";
 
 export type WorkflowTask = {
@@ -179,6 +180,187 @@ export type ParseJob = {
   updated_at: string;
 };
 
+export type CompileJobCreate = Record<string, unknown> & {
+  schema_version_id: string;
+  source_version_ids: string[];
+  prompt_version_id: string;
+  model_profile_id: string;
+  mode?: "FULL" | "INCREMENTAL" | "SOURCE_SCOPED" | "RECOMPILE";
+  scope?: Record<string, unknown>;
+};
+
+export type CompileJob = {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  schema_version_id: string;
+  composition_checksum: string;
+  prompt_version_id: string;
+  model_profile_id: string;
+  workflow_task_id: string;
+  workflow_id: string;
+  run_id?: string;
+  mode: string;
+  status: string;
+  input_fingerprint: string;
+  normalization_version: string;
+  scope: Record<string, unknown>;
+  progress: number;
+  cost_summary: Record<string, unknown>;
+  result_summary: Record<string, unknown>;
+  error_code?: string;
+  error_detail?: string;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  sources: Array<Record<string, unknown>>;
+  steps: Array<Record<string, unknown>>;
+};
+
+export type WikiPageVersion = {
+  id: string;
+  wiki_page_id: string;
+  compile_job_id?: string;
+  revision: number;
+  generated_sections: Record<string, string>;
+  protected_sections: Record<string, string>;
+  properties: Record<string, unknown>;
+  markdown: string;
+  content_checksum: string;
+  status: string;
+  edit_reason?: string;
+  created_at: string;
+  created_by: string;
+};
+
+export type WikiPage = {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  schema_version_id: string;
+  primary_entity_id: string;
+  template_key: string;
+  slug: string;
+  title: string;
+  status: string;
+  current_version_id?: string;
+  current_version?: WikiPageVersion;
+  version: number;
+  created_at: string;
+  created_by: string;
+  updated_at: string;
+  updated_by: string;
+  evidence_candidates?: Array<Record<string, unknown>>;
+  followed?: boolean;
+};
+
+export type WikiLinkGraphNode = {
+  id: string;
+  title: string;
+  template_key: string;
+  status: string;
+  version: number;
+  updated_at: string;
+  outbound_count: number;
+  backlink_count: number;
+};
+
+export type WikiLinkGraphEdge = {
+  id: string;
+  source_page_id: string;
+  target_page_id: string;
+  link_kind: string;
+};
+
+export type WikiLinkGraph = {
+  space_id: string;
+  focus_page_id?: string;
+  max_depth: number;
+  node_limit: number;
+  truncated: boolean;
+  nodes: WikiLinkGraphNode[];
+  edges: WikiLinkGraphEdge[];
+};
+
+export type Claim = {
+  id: string;
+  candidate_id: string;
+  schema_version_id: string;
+  statement: string;
+  confidence_level: string;
+  status: string;
+};
+export type ConflictCase = {
+  id: string;
+  cluster_key: string;
+  kind: string;
+  severity: string;
+  blocking: boolean;
+  status: string;
+};
+export type ReviewTask = {
+  id: string;
+  stage: string;
+  status: string;
+  due_at: string;
+  escalation_count: number;
+};
+export type ReviewCase = {
+  id: string;
+  workflow_task_id: string;
+  workflow_id: string;
+  target_type: string;
+  target_id: string;
+  risk_level: string;
+  status: string;
+  current_stage?: string;
+  tasks: ReviewTask[];
+};
+
+export type EvaluationSuite = {
+  id: string;
+  schema_version_id: string;
+  suite_key: string;
+  version: number;
+  name: string;
+  minimum_pass_rate: number;
+  status: string;
+  cases: Array<Record<string, unknown>>;
+};
+
+export type ReleaseCandidate = {
+  id: string;
+  space_id: string;
+  version: string;
+  workflow_id: string;
+  status: string;
+  manifest_checksum: string;
+  gate_summary: Record<string, unknown>;
+  lint_findings: Array<Record<string, unknown>>;
+};
+
+export type KnowledgeRelease = {
+  id: string;
+  space_id: string;
+  version: string;
+  status: "PUBLISHED";
+  manifest_checksum: string;
+  schema_version_id: string;
+  model_profile_id: string;
+  prompt_version_id: string;
+  published_at: string;
+};
+
+export type QueryAnswer = {
+  id: string;
+  release_id: string;
+  status: "COMPLETED" | "REFUSED" | "FAILED";
+  direct_answer: string;
+  key_basis: string[];
+  uncertainty?: string;
+  citations: Array<Record<string, unknown>>;
+};
+
 export type ImportBatch = {
   id: string;
   tenant_id: string;
@@ -225,6 +407,47 @@ export type SourcePreview = {
   content_type: "text/plain" | "text/html";
   sanitized_content: string;
   locator_results: Array<Record<string, unknown>>;
+};
+
+export type SchemaVersion = {
+  id: string;
+  tenant_id: string;
+  space_id: string;
+  schema_definition_id: string;
+  schema_key: string;
+  semantic_version: string;
+  status: "DRAFT" | "TESTING" | "PUBLISHED" | "DEPRECATED";
+  content_checksum: string;
+  composition_checksum: string;
+  canonicalization_algorithm: string;
+  breaking_change: boolean;
+  normalized_snapshot: Record<string, unknown>;
+  version: number;
+};
+
+export type DomainPackVersion = {
+  id: string;
+  pack_key: string;
+  pack_version: string;
+  publisher: string;
+  key_namespace: string;
+  content_checksum: string;
+  status: string;
+};
+
+export type DomainPackInstallation = {
+  id: string;
+  space_id: string;
+  domain_pack_version_id: string;
+  schema_definition_id: string;
+  requested_semantic_version: string;
+  operation: "INSTALL" | "UPGRADE" | "DISABLE" | "ROLLBACK";
+  workflow_id: string;
+  run_id?: string;
+  candidate_schema_version_id?: string;
+  composition_report_id?: string;
+  status: string;
+  version: number;
 };
 
 export class NexweaveSdkError extends Error {
@@ -336,6 +559,72 @@ export class NexweaveClient {
       repaired: boolean;
       temporal_status: string;
     }>("POST", `/api/v1/workflow-tasks/${taskId}/reconcile`);
+  }
+
+  listSchemas(spaceId: string) {
+    return this.request<{ items: SchemaVersion[] }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/schemas`,
+    );
+  }
+
+  createSchema(
+    spaceId: string,
+    body: Record<string, unknown>,
+    idempotencyKey: string,
+  ) {
+    return this.request<SchemaVersion>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/schemas`,
+      body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  validateSchema(schemaId: string, semanticVersion: string) {
+    return this.request<Record<string, unknown>>(
+      "POST",
+      `/api/v1/schemas/${schemaId}/versions/${encodeURIComponent(semanticVersion)}/validate`,
+    );
+  }
+
+  publishSchema(schema: SchemaVersion) {
+    return this.request<SchemaVersion>(
+      "POST",
+      `/api/v1/schemas/${schema.schema_definition_id}/versions/${encodeURIComponent(schema.semantic_version)}/publish`,
+      undefined,
+      {
+        "If-Match": `"v${schema.version}"`,
+        "Idempotency-Key": crypto.randomUUID(),
+      },
+    );
+  }
+
+  listDomainPacks() {
+    return this.request<{ items: DomainPackVersion[] }>(
+      "GET",
+      "/api/v1/domain-packs",
+    );
+  }
+
+  installDomainPack(
+    spaceId: string,
+    body: Record<string, unknown>,
+    idempotencyKey: string,
+  ) {
+    return this.request<DomainPackInstallation>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/domain-pack-installations`,
+      body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  getDomainPackInstallation(installationId: string) {
+    return this.request<DomainPackInstallation>(
+      "GET",
+      `/api/v1/domain-pack-installations/${installationId}`,
+    );
   }
 
   createSourceImportBatch(
@@ -516,6 +805,263 @@ export class NexweaveClient {
       `/api/v1/source-versions/${versionId}/invalidate`,
       body,
       { "Idempotency-Key": idempotencyKey, "If-Match": `"v${version}"` },
+    );
+  }
+
+  createCompileJob(
+    spaceId: string,
+    body: CompileJobCreate,
+    idempotencyKey: string,
+  ) {
+    return this.request<CompileJob>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/compile-jobs`,
+      body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  listCompileJobs(spaceId: string) {
+    return this.request<{ items: CompileJob[] }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/compile-jobs`,
+    );
+  }
+
+  getCompileJob(compileJobId: string) {
+    return this.request<CompileJob>(
+      "GET",
+      `/api/v1/compile-jobs/${compileJobId}`,
+    );
+  }
+
+  listWikiPages(spaceId: string) {
+    return this.request<{ items: WikiPage[] }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/wiki/pages`,
+    );
+  }
+
+  getWikiLinkGraph(
+    spaceId: string,
+    options: {
+      focusPageId?: string;
+      maxDepth?: number;
+      nodeLimit?: number;
+    } = {},
+  ) {
+    return this.request<WikiLinkGraph>(
+      "GET",
+      this.withQuery(`/api/v1/spaces/${spaceId}/wiki-link-graph`, {
+        focus_page_id: options.focusPageId,
+        max_depth: options.maxDepth ?? 2,
+        node_limit: options.nodeLimit ?? 180,
+      }),
+    );
+  }
+
+  getWikiPage(pageId: string) {
+    return this.request<WikiPage>("GET", `/api/v1/wiki/pages/${pageId}`);
+  }
+
+  editWikiPage(
+    pageId: string,
+    versionId: string,
+    body: Record<string, unknown>,
+    pageVersion: number,
+    idempotencyKey: string,
+  ) {
+    return this.request<WikiPage>(
+      "PATCH",
+      `/api/v1/wiki/pages/${pageId}/drafts/${versionId}`,
+      body,
+      {
+        "Idempotency-Key": idempotencyKey,
+        "If-Match": `"v${pageVersion}"`,
+      },
+    );
+  }
+
+  listWikiPageVersions(pageId: string) {
+    return this.request<{ items: WikiPageVersion[] }>(
+      "GET",
+      `/api/v1/wiki/pages/${pageId}/versions`,
+    );
+  }
+
+  getWikiPageVersion(pageId: string, versionId: string) {
+    return this.request<WikiPageVersion>(
+      "GET",
+      `/api/v1/wiki/pages/${pageId}/versions/${versionId}`,
+    );
+  }
+
+  listClaims(spaceId: string) {
+    return this.request<{ items: Claim[] }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/claims`,
+    );
+  }
+
+  listEvaluationSuites(spaceId: string) {
+    return this.request<EvaluationSuite[]>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/evaluation-suites`,
+    );
+  }
+
+  createEvaluationSuite(spaceId: string, body: Record<string, unknown>) {
+    return this.request<EvaluationSuite>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/evaluation-suites`,
+      body,
+      { "Idempotency-Key": crypto.randomUUID() },
+    );
+  }
+
+  listReleaseCandidates(spaceId: string) {
+    return this.request<{ items: ReleaseCandidate[] }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/release-candidates`,
+    );
+  }
+
+  createReleaseCandidate(
+    spaceId: string,
+    body: Record<string, unknown>,
+    idempotencyKey: string,
+  ) {
+    return this.request<ReleaseCandidate>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/release-candidates`,
+      body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  publishReleaseCandidate(
+    candidateId: string,
+    body: { reason: string; channel?: string },
+    idempotencyKey: string,
+  ) {
+    return this.request<ReleaseCandidate>(
+      "POST",
+      `/api/v1/release-candidates/${candidateId}/publish`,
+      body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  listReleases(spaceId: string) {
+    return this.request<{ items: KnowledgeRelease[] }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/releases`,
+    );
+  }
+
+  getRelease(releaseId: string) {
+    return this.request<KnowledgeRelease>(
+      "GET",
+      `/api/v1/releases/${releaseId}`,
+    );
+  }
+
+  getReleasePointer(spaceId: string, channel = "stable") {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      this.withQuery(`/api/v1/spaces/${spaceId}/release-pointer`, { channel }),
+    );
+  }
+
+  switchReleasePointer(
+    spaceId: string,
+    body: { release_id: string; channel: string; reason: string },
+    expectedVersion: number,
+    idempotencyKey: string,
+  ) {
+    return this.request<Record<string, unknown>>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/release-pointer`,
+      body,
+      {
+        "Idempotency-Key": idempotencyKey,
+        "If-Match": `"v${expectedVersion}"`,
+      },
+    );
+  }
+
+  exportRelease(releaseId: string) {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v1/releases/${releaseId}/export?format=json`,
+    );
+  }
+
+  rebuildReleaseProjection(releaseId: string, idempotencyKey: string) {
+    return this.request<Record<string, unknown>>(
+      "POST",
+      `/api/v1/releases/${releaseId}/projections/rebuild`,
+      undefined,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  askRelease(releaseId: string, body: Record<string, unknown>) {
+    return this.request<QueryAnswer>(
+      "POST",
+      `/api/v1/releases/${releaseId}/queries`,
+      body,
+    );
+  }
+
+  traverseReleaseGraph(releaseId: string, startEntityId: string, maxDepth = 1) {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      this.withQuery(`/api/v1/releases/${releaseId}/graph/traverse`, {
+        start_entity_id: startEntityId,
+        max_depth: maxDepth,
+        mode: "TRAVERSE",
+      }),
+    );
+  }
+
+  createReviewPolicy(
+    spaceId: string,
+    body: Record<string, unknown>,
+    idempotencyKey: string,
+  ) {
+    return this.request<Record<string, unknown>>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/review-policies`,
+      body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  createReviewCase(
+    spaceId: string,
+    body: Record<string, unknown>,
+    idempotencyKey: string,
+  ) {
+    return this.request<ReviewCase>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/review-cases`,
+      body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  listReviewCases(spaceId: string) {
+    return this.request<{ items: ReviewCase[] }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/review-cases`,
+    );
+  }
+
+  listConflicts(spaceId: string) {
+    return this.request<{ items: ConflictCase[] }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/conflicts`,
     );
   }
 
