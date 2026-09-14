@@ -111,6 +111,12 @@ def _source_response(value: dict[str, Any]) -> SourceDocumentResponse:
     return SourceDocumentResponse.model_validate(public)
 
 
+def _source_list_response(value: dict[str, Any]) -> SourceListResponse:
+    public = dict(value)
+    public["items"] = [_source_response(item) for item in value.get("items", ())]
+    return SourceListResponse.model_validate(public)
+
+
 def _validate_controlled_type(filename: str, content_type: str, content: bytes) -> None:
     expected_suffix = _MIME_SUFFIX.get(content_type)
     suffix = PurePath(filename).suffix.lower()
@@ -580,7 +586,7 @@ async def list_sources(
             items=visible,
             content_type=content_type,
         )
-    return SourceListResponse.model_validate(_paginate(visible, limit, cursor))
+    return _source_list_response(_paginate(visible, limit, cursor))
 
 
 @router.get("/sources/{source_id}", response_model=SourceDocumentResponse)

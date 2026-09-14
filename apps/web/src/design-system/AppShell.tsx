@@ -228,7 +228,7 @@ export function AppShell({
         <header className="workspace-header">
           <div className="workspace-context">
             <span>可信知识工作台</span>
-            <strong>{activeItem?.label ?? "NEXWEAVE"}</strong>
+            <strong>{activeItem?.group ?? "NEXWEAVE"}</strong>
           </div>
           <div
             className={`quick-nav ${searchOpen ? "is-open" : ""}`.trim()}

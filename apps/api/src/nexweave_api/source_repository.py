@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from nexweave_api.errors import ApiProblem
@@ -985,7 +985,45 @@ class SourceRepository(WorkflowRepository):
                 .mappings()
                 .all()
             )
-        return [_json_value({**row, "versions": ()}) for row in rows]
+            versions: Sequence[Any] = ()
+            if rows:
+                version_statement = text(
+                    f"SELECT {VERSION_COLUMNS} FROM source_versions "
+                    "WHERE tenant_id=:tenant AND space_id=:space "
+                    "AND source_document_id IN :source_ids ORDER BY source_document_id,created_at,id"
+                ).bindparams(bindparam("source_ids", expanding=True))
+                versions = (
+                    (
+                        await connection.execute(
+                            version_statement,
+                            {
+                                "tenant": principal.tenant_id,
+                                "space": space_id,
+                                "source_ids": [row["id"] for row in rows],
+                            },
+                        )
+                    )
+                    .mappings()
+                    .all()
+                )
+        visible_versions: dict[str, list[JsonDict]] = {}
+        for version in versions:
+            if (
+                CLASSIFICATION_LEVEL[DataClassification(version["classification"])]
+                <= CLASSIFICATION_LEVEL[principal.clearance]
+            ):
+                visible_versions.setdefault(str(version["source_document_id"]), []).append(
+                    dict(version)
+                )
+        return [
+            _json_value(
+                {
+                    **row,
+                    "versions": visible_versions.get(str(row["id"]), ()),
+                }
+            )
+            for row in rows
+        ]
 
     async def get_source(self, *, principal: Principal, source_id: UUID) -> JsonDict:
         async with self._database.engine.connect() as connection:

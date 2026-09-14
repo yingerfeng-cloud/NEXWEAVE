@@ -5,8 +5,12 @@ import pytest
 
 from nexweave_api.errors import ApiProblem
 from nexweave_api.release_graph import traverse
-from nexweave_api.release_repository import ReleaseRepository
-from nexweave_domain import new_uuid7
+from nexweave_api.release_repository import (
+    ReleaseRepository,
+    _answer_reason,
+    _keyword_query_text,
+)
+from nexweave_domain import DataClassification, new_uuid7
 
 
 def edge(a, b, identity=None):
@@ -43,6 +47,93 @@ def test_graph_output_limit_is_explicit_and_hides_unavailable_nodes():
     result = traverse(nodes, edges, "0", None, "TRAVERSE", 2)
     assert len(result["edges"]) == 500 and result["truncated"]
     assert "hidden" not in str(result)
+
+
+def test_state_question_focus_keeps_entity_terms_for_keyword_retrieval():
+    assert _keyword_query_text("What is the state of Pump A?") == "Pump A"
+    assert _keyword_query_text("Pump A operational") == "Pump A operational"
+    assert _keyword_query_text("  What is the status for Pump A?!  ") == "Pump A"
+
+
+@pytest.mark.parametrize(
+    ("candidate_count", "citation_count", "expected"),
+    [
+        (0, 0, "NO_MATCHING_KNOWLEDGE"),
+        (3, 0, "EVIDENCE_UNAVAILABLE"),
+        (3, 1, "SUPPORTED_EVIDENCE"),
+    ],
+)
+def test_answer_reason_explains_fresh_query_without_leaking_hidden_objects(
+    candidate_count: int, citation_count: int, expected: str
+):
+    assert (
+        _answer_reason(
+            candidate_count=candidate_count,
+            citation_count=citation_count,
+        )
+        == expected
+    )
+
+
+def test_answer_reason_marks_historical_recheck_that_lost_all_citations():
+    assert (
+        _answer_reason(
+            candidate_count=1,
+            citation_count=0,
+            historical=True,
+            read_filtered=True,
+        )
+        == "HISTORICAL_RECHECK_UNAVAILABLE"
+    )
+
+
+@pytest.mark.asyncio
+async def test_source_list_includes_only_versions_within_clearance():
+    from types import SimpleNamespace
+
+    from nexweave_api.source_repository import SourceRepository
+
+    source_id, visible_id, hidden_id = new_uuid7(), new_uuid7(), new_uuid7()
+    source_rows = [{"id": source_id, "classification": "INTERNAL"}]
+    version_rows = [
+        {
+            "id": visible_id,
+            "source_document_id": source_id,
+            "classification": "INTERNAL",
+            "status": "PARSED",
+        },
+        {
+            "id": hidden_id,
+            "source_document_id": source_id,
+            "classification": "CONFIDENTIAL",
+            "status": "PARSED",
+        },
+    ]
+    source_result = MagicMock()
+    source_result.mappings.return_value.all.return_value = source_rows
+    version_result = MagicMock()
+    version_result.mappings.return_value.all.return_value = version_rows
+    connection = MagicMock()
+    connection.__aenter__ = AsyncMock(return_value=connection)
+    connection.__aexit__ = AsyncMock(return_value=None)
+
+    async def execute(statement, _params):
+        return version_result if "source_versions" in str(statement) else source_result
+
+    connection.execute = AsyncMock(side_effect=execute)
+    database = SimpleNamespace(engine=MagicMock())
+    database.engine.connect.return_value = connection
+    repository = SourceRepository(database)
+    principal = SimpleNamespace(
+        tenant_id=new_uuid7(),
+        clearance=DataClassification.INTERNAL,
+    )
+
+    result = await repository.list_sources(principal=principal, space_id=new_uuid7())
+
+    assert [version["id"] for version in result[0]["versions"]] == [str(visible_id)]
+    assert str(hidden_id) not in str(result)
+    assert connection.execute.await_count == 2
 
 
 @pytest.mark.asyncio

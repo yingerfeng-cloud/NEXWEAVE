@@ -117,6 +117,99 @@ test("restores a preview deep link and makes unresolved locators explicit", asyn
   expect(document.querySelector("script")).toBeNull();
 });
 
+test("clears the previous preview when re-authorization fails", async () => {
+  history.replaceState(
+    {},
+    "",
+    "/source-versions/version-1/preview?anchor_id=anchor-1",
+  );
+  vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+    const url = String(input);
+    if (url.includes("anchor_id=anchor-1"))
+      return json({
+        source_version_id: "version-1",
+        parse_job_id: "parse-1",
+        anchor_id: "anchor-1",
+        anchor_status: "VALID",
+        content_type: "text/plain",
+        sanitized_content: "valid preview content",
+        locator_results: [],
+      });
+    if (url.includes("anchor_id=anchor-2"))
+      return json(
+        {
+          code: "RESOURCE_NOT_FOUND",
+          detail: "请求的内容不存在，或已不再可用。",
+        },
+        404,
+      );
+    throw new Error(`Unexpected request: ${url}`);
+  });
+
+  renderSourceCenter();
+  expect(await screen.findByText("valid preview content")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("证据位置标识"), {
+    target: { value: "anchor-2" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "定位并重新授权" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "请求的内容不存在",
+  );
+  expect(screen.queryByText("valid preview content")).not.toBeInTheDocument();
+});
+
+test("ignores a late preview response from the previous anchor", async () => {
+  history.replaceState(
+    {},
+    "",
+    "/source-versions/version-1/preview?anchor_id=anchor-1",
+  );
+  let resolveFirst: (response: Response) => void = () => undefined;
+  const firstResponse = new Promise<Response>((resolve) => {
+    resolveFirst = resolve;
+  });
+  vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+    const url = String(input);
+    if (url.includes("anchor_id=anchor-1")) return firstResponse;
+    if (url.includes("anchor_id=anchor-2"))
+      return json({
+        source_version_id: "version-1",
+        parse_job_id: "parse-2",
+        anchor_id: "anchor-2",
+        anchor_status: "VALID",
+        content_type: "text/plain",
+        sanitized_content: "new preview content",
+        locator_results: [],
+      });
+    throw new Error(`Unexpected request: ${url}`);
+  });
+
+  renderSourceCenter();
+  fireEvent.change(screen.getByLabelText("证据位置标识"), {
+    target: { value: "anchor-2" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "定位并重新授权" }));
+
+  expect(await screen.findByText("new preview content")).toBeInTheDocument();
+  resolveFirst(
+    new Response(
+      JSON.stringify({
+        source_version_id: "version-1",
+        parse_job_id: "parse-1",
+        anchor_id: "anchor-1",
+        anchor_status: "VALID",
+        content_type: "text/plain",
+        sanitized_content: "old preview content",
+        locator_results: [],
+      }),
+    ),
+  );
+  await waitFor(() =>
+    expect(screen.queryByText("old preview content")).not.toBeInTheDocument(),
+  );
+});
+
 test("shows active versus latest parse and preserves OCR_REQUIRED partial detail", async () => {
   history.replaceState(
     {},

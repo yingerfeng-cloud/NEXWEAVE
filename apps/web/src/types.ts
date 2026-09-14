@@ -751,6 +751,7 @@ export type KnowledgeRelease = {
   model_profile_id: string;
   prompt_version_id: string;
   published_at: string;
+  gate_summary?: Record<string, unknown>;
   deprecated_at?: string | null;
   deprecation_reason?: string | null;
 };
@@ -763,16 +764,27 @@ export type QueryCitation = {
   status: string;
 };
 
+export type QueryAnswerReason =
+  | "SUPPORTED_EVIDENCE"
+  | "NO_MATCHING_KNOWLEDGE"
+  | "EVIDENCE_UNAVAILABLE"
+  | "HISTORICAL_RECHECK_SUPPORTED"
+  | "HISTORICAL_RECHECK_UNAVAILABLE";
+
 export type QueryAnswer = {
   id: string;
   release_id: string;
   question: string;
   status: "COMPLETED" | "REFUSED" | "FAILED";
+  answer_reason?: QueryAnswerReason;
   direct_answer: string;
   key_basis: string[];
   uncertainty?: string | null;
   citations: QueryCitation[];
   conflicts: Record<string, unknown>[];
+  read_checked_at?: string | null;
+  read_filtered?: boolean;
+  retrieval_hits?: Array<Record<string, unknown>>;
 };
 
 export type GraphTraverse = {

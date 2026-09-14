@@ -85,6 +85,33 @@ h1[tabindex="-1"]:focus {
   line-height: 1.6;
 }
 
+/* Keep stacked work surfaces distinct; adjacent cards should never visually merge. */
+.content-page
+  > :is(
+    .data-card,
+    .m7-grid,
+    .compile-workflow,
+    .studio-layout,
+    .wiki-workspace,
+    .split-layout
+  )
+  + :is(
+    .data-card,
+    .m7-grid,
+    .compile-workflow,
+    .studio-layout,
+    .wiki-workspace,
+    .split-layout
+  ) {
+  margin-top: 1rem;
+}
+
+/* List/detail pages use `.page`; keep their stacked panels visually separate too. */
+.page > .panel + :is(.panel, .task-layout, .state-card),
+.page > .state-card + .panel {
+  margin-top: 1rem;
+}
+
 .panel > header {
   display: flex;
   min-height: 3.1rem;
@@ -579,6 +606,12 @@ textarea:disabled {
   border-right: 1px solid var(--nw-line);
 }
 
+.governance-step-copy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
 .governance-stepper > div:last-child {
   border-right: 0;
 }
@@ -596,6 +629,12 @@ textarea:disabled {
 
 .governance-stepper strong {
   font-size: 0.8125rem;
+}
+
+.governance-stepper small {
+  color: var(--nw-text-muted);
+  font-size: 0.68rem;
+  line-height: 1.3;
 }
 
 .governance-stepper .current {

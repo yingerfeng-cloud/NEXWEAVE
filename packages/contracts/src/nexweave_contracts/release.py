@@ -194,7 +194,7 @@ class ReleaseDeprecationCreate(ContractModel):
 
 
 class QueryCreate(ContractModel):
-    question: str = Field(min_length=1, max_length=4000)
+    question: str = Field(min_length=1, max_length=4000, pattern=r"\S")
     strategy: Literal["KEYWORD", "ATTRIBUTE", "SEMANTIC", "HYBRID"] = "HYBRID"
     filters: dict[str, Any] = Field(default_factory=dict)
     top_k: int = Field(default=5, ge=1, le=20)
@@ -223,6 +223,15 @@ class RetrievalHitResponse(ContractModel):
     fusion_score: float
 
 
+QueryAnswerReason = Literal[
+    "SUPPORTED_EVIDENCE",
+    "NO_MATCHING_KNOWLEDGE",
+    "EVIDENCE_UNAVAILABLE",
+    "HISTORICAL_RECHECK_SUPPORTED",
+    "HISTORICAL_RECHECK_UNAVAILABLE",
+]
+
+
 class QueryAnswerResponse(ContractModel):
     read_checked_at: datetime | None = None
     read_filtered: bool = False
@@ -233,6 +242,7 @@ class QueryAnswerResponse(ContractModel):
     release_id: UUID7
     question: str
     status: Literal["COMPLETED", "REFUSED", "FAILED"]
+    answer_reason: QueryAnswerReason = "EVIDENCE_UNAVAILABLE"
     direct_answer: str
     key_basis: tuple[str, ...]
     uncertainty: str | None = None

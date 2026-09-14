@@ -134,6 +134,18 @@
   },
   "additionalProperties": false,
   "properties": {
+    "answer_reason": {
+      "default": "EVIDENCE_UNAVAILABLE",
+      "enum": [
+        "SUPPORTED_EVIDENCE",
+        "NO_MATCHING_KNOWLEDGE",
+        "EVIDENCE_UNAVAILABLE",
+        "HISTORICAL_RECHECK_SUPPORTED",
+        "HISTORICAL_RECHECK_UNAVAILABLE"
+      ],
+      "title": "Answer Reason",
+      "type": "string"
+    },
     "citations": {
       "default": [],
       "items": {

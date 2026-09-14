@@ -364,7 +364,7 @@ export function WikiLinkGraphCenter({
         />
       )}
       <div className="wiki-graph-toolbar data-card">
-        <label>
+        <label className="wiki-graph-search">
           搜索页面
           <input
             value={search}
@@ -372,19 +372,22 @@ export function WikiLinkGraphCenter({
             placeholder="按页面标题或模板筛选"
           />
         </label>
-        <span>
-          {visibleNodeIds.size} / {graph?.nodes.length || 0} 个页面
-        </span>
-        <span>{visibleEdges.length} 条可见链接</span>
-        <span>→ 出链 · ← 反向引用</span>
+        <div className="wiki-graph-stats" aria-live="polite">
+          <span>
+            {visibleNodeIds.size} / {graph?.nodes.length || 0} 个页面
+          </span>
+          <span>{visibleEdges.length} 条可见链接</span>
+        </div>
+        <span className="wiki-graph-direction">→ 出链 · ← 反向引用</span>
         <button
           type="button"
+          className="wiki-graph-label-toggle"
           aria-pressed={showLabels}
           onClick={() => setShowLabels((current) => !current)}
         >
           {showLabels ? "隐藏标签" : "显示标签"}
         </button>
-        <div>
+        <div className="wiki-graph-zoom-controls">
           <button
             type="button"
             onClick={() =>

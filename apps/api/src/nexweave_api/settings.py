@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     env: str = "development"
     log_level: str = "INFO"
-    build_version: str = "0.9.5-a1"
+    build_version: str = "0.9.5-d1"
     database_url: str = "postgresql+asyncpg://nexweave:local@localhost:5432/nexweave"
     object_store_endpoint: str = "http://localhost:9000"
     object_store_health_url: str = "http://localhost:9000/health"

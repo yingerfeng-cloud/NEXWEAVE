@@ -1,5 +1,7 @@
 # NEXWEAVE Project Status
 
+> 当前验收状态（2026-09-14）：用户于 2026-09-14 明确“同意R1 软件功能验收，并固定当前版本为R1验收版本”。R1 软件功能正式验收通过；固定标签 `r1-software-accepted-20260914`。当前代码包含 M9.5/阶段 A—D 及后续补修，不重新定义 R1=M0—M9 的里程碑归属。Equipment RCA 专家、批准阈值、真实领域评审与工业效果仍独立开放；不授权 M10。验收记录：`docs/development/reports/R1_软件功能正式验收_20260914.md`。本条更新此前“仅本地技术验收”的当前状态，历史报告保留。
+
 - Current Release: R1（M0—M9）
 - Current Milestone: M9.5 Stage D trusted-read consolidation completed local technical verification on 2026-09-10 (11F / ADR-0036). Query/Graph guards, source navigation and key browser flows verified; 162 Python and 33 Web tests passed. Runtime 0.9.5-d1. M9 expert/industrial acceptance remains open; stop at D, no M10.
 - Business implementation: M1—M8 are formally accepted; M9 adds a declarative signed Equipment RCA Pack, admitted NTSB corpus and four-source Pack→Source→Compile technical pilot without claiming expert acceptance, customer applicability or GridCrew integration

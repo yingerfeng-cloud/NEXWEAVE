@@ -1331,20 +1331,27 @@ function PreviewPage({
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const requestEpoch = useRef(0);
   const anchorId = useMemo(
     () => new URL(pathKey, location.origin).searchParams.get("anchor_id") ?? "",
     [pathKey],
   );
 
   const load = useCallback(async () => {
+    const epoch = ++requestEpoch.current;
     setLoading(true);
     setError("");
+    setPreview(null);
     try {
-      setPreview(await api.sourcePreview(versionId, anchorId || undefined));
+      const nextPreview = await api.sourcePreview(
+        versionId,
+        anchorId || undefined,
+      );
+      if (epoch === requestEpoch.current) setPreview(nextPreview);
     } catch (nextError) {
-      setError(messageOf(nextError));
+      if (epoch === requestEpoch.current) setError(messageOf(nextError));
     } finally {
-      setLoading(false);
+      if (epoch === requestEpoch.current) setLoading(false);
     }
   }, [anchorId, api, versionId]);
 

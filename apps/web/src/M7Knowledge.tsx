@@ -30,6 +30,59 @@ function failure(cause: unknown) {
   return messageOf(cause, "请求未能安全完成。");
 }
 
+type AnswerExplanation = {
+  title: string;
+  detail: string;
+  next: string;
+};
+
+function explainAnswer(answer: QueryAnswer): AnswerExplanation {
+  const reason =
+    answer.answer_reason ??
+    (answer.status === "COMPLETED"
+      ? "SUPPORTED_EVIDENCE"
+      : "EVIDENCE_UNAVAILABLE");
+  return (
+    {
+      SUPPORTED_EVIDENCE: {
+        title: "已找到可引用依据",
+        detail:
+          "回答只使用当前固定 Release 中可见、有效且与 Evidence 关联的主张。",
+        next: "查看右侧引用，可直接打开经过服务端重新授权的原文定位。",
+      },
+      NO_MATCHING_KNOWLEDGE: {
+        title: "当前发布没有匹配的知识",
+        detail:
+          "检索没有找到与问题相匹配的已发布知识对象；系统没有把未命中内容当作事实。",
+        next: "换用资料中的设备名、部件名或规程术语，并确认当前发布版本。",
+      },
+      EVIDENCE_UNAVAILABLE: {
+        title: "候选内容未通过证据门禁",
+        detail:
+          "检索到了候选内容，但没有同时满足固定 Release、有效 Anchor、Evidence 和当前权限的可引用依据。",
+        next: "到“主张与证据”或“资料”核对来源；系统不会用未引用文本补全回答。",
+      },
+      HISTORICAL_RECHECK_SUPPORTED: {
+        title: "历史回答已重新核验",
+        detail:
+          "这条历史回答已按当前权限和来源有效性重新投影，保留下来的陈述仍有可见引用。",
+        next: "查看右侧引用，确认当前原文位置。",
+      },
+      HISTORICAL_RECHECK_UNAVAILABLE: {
+        title: "历史引用在重新核验后不可用",
+        detail:
+          "这是历史回答的读时核验结果；原记录未修改，但当前无法保留原来的可见有效引用。",
+        next: "回到当前有效资料和发布版本，重新发起查询。",
+      },
+    }[reason] ?? {
+      title: "回答状态需要核查",
+      detail:
+        "系统没有把未通过固定 Release 和 Evidence 门禁的内容当作正式回答。",
+      next: "检查当前发布、资料有效性和访问权限后重试。",
+    }
+  );
+}
+
 export function QualityCenter({
   api,
   spaceId,
@@ -307,7 +360,9 @@ export function ReleaseCenter({
             <article className="list-row" key={item.id}>
               <strong>{item.version}</strong>
               <StatusPill value={item.status} />
-              <span>质量校验结果已记录</span>
+              <span className="release-gate-readable">
+                {releaseGateSummary(item.gate_summary)}
+              </span>
               <TechnicalDetails>
                 <code>{item.manifest_checksum}</code>
                 <pre>{JSON.stringify(item.gate_summary, null, 2)}</pre>
@@ -339,6 +394,9 @@ export function ReleaseCenter({
                 <StatusPill value={item.status} /> ·{" "}
                 {new Date(item.published_at).toLocaleString()}
               </small>
+              <span className="release-gate-readable">
+                {releaseGateSummary(item.gate_summary)}
+              </span>
               <TechnicalDetails>
                 <code>{item.manifest_checksum}</code>
               </TechnicalDetails>
@@ -359,9 +417,11 @@ export function ReleaseCenter({
 export function AskCenter({
   api,
   spaceId,
+  onNavigate,
 }: {
   api: NexweaveApi;
   spaceId: string;
+  onNavigate?: (path: string) => void;
 }) {
   const [releases, setReleases] = useState<KnowledgeRelease[]>([]);
   const [releaseId, setReleaseId] = useState("");
@@ -435,6 +495,7 @@ export function AskCenter({
       }
     }
   }
+  const explanation = answer ? explainAnswer(answer) : null;
   return (
     <section className="content-page">
       <PageHeader
@@ -511,7 +572,15 @@ export function AskCenter({
                     ))}
                   </div>
                 ) : !releases.length ? (
-                  <a className="btn" href="/releases">
+                  <a
+                    className="btn"
+                    href="/releases"
+                    onClick={(event) => {
+                      if (!onNavigate) return;
+                      event.preventDefault();
+                      onNavigate("releases");
+                    }}
+                  >
                     前往发布中心 →
                   </a>
                 ) : undefined
@@ -526,6 +595,16 @@ export function AskCenter({
                   : "可信回答"}
               </h2>
               <p>{answer.direct_answer}</p>
+              {explanation && (
+                <div className="answer-explanation" role="note">
+                  <strong>{explanation.title}</strong>
+                  <p>{explanation.detail}</p>
+                  <p>
+                    <b>下一步：</b>
+                    {explanation.next}
+                  </p>
+                </div>
+              )}
               {answer.uncertainty && (
                 <small>不确定性：{answer.uncertainty}</small>
               )}
@@ -581,6 +660,25 @@ export function AskCenter({
                 <span>资料版本 {item.source_version_id.slice(0, 8)}</span>
                 <span>证据位置 {item.source_anchor_id.slice(0, 8)}</span>
                 <StatusPill value={item.status} />
+                <a
+                  className="btn"
+                  href={sourcePreviewPath(
+                    item.source_version_id,
+                    item.source_anchor_id,
+                  )}
+                  onClick={(event) => {
+                    if (!onNavigate) return;
+                    event.preventDefault();
+                    onNavigate(
+                      sourcePreviewPath(
+                        item.source_version_id,
+                        item.source_anchor_id,
+                      ),
+                    );
+                  }}
+                >
+                  查看原文定位
+                </a>
               </article>
             ))
           ) : (
@@ -588,13 +686,39 @@ export function AskCenter({
           )}
           {answer && (
             <TechnicalDetails>
-              <code>Release {answer.release_id}</code>
+              <code>
+                Release {answer.release_id} · 判定{" "}
+                {answer.answer_reason ?? "未返回"}
+              </code>
             </TechnicalDetails>
           )}
         </aside>
       </div>
     </section>
   );
+}
+
+function sourcePreviewPath(versionId: string, anchorId: string) {
+  return `/source-versions/${encodeURIComponent(versionId)}/preview?${new URLSearchParams({ anchor_id: anchorId })}`;
+}
+
+function releaseGateSummary(summary: Record<string, unknown> | undefined) {
+  if (!summary) return "发布时已记录质量门禁";
+  const evaluation =
+    summary.evaluation_passed === true ? "评测通过" : "评测待核查";
+  const traceability =
+    typeof summary.traceability_percent === "number"
+      ? `可追溯 ${summary.traceability_percent}%`
+      : "可追溯性待核查";
+  const schema =
+    typeof summary.schema_compliance_percent === "number"
+      ? `Schema ${summary.schema_compliance_percent}%`
+      : "Schema 合规待核查";
+  const conflicts =
+    typeof summary.unresolved_blocking_conflicts === "number"
+      ? `阻断冲突 ${summary.unresolved_blocking_conflicts}`
+      : "阻断冲突待核查";
+  return `${evaluation} · ${traceability} · ${schema} · ${conflicts}`;
 }
 
 export function GraphCenter({

@@ -1,5 +1,9 @@
 # Changelog
 
+## R1 software acceptance — 2026-09-14
+
+User accepted the R1 software functionality and authorized freezing the current delivery as `r1-software-accepted-20260914`. Includes existing M9.5 extensions and follow-up UX/read-boundary fixes. Domain expert approval and industrial effectiveness remain outside this acceptance; no M10 authorization.
+
 All notable changes to NEXWEAVE will be documented in this file.
 
 ## [Unreleased]

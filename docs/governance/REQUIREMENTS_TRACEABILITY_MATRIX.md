@@ -275,3 +275,8 @@
 | NXW-LK-D-005 | 保持 R1 与 Forecast 权威，兼容现有运行 | 162 Python、33 Web；哈希核验、无迁移/依赖、worker d1 在线；Secret scan | VERIFIED / SYNTHETIC SOFTWARE |
 
 证据：`docs/development/reports/NEXWEAVE_阶段D_验收与可信边界执行报告.md` 与 `阶段D_运行证据.json`。覆盖列明的浏览器路径，不声明全站或全安全组合验收。工业 Benchmark、M9 专家批准、签名时序 Pack、现场 Connector 与生产高可用仍开放。停止在 D，不进入 M10。
+
+
+## 2026-09-14 R1 软件功能正式验收
+
+用户于 2026-09-14 明确“同意R1 软件功能验收，并固定当前版本为R1验收版本”。R1 软件功能正式验收通过；固定标签 `r1-software-accepted-20260914`。当前代码包含 M9.5/阶段 A—D 及后续补修，不重新定义 R1=M0—M9 的里程碑归属。Equipment RCA 专家、批准阈值、真实领域评审与工业效果仍独立开放；不授权 M10。验收记录：`docs/development/reports/R1_软件功能正式验收_20260914.md`。本条更新此前“仅本地技术验收”的当前状态，历史报告保留。

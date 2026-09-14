@@ -226,6 +226,7 @@ export function App() {
             selected={selectedSpace}
             onSelect={selectSpace}
             onChanged={loadSpaces}
+            onNavigate={navigate}
           />
         )}
         {(route === "sources" || route === "source-versions") && (
@@ -246,7 +247,11 @@ export function App() {
           />
         )}
         {route === "compile" && (
-          <CompileCenter api={api} spaceId={selectedSpaceId} />
+          <CompileCenter
+            api={api}
+            spaceId={selectedSpaceId}
+            onNavigate={navigate}
+          />
         )}
         {route === "tasks" && (
           <TaskCenter
@@ -280,7 +285,11 @@ export function App() {
           <ReleaseCenter api={api} spaceId={selectedSpaceId} />
         )}
         {route === "ask" && !living && (
-          <AskCenter api={api} spaceId={selectedSpaceId} />
+          <AskCenter
+            api={api}
+            spaceId={selectedSpaceId}
+            onNavigate={navigate}
+          />
         )}
         {route === "graph" &&
           !living &&

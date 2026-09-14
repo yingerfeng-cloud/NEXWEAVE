@@ -355,6 +355,12 @@ export type QueryAnswer = {
   id: string;
   release_id: string;
   status: "COMPLETED" | "REFUSED" | "FAILED";
+  answer_reason?:
+    | "SUPPORTED_EVIDENCE"
+    | "NO_MATCHING_KNOWLEDGE"
+    | "EVIDENCE_UNAVAILABLE"
+    | "HISTORICAL_RECHECK_SUPPORTED"
+    | "HISTORICAL_RECHECK_UNAVAILABLE";
   direct_answer: string;
   key_basis: string[];
   uncertainty?: string;

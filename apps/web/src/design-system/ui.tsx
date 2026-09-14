@@ -370,20 +370,27 @@ export function ErrorState({
 }
 
 const GOVERNANCE_STEPS = [
-  ["claims", "主张与证据"],
-  ["conflicts", "冲突"],
-  ["reviews", "审核"],
-  ["quality", "质量"],
-  ["releases", "发布"],
+  ["claims", "主张与证据", "确认事实陈述与来源"],
+  ["conflicts", "冲突", "保留分歧并核查证据"],
+  ["reviews", "审核", "由人确认可用性"],
+  ["quality", "质量", "用固定问题集验证"],
+  ["releases", "发布", "生成不可变知识版本"],
 ] as const;
 
 export function GovernanceStepper({ current }: { current: string }) {
   return (
     <nav className="governance-stepper" aria-label="可信知识治理流程">
-      {GOVERNANCE_STEPS.map(([key, label], index) => (
-        <div className={key === current ? "current" : ""} key={key}>
+      {GOVERNANCE_STEPS.map(([key, label, description], index) => (
+        <div
+          className={key === current ? "current" : ""}
+          key={key}
+          aria-current={key === current ? "step" : undefined}
+        >
           <span>{index + 1}</span>
-          <strong>{label}</strong>
+          <div className="governance-step-copy">
+            <strong>{label}</strong>
+            <small>{description}</small>
+          </div>
         </div>
       ))}
     </nav>

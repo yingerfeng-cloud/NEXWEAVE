@@ -24,6 +24,7 @@ export function SpacesPage({
   selected,
   onSelect,
   onChanged,
+  onNavigate,
 }: {
   api: NexweaveApi;
   principal: Principal;
@@ -31,12 +32,16 @@ export function SpacesPage({
   selected?: Space;
   onSelect: (id: string) => void;
   onChanged: () => Promise<void>;
+  onNavigate?: (path: string) => void;
 }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [refreshIssue, setRefreshIssue] = useState("");
   const [creating, setCreating] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [query, setQuery] = useState("");
   const canCreate = hasAnyRole(principal, "platform_admin", "tenant_admin");
   const canManage = canCreate || hasAnyRole(principal, "space_admin");
@@ -67,7 +72,13 @@ export function SpacesPage({
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    if (submitting) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    setError("");
+    setNotice("");
+    setRefreshIssue("");
+    setSubmitting(true);
     try {
       const created = await api.createSpace({
         organization_id: data.get("organization_id"),
@@ -76,12 +87,28 @@ export function SpacesPage({
         description: data.get("description"),
         default_classification: data.get("default_classification"),
       });
-      event.currentTarget.reset();
+      form.reset();
       setCreating(false);
-      await onChanged();
       onSelect(created.id);
+      setNotice(`空间“${created.display_name}”已创建，正在刷新空间目录。`);
+      try {
+        await onChanged();
+        setNotice(
+          `空间“${created.display_name}”已创建并已切换。下一步可进入资料中心导入并解析资料。`,
+        );
+      } catch {
+        // The POST is already committed. A refresh failure must not turn a
+        // successful creation into a misleading network error or invite a
+        // duplicate submission.
+        setNotice(`空间“${created.display_name}”已创建，但目录尚未刷新。`);
+        setRefreshIssue(
+          "空间已创建，但目录刷新暂时失败；可以安全重试目录刷新。",
+        );
+      }
     } catch (nextError) {
       setError(messageOf(nextError));
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -118,10 +145,11 @@ export function SpacesPage({
 
   async function retry() {
     setError("");
+    setRefreshIssue("");
     try {
       await Promise.all([onChanged(), refreshDirectory(), refreshMembers()]);
     } catch (nextError) {
-      setError(messageOf(nextError));
+      setRefreshIssue(`目录刷新失败：${messageOf(nextError)}`);
     }
   }
 
@@ -142,11 +170,29 @@ export function SpacesPage({
           ) : undefined
         }
       />
+      {notice && (
+        <div className="notice-banner" role="status">
+          <span>{notice}</span>
+          {onNavigate && (
+            <button type="button" onClick={() => onNavigate("sources")}>
+              前往资料中心
+            </button>
+          )}
+        </div>
+      )}
       {error && (
         <div className="form-error" role="alert">
           <span>{error}</span>
           <button type="button" onClick={() => void retry()}>
             重试
+          </button>
+        </div>
+      )}
+      {refreshIssue && (
+        <div className="form-error" role="alert">
+          <span>{refreshIssue}</span>
+          <button type="button" onClick={() => void retry()}>
+            重试目录刷新
           </button>
         </div>
       )}
@@ -290,8 +336,12 @@ export function SpacesPage({
                       <option value="HIGHLY_RESTRICTED">高度受限</option>
                     </select>
                   </label>
-                  <button className="primary" type="submit">
-                    创建
+                  <button
+                    className="primary"
+                    type="submit"
+                    disabled={submitting}
+                  >
+                    {submitting ? "创建中…" : "创建"}
                   </button>
                 </form>
               </section>

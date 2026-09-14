@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
@@ -22,12 +23,22 @@ import type {
   SourceVersion,
 } from "./types";
 
-export function CompileCenter({
+export function CompileCenter(props: {
+  api: NexweaveApi;
+  spaceId: string;
+  onNavigate?: (path: string) => void;
+}) {
+  return <CompileCenterView key={props.spaceId} {...props} />;
+}
+
+function CompileCenterView({
   api,
   spaceId,
+  onNavigate,
 }: {
   api: NexweaveApi;
   spaceId: string;
+  onNavigate?: (path: string) => void;
 }) {
   const [jobs, setJobs] = useState<CompileJob[]>([]);
   const [schemas, setSchemas] = useState<SchemaVersion[]>([]);
@@ -41,7 +52,12 @@ export function CompileCenter({
   const [mode, setMode] = useState<CompileJob["mode"]>("FULL");
   const [selected, setSelected] = useState<CompileJob | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
+  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const loadEpoch = useRef(0);
+  const hasLoadedRef = useRef(false);
 
   const versions = useMemo(
     () =>
@@ -52,6 +68,7 @@ export function CompileCenter({
   );
 
   const load = useCallback(async () => {
+    const epoch = ++loadEpoch.current;
     if (!spaceId) {
       setJobs([]);
       setSchemas([]);
@@ -60,69 +77,132 @@ export function CompileCenter({
       setModels([]);
       setSelected(null);
       setError("");
+      setNotice("");
+      setSourcesUnavailable(false);
+      setLoading(false);
+      hasLoadedRef.current = true;
       return;
     }
+    // Keep the current projection mounted during polling. Toggling loading on
+    // every refresh temporarily removes the version rows and makes the first
+    // step visibly flash while the three-second poll is in flight.
+    if (!hasLoadedRef.current) setLoading(true);
     try {
-      const [jobPage, schemaPage, sourcePage, promptPage, modelPage] =
-        await Promise.all([
-          api.compileJobs(spaceId),
-          api.schemas(spaceId),
-          api.sources(spaceId, { limit: 100 }),
-          api.listGovernance("prompt-versions"),
-          api.listGovernance("model-profiles"),
-        ]);
-      setJobs(jobPage.items);
-      const publishedSchemas = schemaPage.items.filter(
-        (item) => item.status === "PUBLISHED",
+      const results = await Promise.allSettled([
+        api.compileJobs(spaceId),
+        api.schemas(spaceId),
+        api.sources(spaceId, { limit: 100 }),
+        api.listGovernance("prompt-versions"),
+        api.listGovernance("model-profiles"),
+      ]);
+      if (epoch !== loadEpoch.current) return;
+      const [jobResult, schemaResult, sourceResult, promptResult, modelResult] =
+        results;
+      const failures = results.filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected",
       );
-      setSchemas(publishedSchemas);
-      setSources(sourcePage.items);
-      setPrompts(promptPage.items);
-      setModels(modelPage.items);
-      setSchemaId((value) =>
-        publishedSchemas.some((item) => item.id === value)
-          ? value
-          : publishedSchemas[0]?.id || "",
+      if (jobResult.status === "fulfilled") {
+        setJobs(jobResult.value.items);
+        setSelected((current) =>
+          current
+            ? (jobResult.value.items.find((item) => item.id === current.id) ??
+              null)
+            : current,
+        );
+      } else {
+        setJobs([]);
+        setSelected(null);
+      }
+      if (schemaResult.status === "fulfilled") {
+        const publishedSchemas = schemaResult.value.items.filter(
+          (item) => item.status === "PUBLISHED",
+        );
+        setSchemas(publishedSchemas);
+        setSchemaId((value) =>
+          publishedSchemas.some((item) => item.id === value)
+            ? value
+            : publishedSchemas[0]?.id || "",
+        );
+      } else {
+        setSchemas([]);
+        setSchemaId("");
+      }
+      if (sourceResult.status === "fulfilled") {
+        setSourcesUnavailable(false);
+        setSources(sourceResult.value.items);
+        const availableVersionIds = new Set(
+          sourceResult.value.items.flatMap((source) =>
+            source.versions
+              .filter((version) =>
+                ["PARSED", "PARTIAL"].includes(version.status),
+              )
+              .map((version) => version.id),
+          ),
+        );
+        setSourceIds((current) =>
+          current.filter((id) => availableVersionIds.has(id)),
+        );
+      } else {
+        setSourcesUnavailable(true);
+        setSources([]);
+        setSourceIds([]);
+      }
+      if (promptResult.status === "fulfilled") {
+        setPrompts(promptResult.value.items);
+        setPromptId((value) =>
+          promptResult.value.items.some((item) => item.id === value)
+            ? value
+            : promptResult.value.items[0]?.id || "",
+        );
+      } else {
+        setPrompts([]);
+        setPromptId("");
+      }
+      if (modelResult.status === "fulfilled") {
+        setModels(modelResult.value.items);
+        setModelId((value) =>
+          modelResult.value.items.some((item) => item.id === value)
+            ? value
+            : modelResult.value.items.find(
+                (item) => item.provider === "nexweave.local",
+              )?.id ||
+              modelResult.value.items[0]?.id ||
+              "",
+        );
+      } else {
+        setModels([]);
+        setModelId("");
+      }
+      setError(
+        failures.length
+          ? "部分编译资源暂时无法读取；已保留可用内容，请重试。"
+          : "",
       );
-      setPromptId((value) =>
-        promptPage.items.some((item) => item.id === value)
-          ? value
-          : promptPage.items[0]?.id || "",
-      );
-      setModelId((value) =>
-        modelPage.items.some((item) => item.id === value)
-          ? value
-          : modelPage.items.find((item) => item.provider === "nexweave.local")
-              ?.id ||
-            modelPage.items[0]?.id ||
-            "",
-      );
-      const availableVersionIds = new Set(
-        sourcePage.items.flatMap((source) =>
-          source.versions
-            .filter((version) => ["PARSED", "PARTIAL"].includes(version.status))
-            .map((version) => version.id),
-        ),
-      );
-      setSourceIds((current) =>
-        current.filter((id) => availableVersionIds.has(id)),
-      );
-      setError("");
     } catch (cause) {
-      setError(messageOf(cause, "无法读取编译中心。"));
+      if (epoch === loadEpoch.current)
+        setError(messageOf(cause, "无法读取编译中心。"));
+    } finally {
+      if (epoch === loadEpoch.current) {
+        hasLoadedRef.current = true;
+        setLoading(false);
+      }
     }
   }, [api, spaceId]);
 
   useEffect(() => {
-    if (!spaceId) return;
     void load();
+    if (!spaceId) return;
     const timer = window.setInterval(() => void load(), 3000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+    };
   }, [load, spaceId]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (
+      loading ||
       busy ||
       !spaceId ||
       !sourceIds.length ||
@@ -141,6 +221,7 @@ export function CompileCenter({
         mode,
       });
       setSelected(job);
+      setNotice("编译任务已提交。任务完成后会生成可审核草稿，不会自动发布。");
       await load();
     } catch (cause) {
       setError(messageOf(cause, "无法创建编译任务。"));
@@ -158,6 +239,7 @@ export function CompileCenter({
   }
 
   async function retry(job: CompileJob) {
+    if (busy || loading || !spaceId) return;
     setBusy(true);
     try {
       const retried = await api.createCompileJob(spaceId, {
@@ -185,6 +267,11 @@ export function CompileCenter({
         title="编译中心"
         description="选择已解析资料和知识模型，完成前置检查后生成可审核的知识草稿。"
       />
+      {notice && (
+        <div className="notice-banner" role="status">
+          {notice}
+        </div>
+      )}
       {error && <ErrorState message={error} onRetry={load} />}
       {!spaceId && (
         <EmptyState
@@ -199,32 +286,66 @@ export function CompileCenter({
             <h2>选择知识版本</h2>
             <p>选择本次要转换为结构化知识的已解析资料。</p>
             <fieldset>
-              <legend>可用资料版本</legend>
-              {versions.map((version) => (
-                <label className="check-row" key={version.id}>
-                  <input
-                    type="checkbox"
-                    checked={sourceIds.includes(version.id)}
-                    onChange={(event) =>
-                      setSourceIds((current) =>
-                        event.target.checked
-                          ? [...current, version.id]
-                          : current.filter((id) => id !== version.id),
-                      )
-                    }
-                  />
-                  {labelForVersion(version, sources)} ·{" "}
-                  <StatusPill value={version.status} />
-                </label>
-              ))}
-              {!versions.length && (
+              <legend>
+                可用资料版本 · {loading ? "读取中" : `${versions.length} 个`}
+              </legend>
+              {!loading &&
+                versions.map((version) => (
+                  <label className="check-row" key={version.id}>
+                    <input
+                      type="checkbox"
+                      checked={sourceIds.includes(version.id)}
+                      onChange={(event) =>
+                        setSourceIds((current) =>
+                          event.target.checked
+                            ? [...current, version.id]
+                            : current.filter((id) => id !== version.id),
+                        )
+                      }
+                    />
+                    {labelForVersion(version, sources)} ·{" "}
+                    <StatusPill value={version.status} />
+                  </label>
+                ))}
+              {loading && (
+                <p className="workflow-loading" role="status">
+                  正在读取资料、解析状态与编译配置…
+                </p>
+              )}
+              {!loading && !versions.length && (
                 <EmptyState
-                  title="没有可编译的资料"
-                  description="先在资料中心导入并完成解析，再返回这里开始编译。"
+                  title={
+                    sourcesUnavailable
+                      ? "暂时无法读取资料版本"
+                      : "没有可编译的资料"
+                  }
+                  description={
+                    sourcesUnavailable
+                      ? "资料目录请求没有完成；先重试读取，避免把暂时不可见误判为空目录。"
+                      : "先在资料中心导入并完成解析，再返回这里开始编译。"
+                  }
                   primaryAction={
-                    <a className="btn" href="/sources">
-                      前往资料中心 →
-                    </a>
+                    sourcesUnavailable ? (
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => void load()}
+                      >
+                        重试读取
+                      </button>
+                    ) : onNavigate ? (
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => onNavigate("sources")}
+                      >
+                        前往资料中心 →
+                      </button>
+                    ) : (
+                      <a className="btn" href="/sources">
+                        前往资料中心 →
+                      </a>
+                    )
                   }
                 />
               )}
@@ -330,7 +451,12 @@ export function CompileCenter({
           <button
             className="primary"
             disabled={
-              busy || !sourceIds.length || !schemaId || !promptId || !modelId
+              loading ||
+              busy ||
+              !sourceIds.length ||
+              !schemaId ||
+              !promptId ||
+              !modelId
             }
             type="submit"
           >
@@ -384,7 +510,7 @@ export function CompileCenter({
                     ) && (
                       <button
                         type="button"
-                        disabled={busy}
+                        disabled={busy || loading}
                         onClick={() => void retry(job)}
                       >
                         新任务重试
@@ -400,6 +526,33 @@ export function CompileCenter({
       {selected && (
         <div className="data-card">
           <h2>CompileJob 轨迹</h2>
+          {selected.status === "SUCCEEDED" && (
+            <div className="compile-next-step" role="status">
+              <strong>编译完成：</strong>草稿已生成，下一步请到 Wiki
+              核对内容，再进入审核；当前仍未发布。
+              <div>
+                {onNavigate ? (
+                  <>
+                    <button type="button" onClick={() => onNavigate("wiki")}>
+                      打开 Wiki
+                    </button>
+                    <button type="button" onClick={() => onNavigate("reviews")}>
+                      打开审核
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <a className="btn" href="/wiki">
+                      打开 Wiki
+                    </a>
+                    <a className="btn" href="/reviews">
+                      打开审核
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
           <p>
             <code>{selected.input_fingerprint.slice(0, 20)}…</code>
           </p>

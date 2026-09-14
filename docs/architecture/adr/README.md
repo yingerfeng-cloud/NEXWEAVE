@@ -38,3 +38,5 @@ ADR-0001—0018 已在 M0 冻结；ADR-0019 冻结 M1；ADR-0020 冻结 M2 Tempo
 | ADR-0035 | 阶段 C 固定 Release 知识回接与当前引用门禁 | Accepted under explicit Stage C authorization |
 
 ADR-0036：[阶段 D 固定发布读取与验收收口](ADR-0036-stage-d-trusted-read-boundary.md)，Accepted，实施与本地技术验证完成（2026-09-10）；不进入 M10。
+
+ADR-0037：[R1 可信读取与流程反馈](ADR-0037-r1-trusted-read-feedback.md)，Accepted，增量 UX/契约收口；无迁移，不进入 M10。

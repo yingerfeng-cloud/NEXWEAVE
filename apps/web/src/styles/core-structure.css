@@ -20,6 +20,12 @@
   color: var(--nw-text-muted);
 }
 
+.release-gate-readable {
+  color: var(--nw-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .check-row {
   display: flex !important;
   gap: 0.55rem;
@@ -589,6 +595,14 @@ button.danger {
   color: var(--nw-text-muted);
 }
 
+.workflow-loading {
+  padding: 0.75rem;
+  color: var(--nw-cyan) !important;
+  background: var(--nw-cyan-soft);
+  border: 1px solid var(--nw-cyan-32);
+  border-radius: var(--nw-radius-sm);
+}
+
 .preflight-list {
   display: flex;
   flex-wrap: wrap;
@@ -723,6 +737,23 @@ button.danger {
   margin-bottom: 1rem;
   line-height: 1.8;
 }
+
+.answer-explanation {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.8rem 0.9rem;
+  margin: 1rem 0;
+  color: var(--nw-text-secondary);
+  background: var(--nw-cyan-soft);
+  border: 1px solid var(--nw-cyan-32);
+  border-radius: var(--nw-radius-sm);
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.answer-explanation p {
+  margin: 0;
+}
 .ask-composer label {
   display: grid;
   gap: 0.5rem;
@@ -768,6 +799,36 @@ button.danger {
   gap: 0.35rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--nw-line);
+}
+
+.evidence-inspector article .btn {
+  display: inline-flex;
+  width: fit-content;
+  text-decoration: none;
+}
+
+.compile-next-step {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  margin-bottom: 0.9rem;
+  color: var(--nw-text-secondary);
+  background: var(--nw-success-soft);
+  border: 1px solid var(--nw-success-24);
+  border-radius: var(--nw-radius-sm);
+}
+
+.compile-next-step > div {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.compile-next-step button,
+.compile-next-step .btn {
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
+  text-decoration: none;
 }
 
 .evidence-inspector p,

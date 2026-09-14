@@ -8,6 +8,7 @@ from nexweave_api.source_routes import (
     _download_content_disposition,
     _filter_sources_by_content_type,
     _read_bounded_upload,
+    _source_list_response,
     _source_response,
     _validate_controlled_type,
 )
@@ -60,6 +61,9 @@ def test_source_response_keeps_public_metadata_and_hides_internal_storage() -> N
     assert result["versions"][0]["object_version_id"] == "fixed-version"
     assert result["versions"][0]["checksum"] == version["checksum"]
     assert version["object_key"] == "private-storage-path"
+    listed = _source_list_response({"items": [source], "next_cursor": None}).model_dump(mode="json")
+    assert "archived_at" not in listed["items"][0]
+    assert "object_key" not in listed["items"][0]["versions"][0]
 
 
 class SourceDetailsStub:

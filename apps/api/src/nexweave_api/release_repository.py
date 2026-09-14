@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
@@ -28,6 +29,49 @@ from nexweave_domain import (
 )
 
 CLASSIFICATION_LEVEL = {"PUBLIC": 0, "INTERNAL": 1, "CONFIDENTIAL": 2, "HIGHLY_RESTRICTED": 3}
+_QUESTION_STATE_PREFIX = re.compile(
+    r"^\s*(?:what(?:\s+is|'s)|tell\s+me|show\s+me)\s+"
+    r"(?:the\s+)?(?:current\s+)?(?:state|status|condition)\s+(?:of|for)\s+",
+    re.IGNORECASE,
+)
+
+
+def _keyword_query_text(question: str) -> str:
+    """Remove common state-question framing before the AND-based FTS query.
+
+    The searchable body already contains the governed entity (for example,
+    ``Pump A``). Keeping the question framing would require every framing word
+    to occur in the claim and causes a valid, evidence-backed answer to be
+    refused. This stays deterministic and leaves semantic retrieval unchanged.
+    """
+
+    normalized = " ".join(question.strip().split()).rstrip("?？!！")
+    focused = _QUESTION_STATE_PREFIX.sub("", normalized).strip()
+    return focused or normalized
+
+
+def _answer_reason(
+    *,
+    candidate_count: int,
+    citation_count: int,
+    historical: bool = False,
+    read_filtered: bool = False,
+) -> str:
+    """Return a user-safe explanation code for the read-time answer outcome.
+
+    The code deliberately does not disclose hidden release objects. A fresh
+    query distinguishes no matching indexed knowledge from a candidate that
+    failed the Evidence/Anchor gate; historical reads separately signal when
+    revalidation could no longer keep the old citation.
+    """
+
+    if historical:
+        if citation_count:
+            return "HISTORICAL_RECHECK_SUPPORTED" if read_filtered else "SUPPORTED_EVIDENCE"
+        return "HISTORICAL_RECHECK_UNAVAILABLE" if read_filtered else "EVIDENCE_UNAVAILABLE"
+    if citation_count:
+        return "SUPPORTED_EVIDENCE"
+    return "NO_MATCHING_KNOWLEDGE" if candidate_count == 0 else "EVIDENCE_UNAVAILABLE"
 
 
 class ReleaseRepository(ReviewRepository):
@@ -1939,6 +1983,7 @@ class ReleaseRepository(ReviewRepository):
         )[0]
         vector_value = "[" + ",".join(f"{float(value):.9f}" for value in query_vector) + "]"
         clearance = CLASSIFICATION_LEVEL[principal.clearance.value]
+        keyword_query = _keyword_query_text(payload["question"])
         async with self._database.engine.connect() as connection:
             base = "release_id=:release AND CASE classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1 WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END <= :clearance"
             keyword = (
@@ -1950,7 +1995,7 @@ class ReleaseRepository(ReviewRepository):
                         {
                             "release": release_id,
                             "clearance": clearance,
-                            "query": payload["question"],
+                            "query": keyword_query,
                             "limit": payload["top_k"] * 4,
                         },
                     )
@@ -2014,12 +2059,19 @@ class ReleaseRepository(ReviewRepository):
                 for item_id, score, ranks in fused
                 if item_id in by_id
             ]
+            candidate_count = len(hits)
             citations = await self._visible_citations(connection, principal, release_id, hits)
             hits = await self._supported_hits(connection, release_id, hits, citations)
+            if not hits:
+                citations = []
             # Draft conflict details have no fixed-release classification contract.
             conflicts: list[dict[str, Any]] = []
         answer_id, session_id, now = new_uuid7(), new_uuid7(), datetime.now(UTC)
-        if citations:
+        answer_reason = _answer_reason(
+            candidate_count=candidate_count,
+            citation_count=len(citations),
+        )
+        if answer_reason == "SUPPORTED_EVIDENCE":
             statements = [str(hit["text"]) for hit in hits if hit["object_type"] == "CLAIM"]
             status, direct = "COMPLETED", "；".join(statements[:3])
             uncertainty = "回答仅由当前固定 Release 中可见且 Anchor 有效的证据支持；RRF 分数不是事实置信度。冲突需在有权限的冲突工作台另行核查。"
@@ -2066,6 +2118,7 @@ class ReleaseRepository(ReviewRepository):
                             "top_k": payload["top_k"],
                             "filters": payload.get("filters", {}),
                             "rrf_constant": 60,
+                            "keyword_query": keyword_query,
                         }
                     ),
                     "model": UUID(str(release["model_profile_id"])),
@@ -2119,6 +2172,7 @@ class ReleaseRepository(ReviewRepository):
             "release_id": str(release_id),
             "question": payload["question"],
             "status": status,
+            "answer_reason": answer_reason,
             "direct_answer": direct,
             "key_basis": [str(hit["text"]) for hit in hits[:3]],
             "uncertainty": uncertainty,
@@ -2128,6 +2182,7 @@ class ReleaseRepository(ReviewRepository):
                 "top_k": payload["top_k"],
                 "filters": payload.get("filters", {}),
                 "rrf_constant": 60,
+                "keyword_query": keyword_query,
             },
             "model_profile_id": release["model_profile_id"],
             "prompt_version_id": release["prompt_version_id"],
@@ -2323,17 +2378,25 @@ class ReleaseRepository(ReviewRepository):
             if statements
             else "当前固定 Release 中没有足够的可见有效证据，无法下结论。"
         )
+        read_filtered = direct != answer["direct_answer"] or len(kept) != len(old)
+        answer_reason = _answer_reason(
+            candidate_count=len(hits),
+            citation_count=len(kept),
+            historical=True,
+            read_filtered=read_filtered,
+        )
         return _json_value(
             {
                 **answer,
                 "status": "COMPLETED" if statements else "REFUSED",
+                "answer_reason": answer_reason,
                 "direct_answer": direct,
                 "key_basis": statements,
                 "conflicts": [],
                 "retrieval_hits": [],
                 "citations": kept,
                 "read_checked_at": datetime.now(UTC),
-                "read_filtered": direct != answer["direct_answer"] or len(kept) != len(old),
+                "read_filtered": read_filtered,
                 "uncertainty": "按当前权限与来源有效性重新核验；原始答案记录未修改。冲突需在有权限的冲突工作台另行核查。",
             }
         )

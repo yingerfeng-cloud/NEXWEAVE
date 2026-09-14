@@ -40,20 +40,23 @@
   align-items: flex-start;
 }
 .wiki-graph-actions,
-.wiki-graph-toolbar,
-.wiki-graph-toolbar > div {
+.wiki-graph-zoom-controls {
   display: flex;
   gap: 0.6rem;
   align-items: center;
 }
 .wiki-graph-toolbar {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns:
+    minmax(18rem, 1.2fr) minmax(11rem, 0.8fr) minmax(11rem, 0.9fr)
+    auto auto;
+  gap: 0.75rem;
+  align-items: end;
   margin-bottom: 1rem;
   color: var(--nw-text-secondary);
 }
-.wiki-graph-toolbar > span {
-  padding-right: 0.25rem;
-  font-size: 0.84rem;
+.wiki-graph-search {
+  min-width: 0;
 }
 .wiki-graph-toolbar label {
   display: grid;
@@ -61,11 +64,49 @@
   color: var(--nw-text);
 }
 .wiki-graph-toolbar input {
-  min-width: min(19rem, 70vw);
+  width: 100%;
+  min-width: 0;
   padding: 0.55rem 0.7rem;
   color: var(--nw-text);
   background: var(--nw-bg-canvas);
   border: 1px solid var(--nw-line);
+}
+.wiki-graph-stats {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  align-self: stretch;
+}
+.wiki-graph-stats span,
+.wiki-graph-direction {
+  display: flex;
+  min-width: 0;
+  min-height: 2.25rem;
+  align-items: center;
+  padding: 0.45rem 0.6rem;
+  color: var(--nw-text-secondary);
+  background: var(--nw-surface-2);
+  border: 1px solid var(--nw-line);
+  border-radius: var(--nw-radius-sm);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.wiki-graph-direction {
+  justify-content: center;
+  text-align: center;
+}
+.wiki-graph-direction,
+.wiki-graph-label-toggle,
+.wiki-graph-zoom-controls {
+  align-self: stretch;
+}
+.wiki-graph-label-toggle {
+  min-width: 5.5rem;
+}
+.wiki-graph-zoom-controls button {
+  min-width: 3.5rem;
 }
 .wiki-graph-shell {
   display: grid;
@@ -293,6 +334,17 @@
   line-height: 1.5;
 }
 @media (max-width: 980px) {
+  .wiki-graph-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .wiki-graph-search,
+  .wiki-graph-direction {
+    grid-column: 1 / -1;
+  }
+  .wiki-graph-toolbar .wiki-graph-label-toggle,
+  .wiki-graph-toolbar .wiki-graph-zoom-controls {
+    align-self: center;
+  }
   .wiki-graph-shell {
     grid-template-columns: 1fr;
   }

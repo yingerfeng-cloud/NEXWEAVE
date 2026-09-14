@@ -117,6 +117,7 @@ describe("M7 trusted consumption pages", () => {
         release_id: release.id,
         question: "未知问题",
         status: "REFUSED",
+        answer_reason: "NO_MATCHING_KNOWLEDGE",
         direct_answer:
           "当前固定 Release 中没有足够的可见有效证据，无法下结论。",
         key_basis: [],
@@ -133,6 +134,44 @@ describe("M7 trusted consumption pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
     expect(await screen.findByText("证据不足，无法回答")).toBeInTheDocument();
     expect(screen.getByText(/没有足够的可见有效证据/)).toBeInTheDocument();
+    expect(screen.getByText("当前发布没有匹配的知识")).toBeInTheDocument();
+    expect(screen.getByText(/换用资料中的设备名/)).toBeInTheDocument();
+  });
+
+  it("links each citation to the anchored source preview", async () => {
+    const citation = {
+      id: "citation-1",
+      evidence_id: "evidence-1",
+      source_version_id: "version-1",
+      source_anchor_id: "anchor-1",
+      status: "VALID",
+    };
+    const api = {
+      releases: vi.fn().mockResolvedValue({ items: [release] }),
+      askRelease: vi.fn().mockResolvedValue({
+        id: "answer-1",
+        release_id: release.id,
+        question: "Pump A",
+        status: "COMPLETED",
+        direct_answer: "Pump A is operational.",
+        key_basis: ["Pump A is operational."],
+        uncertainty: null,
+        citations: [citation],
+        conflicts: [],
+      }),
+    } as unknown as NexweaveApi;
+    render(<AskCenter api={api} spaceId={release.space_id} />);
+    await screen.findByText("1.0.0");
+    fireEvent.change(screen.getByPlaceholderText("向当前发布提问…"), {
+      target: { value: "Pump A" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+
+    const link = await screen.findByRole("link", { name: "查看原文定位" });
+    expect(link).toHaveAttribute(
+      "href",
+      "/source-versions/version-1/preview?anchor_id=anchor-1",
+    );
   });
 
   it("uses a Release-scoped graph route and renders evidence counts", async () => {

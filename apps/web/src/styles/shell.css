@@ -323,7 +323,8 @@
   margin-top: 0.2rem;
   overflow: hidden;
   color: var(--nw-text);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

@@ -1,0 +1,85 @@
+{
+  "date": "2026-09-13",
+  "scope": "User-authorized R1 guided walkthrough; synthetic software demonstration",
+  "space_id": "01a09a8f-617d-7efb-a709-abebfdd1c110",
+  "space_name": "R1 全流程讲解 · 合成演示 0913",
+  "source_version_id": "01a09a91-3d6e-7723-ad70-8f753688955f",
+  "schema_version_id": "01a09a92-08eb-7c8b-9226-a9d4346fa104",
+  "compile_job_id": "01a09a93-a580-74e8-ac2e-b0a56fc70647",
+  "compile_status": "SUCCEEDED",
+  "wiki_page_id": "01a09a93-a5d1-71c5-8c5e-a74bd35b045e",
+  "claim_id": "01a09a94-93fb-7abc-92ce-45c9f52715f4",
+  "evidence_ids": [
+    "01a09a94-93fc-79b9-aacb-c3d7d8ebe845"
+  ],
+  "evidence_statuses": [
+    "ACCEPTED"
+  ],
+  "review_statuses": [
+    "APPROVED"
+  ],
+  "releases": [
+    {
+      "id": "01a09a95-9aa5-7da8-968c-729fb24ad544",
+      "version": "7.0.1789299891",
+      "checksum": "sha256:855c5ed33be57c25ec4383356a7e3e821493b8838d17add72ec48e27dde5d316"
+    },
+    {
+      "id": "01a09a95-9981-7808-933c-098dd2cfe576",
+      "version": "7.0.1789299890",
+      "checksum": "sha256:136b01b2921c1a74d90520578ef35c5454ee1aadc344d15a189026e8f071847f"
+    }
+  ],
+  "gate_summaries": [
+    {
+      "evaluation_passed": true,
+      "evaluation_run_id": "01a09a95-99c7-77f0-a8bc-5d01a6c8d3cd",
+      "blocking_lint_count": 0,
+      "traceability_percent": 100,
+      "schema_compliance_percent": 100,
+      "unresolved_blocking_conflicts": 0
+    },
+    {
+      "evaluation_passed": true,
+      "evaluation_run_id": "01a09a95-98b0-7285-b353-5911a830e752",
+      "blocking_lint_count": 0,
+      "traceability_percent": 100,
+      "schema_compliance_percent": 100,
+      "unresolved_blocking_conflicts": 0
+    }
+  ],
+  "stable_release_id": "01a09a95-9981-7808-933c-098dd2cfe576",
+  "pointer_version": 3,
+  "browser_results": {
+    "space_creation": "Server created; UI showed connection error; reload recovered without duplicate",
+    "compile": "No parsed source listed; submitted through official API; success visible in browser",
+    "wiki": "AI_DRAFT with evidence candidates",
+    "review": "Engineering/expert/approval stages displayed approved; scripted test roles",
+    "query_natural_language": "What is the state of Pump A? -> REFUSED",
+    "query_keywords": "Pump A operational -> supported answer with valid citation",
+    "query_unrelated": "Unrelated satellite launch code -> REFUSED without citation",
+    "source_preview": "VALID; block matched; source_utf8 chars 0-65 matched"
+  },
+  "api_checks": [
+    "SOURCE_PARSE",
+    "SCHEMA_PUBLISHED",
+    "COMPILE",
+    "REVIEW",
+    "ACCEPTED_EVIDENCE",
+    "QUALITY_GATE",
+    "TWO_IMMUTABLE_RELEASES",
+    "CITED_QUERY",
+    "QUERY_REPLAY",
+    "REFUSAL",
+    "EXPORT",
+    "PROJECTION_REBUILD",
+    "POINTER_ROLLBACK"
+  ],
+  "provider": "nexweave.local / structured-compile-v1; deterministic local test provider, not external LLM",
+  "industrial_acceptance": false,
+  "voice_narration_performed": false,
+  "text_narration_performed": true,
+  "new_migrations": 0,
+  "source_code_changed": false,
+  "entered_m10": false
+}
