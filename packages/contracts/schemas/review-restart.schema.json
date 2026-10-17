@@ -1,0 +1,17 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "reason": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "reason"
+  ],
+  "title": "ReviewRestartCreate",
+  "type": "object"
+}

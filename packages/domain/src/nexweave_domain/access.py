@@ -336,6 +336,7 @@ class AuthorizationRequest:
     membership_active: bool = False
     classification: DataClassification = DataClassification.INTERNAL
     resource_archived: bool = False
+    member_clearance: DataClassification | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -351,6 +352,13 @@ def authorize(principal: Principal, request: AuthorizationRequest) -> Authorizat
     if "nexweave-api" not in principal.audience:
         return AuthorizationDecision(False, "AUDIENCE_MISMATCH")
     if CLASSIFICATION_LEVEL[principal.clearance] < CLASSIFICATION_LEVEL[request.classification]:
+        return AuthorizationDecision(False, "CLASSIFICATION_DENIED")
+    if (
+        request.membership_active
+        and request.member_clearance is not None
+        and CLASSIFICATION_LEVEL[request.member_clearance]
+        < CLASSIFICATION_LEVEL[request.classification]
+    ):
         return AuthorizationDecision(False, "CLASSIFICATION_DENIED")
 
     roles = set(principal.tenant_roles)

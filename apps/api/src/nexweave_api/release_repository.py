@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -13,6 +12,8 @@ from uuid import UUID
 from sqlalchemy import bindparam, text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from nexweave_api import query_engine
+from nexweave_api.derived_reads import DerivedReadGate
 from nexweave_api.errors import ApiProblem
 from nexweave_api.repository import JsonDict, _json_value
 from nexweave_api.review_repository import ReviewRepository
@@ -21,7 +22,6 @@ from nexweave_domain import (
     ReleaseGate,
     ReleaseRuleViolation,
     new_uuid7,
-    reciprocal_rank_fusion,
     release_manifest_checksum,
     validate_release_approver,
     validate_release_gate,
@@ -75,6 +75,103 @@ def _answer_reason(
 
 
 class ReleaseRepository(ReviewRepository):
+    async def _assert_candidate_current(
+        self, connection: AsyncConnection, candidate: Any, actor_id: UUID
+    ) -> None:
+        """Recheck under locks shared with permission/source/conflict mutations."""
+        from nexweave_domain import ActorType, DataClassification
+
+        identity = (
+            (
+                await connection.execute(
+                    text(
+                        "SELECT subject,clearance,status FROM user_identities "
+                        "WHERE id=:id AND tenant_id=:tenant FOR SHARE"
+                    ),
+                    {"id": actor_id, "tenant": candidate["tenant_id"]},
+                )
+            )
+            .mappings()
+            .first()
+        )
+        if identity is None or identity["status"] != "ACTIVE":
+            raise ApiProblem(
+                403, "ACCESS_DENIED", "Publisher unavailable", "An active Publisher is required."
+            )
+        for sql in (
+            "SELECT id FROM knowledge_spaces WHERE id=:space FOR NO KEY UPDATE",
+            "SELECT id FROM space_members WHERE space_id=:space ORDER BY id FOR SHARE",
+            "SELECT space_member_id FROM space_member_roles WHERE space_id=:space FOR SHARE",
+            "SELECT id FROM knowledge_entities WHERE space_id=:space ORDER BY id FOR SHARE",
+            "SELECT id FROM wiki_pages WHERE space_id=:space ORDER BY id FOR SHARE",
+            "SELECT id FROM source_documents WHERE space_id=:space ORDER BY id FOR SHARE",
+            "SELECT id FROM source_versions WHERE space_id=:space ORDER BY id FOR SHARE",
+            "SELECT id FROM source_anchors WHERE space_id=:space ORDER BY id FOR SHARE",
+        ):
+            await connection.execute(text(sql), {"space": candidate["space_id"]})
+        principal = Principal(
+            actor_type=ActorType.USER,
+            actor_id=actor_id,
+            tenant_id=UUID(str(candidate["tenant_id"])),
+            subject=str(identity["subject"]),
+            audience=("nexweave-api",),
+            token_id=f"release-current:{candidate['id']}",
+            clearance=DataClassification(identity["clearance"]),
+            tenant_roles=await self._tenant_roles(
+                connection, UUID(str(candidate["tenant_id"])), ActorType.USER, actor_id
+            ),
+        )
+        principal = await self.principal_for_space(
+            principal=principal, space_id=UUID(str(candidate["space_id"])), action="release.publish"
+        )
+        gate = DerivedReadGate(
+            connection, principal, UUID(str(candidate["space_id"])), self.record_denial
+        )
+        manifest = dict(candidate["manifest"])
+        refs = [(key.upper(), i) for key, ids in manifest["objects"].items() for i in ids]
+        refs += [("ENTITY", i) for i in manifest["entity_ids"]]
+        refs += [("EVIDENCE", i) for i in manifest["evidence_ids"]]
+        if set(manifest.get("entity_snapshots", {})) != set(manifest["entity_ids"]):
+            raise ApiProblem(
+                409,
+                "RELEASE_MANIFEST_REFRESH_REQUIRED",
+                "Create a fresh candidate",
+                "Legacy unpublished candidates must freeze entity versions before publication.",
+            )
+        for kind, object_id in refs:
+            snapshot = (
+                manifest["entity_snapshots"].get(str(object_id)) if kind == "ENTITY" else None
+            )
+            await gate.require(kind, object_id, snapshot)
+        unresolved = (
+            await connection.execute(
+                text(
+                    "SELECT count(*) FROM conflict_cases WHERE space_id=:space "
+                    "AND blocking=true AND status IN ('OPEN','UNRESOLVED')"
+                ),
+                {"space": candidate["space_id"]},
+            )
+        ).scalar_one()
+        findings = await self._lint_candidate(connection, candidate)
+        evaluation = await self._evaluate(
+            connection,
+            tenant_id=UUID(str(candidate["tenant_id"])),
+            space_id=UUID(str(candidate["space_id"])),
+            suite_id=UUID(str(candidate["evaluation_suite_id"])),
+            target_type="RELEASE_CANDIDATE",
+            target_id=UUID(str(candidate["id"])),
+            strategy="HYBRID",
+            config={},
+            actor_id=UUID(str(candidate["created_by"])),
+        )
+        if unresolved or any(f["blocking"] for f in findings) or not evaluation["gate_passed"]:
+            raise ApiProblem(
+                409,
+                "RELEASE_GATE_CHANGED",
+                "Current release gate failed",
+                "Sources, conflicts, lint and actual Query evaluation must still pass.",
+            )
+
     async def create_evaluation_suite(
         self,
         *,
@@ -338,6 +435,10 @@ class ReleaseRepository(ReviewRepository):
             )
             manifest["evidence_ids"] = sorted(str(item["id"]) for item in evidence_rows)
             manifest["entity_ids"] = sorted(str(value) for value in entity_ids)
+            manifest["entity_snapshots"] = {
+                str(value): await self._object_snapshot(connection, "ENTITY", value)
+                for value in sorted(entity_ids, key=str)
+            }
             manifest["source_refs"] = sorted(
                 source_refs, key=lambda item: (item["source_version_id"], item["source_anchor_id"])
             )
@@ -834,19 +935,40 @@ class ReleaseRepository(ReviewRepository):
                 ),
                 {"now": now, "id": evaluation_id},
             )
-        claim_ids = await self._target_claim_ids(connection, target_type, target_id)
-        statements: dict[str, str] = {}
-        if claim_ids:
-            statement = text("SELECT id,statement FROM claims WHERE id IN :ids").bindparams(
-                bindparam("ids", expanding=True)
+        identity = (
+            (
+                await connection.execute(
+                    text(
+                        "SELECT id,subject,clearance,status FROM user_identities WHERE id=:id AND tenant_id=:tenant"
+                    ),
+                    {"id": actor_id, "tenant": tenant_id},
+                )
             )
-            statements = {
-                str(row["id"]): str(row["statement"])
-                for row in (await connection.execute(statement, {"ids": claim_ids}))
-                .mappings()
-                .all()
-            }
-        corpus = "\n".join(statements.values()).casefold()
+            .mappings()
+            .first()
+        )
+        if identity is None or identity["status"] != "ACTIVE":
+            raise ApiProblem(
+                403,
+                "ACCESS_DENIED",
+                "Evaluation actor unavailable",
+                "An active evaluation actor is required.",
+            )
+        from nexweave_domain import ActorType, DataClassification
+
+        evaluation_principal = Principal(
+            actor_type=ActorType.USER,
+            actor_id=actor_id,
+            tenant_id=tenant_id,
+            subject=str(identity["subject"]),
+            audience=("nexweave-api",),
+            tenant_roles=await self._tenant_roles(connection, tenant_id, ActorType.USER, actor_id),
+            clearance=DataClassification(identity["clearance"]),
+            token_id=f"evaluation:{evaluation_id}",
+        )
+        evaluation_principal = await self.principal_for_space(
+            principal=evaluation_principal, space_id=space_id, action="quality.run"
+        )
         cases = (
             (
                 await connection.execute(
@@ -859,19 +981,39 @@ class ReleaseRepository(ReviewRepository):
         )
         passed_count = 0
         for case in cases:
+            actual = await self._execute_question(
+                connection,
+                evaluation_principal,
+                target_type,
+                target_id,
+                {
+                    "question": case["question"],
+                    "strategy": strategy,
+                    "top_k": int(config.get("top_k", 5)),
+                    "filters": config.get("filters", {}),
+                    "space_id": str(space_id),
+                },
+            )
             expected = {str(value) for value in case["expected_claim_ids"]}
-            matched = sorted(expected.intersection(statements))
+            matched = sorted({c["claim_id"] for c in actual["citations"]})
             refusal_type = (
                 case["case_type"] in {"UNANSWERABLE", "INSUFFICIENT_EVIDENCE", "COUNTERFACTUAL"}
                 or case["expect_refusal"]
             )
-            if refusal_type:
-                passed = not expected or not matched
-                answer_status = "REFUSED" if passed else "COMPLETED"
-            else:
-                terms_ok = all(str(term).casefold() in corpus for term in case["expected_terms"])
-                passed = expected.issubset(statements) and terms_ok
-                answer_status = "COMPLETED" if passed else "REFUSED"
+            terms = [str(t).casefold() for t in case["expected_terms"] if str(t).strip()]
+            valid_expectation = refusal_type or bool(expected or terms)
+            passed = bool(
+                valid_expectation
+                and (
+                    actual["status"] == "REFUSED"
+                    if refusal_type
+                    else actual["status"] == "COMPLETED"
+                    and bool(actual["citations"])
+                    and expected.issubset(matched)
+                    and all(term in actual["direct_answer"].casefold() for term in terms)
+                )
+            )
+            answer_status = actual["status"]
             passed_count += int(passed)
             await connection.execute(
                 text(
@@ -891,13 +1033,33 @@ class ReleaseRepository(ReviewRepository):
                         {
                             "expected_claim_ids": sorted(expected),
                             "expected_terms": list(case["expected_terms"]),
+                            "actual": actual,
+                            "valid_expectation": valid_expectation,
+                            "scoring": {
+                                "expected_refusal": bool(refusal_type),
+                                "expected_claims_retrieved": expected.issubset(
+                                    {
+                                        h["object_id"]
+                                        for h in actual["retrieval_trace"]
+                                        if h["object_type"] == "CLAIM"
+                                    }
+                                ),
+                                "expected_claims_cited": expected.issubset(matched),
+                                "refusal_matches": (actual["status"] == "REFUSED")
+                                == bool(refusal_type),
+                                "terms_in_answer": all(
+                                    t in actual["direct_answer"].casefold() for t in terms
+                                ),
+                            },
+                            "pipeline_version": "r1-query-v2",
                         }
                     ),
                 },
             )
         rate = int(passed_count * 100 / len(cases)) if cases else 0
-        gate_passed = rate >= int(suite["minimum_pass_rate"])
+        gate_passed = bool(cases) and rate >= int(suite["minimum_pass_rate"])
         metrics = {
+            "pipeline_version": "r1-query-v2",
             "cases": len(cases),
             "passed": passed_count,
             "failed": len(cases) - passed_count,
@@ -1004,6 +1166,25 @@ class ReleaseRepository(ReviewRepository):
                 "Suite and target must share a space.",
             )
         async with self._database.engine.begin() as connection:
+            target_table = (
+                "releases" if payload["target_type"] == "RELEASE" else "release_candidates"
+            )
+            target_schema = (
+                await connection.execute(
+                    text(
+                        f"SELECT schema_version_id FROM {target_table} WHERE id=:id AND tenant_id=:tenant AND space_id=:space"
+                    ),
+                    {"id": payload["target_id"], "tenant": principal.tenant_id, "space": space_id},
+                )
+            ).scalar_one_or_none()
+            if target_schema is None or str(target_schema) != str(suite["schema_version_id"]):
+                raise ApiProblem(
+                    409,
+                    "EVALUATION_SCOPE_CONFLICT",
+                    "Evaluation scope conflict",
+                    "Target and suite must share space and Schema.",
+                )
+
             await connection.execute(
                 text(
                     "INSERT INTO evaluation_runs (id,tenant_id,space_id,suite_id,suite_version,target_type,target_id,workflow_task_id,workflow_id,retrieval_strategy,retrieval_config,status,created_at,created_by) VALUES (:id,:tenant,:space,:suite,:version,:type,:target,:task,:workflow,:strategy,CAST(:config AS jsonb),'CREATED',:now,:actor)"
@@ -1093,6 +1274,21 @@ class ReleaseRepository(ReviewRepository):
                     "EvaluationRun unavailable",
                     "The EvaluationRun is unavailable.",
                 )
+            principal = await self.principal_for_space(
+                principal=principal, space_id=UUID(str(row["space_id"])), action="quality.read"
+            )
+            scope, _, items = await self._query_scope(
+                connection, principal, row["target_type"], UUID(str(row["target_id"]))
+            )
+            if str(scope["space_id"]) != str(row["space_id"]):
+                raise ApiProblem(
+                    404, "RESOURCE_NOT_FOUND", "Scope unavailable", "Scope unavailable."
+                )
+            gate = DerivedReadGate(
+                connection, principal, UUID(str(scope["space_id"])), self.record_denial
+            )
+            for item in items:
+                await gate.require(item["object_type"], item["object_id"], item["snapshot"])
             results = (
                 (
                     await connection.execute(
@@ -1151,6 +1347,8 @@ class ReleaseRepository(ReviewRepository):
                 )
             except ReleaseRuleViolation as exc:
                 raise ApiProblem(409, exc.code, "Release approval rejected", str(exc)) from exc
+            if decision == "APPROVED":
+                await self._assert_candidate_current(connection, candidate, principal.actor_id)
             await connection.execute(
                 text(
                     "INSERT INTO release_approvals (id,candidate_id,decision,reason,channel,created_at,created_by) VALUES (:id,:candidate,:decision,:reason,:channel,:now,:actor)"
@@ -1279,6 +1477,7 @@ class ReleaseRepository(ReviewRepository):
                     "Release approval required",
                     "A matching audited Publisher approval is required.",
                 )
+            await self._assert_candidate_current(connection, candidate, approver_id)
             await connection.execute(
                 text(
                     "UPDATE release_candidates SET status='PUBLISHING',updated_at=:now,updated_by=:actor WHERE id=:id"
@@ -1417,7 +1616,11 @@ class ReleaseRepository(ReviewRepository):
         refs.extend(("EVIDENCE", value) for value in manifest["evidence_ids"])
         refs.extend(("ENTITY", value) for value in manifest["entity_ids"])
         for object_type, value in refs:
-            snapshot = await self._object_snapshot(connection, object_type, UUID(value))
+            snapshot = (
+                manifest.get("entity_snapshots", {}).get(value) if object_type == "ENTITY" else None
+            )
+            if snapshot is None:
+                snapshot = await self._object_snapshot(connection, object_type, UUID(value))
             await connection.execute(
                 text(
                     "INSERT INTO release_items (id,tenant_id,space_id,release_id,object_type,object_id,object_checksum,snapshot) VALUES (:id,:tenant,:space,:release,:type,:object,:checksum,CAST(:snapshot AS jsonb))"
@@ -1465,7 +1668,7 @@ class ReleaseRepository(ReviewRepository):
                 (
                     await connection.execute(
                         text(
-                            "SELECT c.id,c.statement,c.predicate_key,c.object_value,e.display_name,CASE max(CASE sv.classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1 WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END) WHEN 0 THEN 'PUBLIC' WHEN 1 THEN 'INTERNAL' WHEN 2 THEN 'CONFIDENTIAL' ELSE 'HIGHLY_RESTRICTED' END AS classification FROM claims c JOIN knowledge_entities e ON e.id=c.subject_entity_id JOIN evidence_records er ON er.claim_id=c.id JOIN source_anchors sa ON sa.id=er.source_anchor_id JOIN source_versions sv ON sv.id=sa.source_version_id WHERE c.id=:id GROUP BY c.id,e.display_name"
+                            "SELECT c.id,c.subject_entity_id,c.statement,c.predicate_key,c.object_value,e.display_name,CASE max(CASE sv.classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1 WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END) WHEN 0 THEN 'PUBLIC' WHEN 1 THEN 'INTERNAL' WHEN 2 THEN 'CONFIDENTIAL' ELSE 'HIGHLY_RESTRICTED' END AS classification FROM claims c JOIN knowledge_entities e ON e.id=c.subject_entity_id JOIN evidence_records er ON er.claim_id=c.id JOIN source_anchors sa ON sa.id=er.source_anchor_id JOIN source_versions sv ON sv.id=sa.source_version_id WHERE c.id=:id GROUP BY c.id,e.display_name"
                         ),
                         {"id": UUID(value)},
                     )
@@ -1477,7 +1680,11 @@ class ReleaseRepository(ReviewRepository):
                 {
                     "object_type": "CLAIM",
                     "object_id": str(row["id"]),
-                    "title": str(row["display_name"]),
+                    "title": str(
+                        manifest.get("entity_snapshots", {})
+                        .get(str(row["subject_entity_id"]), {})
+                        .get("display_name", row["display_name"])
+                    ),
                     "body": str(row["statement"]),
                     "attributes": {
                         "predicate_key": row["predicate_key"],
@@ -1503,7 +1710,9 @@ class ReleaseRepository(ReviewRepository):
                 {
                     "object_type": "WIKI_PAGE_VERSION",
                     "object_id": str(row["id"]),
-                    "title": str(row["title"]),
+                    "title": str(row["markdown"]).splitlines()[0].lstrip("# ")
+                    if str(row["markdown"]).splitlines()
+                    else "已发布 Wiki",
                     "body": str(row["markdown"]),
                     "attributes": {},
                     "classification": row["classification"],
@@ -1751,6 +1960,42 @@ class ReleaseRepository(ReviewRepository):
             )
         return _json_value(row)
 
+    async def release_metadata_view(self, *, principal: Principal, release: JsonDict) -> JsonDict:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=UUID(str(release["space_id"])), action="release.read"
+        )
+        async with self._database.engine.connect() as connection:
+            items = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT object_type,object_id,snapshot FROM release_items WHERE release_id=:id"
+                        ),
+                        {"id": UUID(str(release["id"]))},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            gate = DerivedReadGate(connection, principal, UUID(str(release["space_id"])))
+            visible = True
+            for item in items:
+                if not await gate.can_read(
+                    item["object_type"], item["object_id"], dict(item["snapshot"])
+                ):
+                    visible = False
+                    break
+        return {
+            **release,
+            "manifest_visibility": "FULL" if visible else "METADATA_ONLY",
+            "manifest": release["manifest"]
+            if visible
+            else {
+                "view": "METADATA_ONLY",
+                "notice": "完整冻结清单包含当前不可读成员；完整导出不可用。",
+            },
+        }
+
     async def list_releases(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
         async with self._database.engine.connect() as connection:
             rows = (
@@ -1765,7 +2010,10 @@ class ReleaseRepository(ReviewRepository):
                 .mappings()
                 .all()
             )
-        return [_json_value(row) for row in rows]
+        return [
+            await self.release_metadata_view(principal=principal, release=_json_value(row))
+            for row in rows
+        ]
 
     async def get_release(self, *, principal: Principal, release_id: UUID) -> JsonDict:
         async with self._database.engine.connect() as connection:
@@ -1789,6 +2037,9 @@ class ReleaseRepository(ReviewRepository):
 
     async def export_release(self, *, principal: Principal, release_id: UUID) -> JsonDict:
         release = await self.get_release(principal=principal, release_id=release_id)
+        principal = await self.principal_for_space(
+            principal=principal, space_id=UUID(str(release["space_id"])), action="release.read"
+        )
         async with self._database.engine.connect() as connection:
             items = (
                 (
@@ -1802,12 +2053,18 @@ class ReleaseRepository(ReviewRepository):
                 .mappings()
                 .all()
             )
+            gate = DerivedReadGate(
+                connection, principal, UUID(str(release["space_id"])), self.record_denial
+            )
+            for item in items:
+                await gate.require(item["object_type"], item["object_id"], dict(item["snapshot"]))
         return {"release": release, "items": [_json_value(item) for item in items]}
 
     async def rebuild_release_projection(
         self, *, principal: Principal, release_id: UUID, idempotency_key: str, trace_id: str
     ) -> JsonDict:
         release = await self.get_release(principal=principal, release_id=release_id)
+        await self.export_release(principal=principal, release_id=release_id)
 
         async def mutation(connection: AsyncConnection) -> JsonDict:
             candidate = (
@@ -1820,11 +2077,52 @@ class ReleaseRepository(ReviewRepository):
                 .mappings()
                 .one()
             )
+            frozen_items = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT object_type,object_id,snapshot FROM release_items WHERE release_id=:id"
+                        ),
+                        {"id": release_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            frozen_entities = {
+                str(i["object_id"]): dict(i["snapshot"])
+                for i in frozen_items
+                if i["object_type"] == "ENTITY"
+            }
+            frozen_claims = {
+                str(i["object_id"]): dict(i["snapshot"])
+                for i in frozen_items
+                if i["object_type"] == "CLAIM"
+            }
+            frozen_pages = {
+                str(i["object_id"]): dict(i["snapshot"])
+                for i in frozen_items
+                if i["object_type"] == "WIKI_PAGE_VERSION"
+            }
             documents = await self._projection_documents(connection, candidate)
+            for doc in documents:
+                if doc["object_type"] == "CLAIM":
+                    claim = frozen_claims[doc["object_id"]]
+                    doc["body"] = claim["statement"]
+                    doc["title"] = frozen_entities.get(str(claim["subject_entity_id"]), {}).get(
+                        "display_name", "已发布主张"
+                    )
+                else:
+                    doc["body"] = frozen_pages[doc["object_id"]]["markdown"]
+                    doc["title"] = (
+                        doc["body"].splitlines()[0].lstrip("# ")
+                        if doc["body"].splitlines()
+                        else "已发布 Wiki"
+                    )
             vectors = (
                 await self._model_gateway.embedding(
                     model_profile_id=str(candidate["model_profile_id"]),
-                    texts=tuple(f"{item['title']}\n{item['body']}" for item in documents),
+                    texts=tuple(item["body"] for item in documents),
                 )
                 if documents
                 else ()
@@ -1940,10 +2238,174 @@ class ReleaseRepository(ReviewRepository):
             mutation=mutation,
         )
 
+    async def _query_scope(
+        self, connection: AsyncConnection, principal: Principal, target_type: str, target_id: UUID
+    ) -> tuple[JsonDict, list[JsonDict], list[JsonDict]]:
+        items: Any
+        if target_type == "RELEASE":
+            scope = (
+                (
+                    await connection.execute(
+                        text("SELECT * FROM releases WHERE id=:id AND tenant_id=:tenant"),
+                        {"id": target_id, "tenant": principal.tenant_id},
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            documents = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT object_id,object_type,title,body,attributes,classification,embedding::text AS embedding "
+                            "FROM release_search_documents WHERE release_id=:id AND tenant_id=:tenant LIMIT 10001"
+                        ),
+                        {"id": target_id, "tenant": principal.tenant_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            items = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT object_id,object_type,snapshot FROM release_items WHERE release_id=:id AND tenant_id=:tenant"
+                        ),
+                        {"id": target_id, "tenant": principal.tenant_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            docs = [_json_value(d) for d in documents]
+        else:
+            scope = (
+                (
+                    await connection.execute(
+                        text("SELECT * FROM release_candidates WHERE id=:id AND tenant_id=:tenant"),
+                        {"id": target_id, "tenant": principal.tenant_id},
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            if scope is None:
+                raise ApiProblem(
+                    404, "RESOURCE_NOT_FOUND", "Scope unavailable", "Scope unavailable."
+                )
+            docs = await self._projection_documents(connection, scope)
+            vectors = (
+                await self._model_gateway.embedding(
+                    model_profile_id=str(scope["model_profile_id"]),
+                    texts=tuple(d["body"] for d in docs),
+                )
+                if docs
+                else ()
+            )
+            for doc, vector in zip(docs, vectors, strict=True):
+                doc["embedding"] = "[" + ",".join(str(float(v)) for v in vector) + "]"
+            manifest = dict(scope["manifest"])
+            refs = [(key.upper(), i) for key, ids in manifest["objects"].items() for i in ids]
+            refs += [("EVIDENCE", i) for i in manifest["evidence_ids"]]
+            items = [
+                {
+                    "object_type": kind,
+                    "object_id": i,
+                    "snapshot": await self._object_snapshot(connection, kind, UUID(i)),
+                }
+                for kind, i in refs
+            ]
+        if scope is None:
+            raise ApiProblem(404, "RESOURCE_NOT_FOUND", "Scope unavailable", "Scope unavailable.")
+        if len(docs) > 10000:
+            raise ApiProblem(
+                422, "QUERY_BUDGET_EXCEEDED", "Query budget exceeded", "Narrow the knowledge scope."
+            )
+        for doc in docs:
+            doc["classification"] = CLASSIFICATION_LEVEL[str(doc["classification"])]
+            if doc["object_type"] == "CLAIM":
+                frozen: dict[str, Any] = next(
+                    (
+                        i["snapshot"]
+                        for i in items
+                        if i["object_type"] == "CLAIM"
+                        and str(i["object_id"]) == str(doc["object_id"])
+                    ),
+                    {},
+                )
+                doc["attributes"] = {
+                    **doc.get("attributes", {}),
+                    "subject_entity_id": str(frozen.get("subject_entity_id", "")),
+                }
+        return _json_value(scope), docs, [_json_value(i) for i in items]
+
+    async def _execute_question(
+        self,
+        connection: AsyncConnection,
+        principal: Principal,
+        target_type: str,
+        target_id: UUID,
+        payload: JsonDict,
+    ) -> JsonDict:
+        scope, documents, items = await self._query_scope(
+            connection, principal, target_type, target_id
+        )
+        if str(scope["space_id"]) != str(payload["space_id"]):
+            raise ApiProblem(404, "RESOURCE_NOT_FOUND", "Scope unavailable", "Scope unavailable.")
+        vector = (
+            await self._model_gateway.embedding(
+                model_profile_id=str(scope["model_profile_id"]), texts=(payload["question"],)
+            )
+        )[0]
+        recalled = await query_engine.retrieve(
+            connection,
+            documents,
+            payload,
+            _keyword_query_text(payload["question"]),
+            vector,
+            principal,
+        )
+        hits, citations = await query_engine.ground(
+            connection,
+            principal,
+            UUID(str(scope["space_id"])),
+            target_id,
+            target_type,
+            recalled,
+            items,
+        )
+        return {
+            **query_engine.compose(hits, citations),
+            "retrieval_hits": hits,
+            "citations": citations,
+            "candidate_count": len(recalled),
+            "retrieval_trace": [
+                {
+                    "object_type": h["object_type"],
+                    "object_id": h["object_id"],
+                    "ranks": h["ranks"],
+                    "fusion_score": h["fusion_score"],
+                    "evidence_gate": "SUPPORTED"
+                    if h["object_id"] in {v["object_id"] for v in hits}
+                    else "CURRENT_EVIDENCE_OR_PERMISSION_UNAVAILABLE",
+                }
+                for h in recalled
+            ],
+            "answer_reason": _answer_reason(
+                candidate_count=len(recalled), citation_count=len(citations)
+            ),
+            "retrieval_strategy": payload["strategy"],
+            "pipeline_version": "r1-query-v2",
+        }
+
     async def query_release(
         self, *, principal: Principal, release_id: UUID, payload: dict[str, Any], trace_id: str
     ) -> JsonDict:
         release = await self.get_release(principal=principal, release_id=release_id)
+        principal = await self.principal_for_space(
+            principal=principal, space_id=UUID(str(release["space_id"])), action="query.release"
+        )
         async with self._database.engine.connect() as connection:
             existing = (
                 await connection.execute(
@@ -1976,108 +2438,26 @@ class ReleaseRepository(ReviewRepository):
                     "Use a new client request ID for different query inputs.",
                 )
             return previous
-        query_vector = (
-            await self._model_gateway.embedding(
-                model_profile_id=str(release["model_profile_id"]), texts=(payload["question"],)
-            )
-        )[0]
-        vector_value = "[" + ",".join(f"{float(value):.9f}" for value in query_vector) + "]"
-        clearance = CLASSIFICATION_LEVEL[principal.clearance.value]
+        strategy = payload["strategy"]
         keyword_query = _keyword_query_text(payload["question"])
         async with self._database.engine.connect() as connection:
-            base = "release_id=:release AND CASE classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1 WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END <= :clearance"
-            keyword = (
-                (
-                    await connection.execute(
-                        text(
-                            f"SELECT object_id,ROW_NUMBER() OVER (ORDER BY ts_rank(search_vector,plainto_tsquery('simple',:query)) DESC,object_id) AS rank FROM release_search_documents WHERE {base} AND search_vector @@ plainto_tsquery('simple',:query) ORDER BY rank LIMIT :limit"
-                        ),
-                        {
-                            "release": release_id,
-                            "clearance": clearance,
-                            "query": keyword_query,
-                            "limit": payload["top_k"] * 4,
-                        },
-                    )
-                )
-                .mappings()
-                .all()
+            result = await self._execute_question(
+                connection,
+                principal,
+                "RELEASE",
+                release_id,
+                {**payload, "space_id": release["space_id"]},
             )
-            semantic = (
-                (
-                    await connection.execute(
-                        text(
-                            f"SELECT object_id,1-(embedding <=> CAST(:embedding AS vector)) AS similarity,ROW_NUMBER() OVER (ORDER BY embedding <=> CAST(:embedding AS vector),object_id) AS rank FROM release_search_documents WHERE {base} ORDER BY embedding <=> CAST(:embedding AS vector),object_id LIMIT :limit"
-                        ),
-                        {
-                            "release": release_id,
-                            "clearance": clearance,
-                            "embedding": vector_value,
-                            "limit": payload["top_k"] * 4,
-                        },
-                    )
-                )
-                .mappings()
-                .all()
-            )
-            rankings: dict[str, list[str]] = {}
-            strategy = payload["strategy"]
-            if strategy in {"KEYWORD", "ATTRIBUTE", "HYBRID"}:
-                rankings["keyword"] = [str(item["object_id"]) for item in keyword]
-            if strategy in {"SEMANTIC", "HYBRID"}:
-                rankings["semantic"] = [str(item["object_id"]) for item in semantic]
-            keyword_ids = {str(item["object_id"]) for item in keyword}
-            semantic_similarity = {
-                str(item["object_id"]): float(item["similarity"]) for item in semantic
-            }
-            fused = [
-                item
-                for item in reciprocal_rank_fusion(rankings)
-                if item[0] in keyword_ids or semantic_similarity.get(item[0], -1.0) >= 0.90
-            ][: payload["top_k"]]
-            ids = [UUID(item[0]) for item in fused]
-            rows: Sequence[Any] = []
-            if ids:
-                statement = text(
-                    "SELECT object_type,object_id,title,body FROM release_search_documents WHERE release_id=:release AND object_id IN :ids"
-                ).bindparams(bindparam("ids", expanding=True))
-                rows = (
-                    (await connection.execute(statement, {"release": release_id, "ids": ids}))
-                    .mappings()
-                    .all()
-                )
-            by_id = {str(row["object_id"]): row for row in rows}
-            hits = [
-                {
-                    "object_type": by_id[item_id]["object_type"],
-                    "object_id": item_id,
-                    "title": by_id[item_id]["title"],
-                    "text": by_id[item_id]["body"],
-                    "ranks": ranks,
-                    "fusion_score": score,
-                }
-                for item_id, score, ranks in fused
-                if item_id in by_id
-            ]
-            candidate_count = len(hits)
-            citations = await self._visible_citations(connection, principal, release_id, hits)
-            hits = await self._supported_hits(connection, release_id, hits, citations)
-            if not hits:
-                citations = []
-            # Draft conflict details have no fixed-release classification contract.
-            conflicts: list[dict[str, Any]] = []
+        hits, citations = result["retrieval_hits"], result["citations"]
+        candidate_count = result["candidate_count"]
+        conflicts: list[dict[str, Any]] = []
         answer_id, session_id, now = new_uuid7(), new_uuid7(), datetime.now(UTC)
         answer_reason = _answer_reason(
             candidate_count=candidate_count,
             citation_count=len(citations),
         )
-        if answer_reason == "SUPPORTED_EVIDENCE":
-            statements = [str(hit["text"]) for hit in hits if hit["object_type"] == "CLAIM"]
-            status, direct = "COMPLETED", "；".join(statements[:3])
-            uncertainty = "回答仅由当前固定 Release 中可见且 Anchor 有效的证据支持；RRF 分数不是事实置信度。冲突需在有权限的冲突工作台另行核查。"
-        else:
-            status, direct = "REFUSED", "当前固定 Release 中没有足够的可见有效证据，无法下结论。"
-            uncertainty = "证据不足或访问级别不允许展示引用；冲突需在有权限的冲突工作台另行核查。"
+        status, direct = result["status"], result["direct_answer"]
+        uncertainty = "回答仅由固定知识范围内当前可见有效证据支持；检索分数不是事实置信度。冲突需在有权限的冲突工作台核查。"
         async with self._database.engine.begin() as connection:
             await connection.execute(
                 text(
@@ -2198,76 +2578,11 @@ class ReleaseRepository(ReviewRepository):
         release_id: UUID,
         hits: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        claim_ids = [
-            UUID(str(item["object_id"])) for item in hits if item["object_type"] == "CLAIM"
-        ]
-        if not claim_ids:
-            return []
-        statement = text("""
-            SELECT er.id AS evidence_id,er.claim_id,er.relation_id,sa.source_version_id,
-                   sa.id AS source_anchor_id,sa.locators,sv.classification,
-                   sd.classification AS document_classification,rs.classification AS claim_classification,
-                   (SELECT max(greatest(
-                       CASE all_sv.classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1
-                           WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END,
-                       CASE all_sd.classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1
-                           WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END))
-                    FROM release_items all_e
-                    JOIN source_anchors all_sa ON CAST(all_sa.id AS text)=all_e.snapshot->>'source_anchor_id'
-                    JOIN source_versions all_sv ON all_sv.id=all_sa.source_version_id
-                    JOIN source_documents all_sd ON all_sd.id=all_sv.source_document_id
-                    WHERE all_e.release_id=:release AND all_e.object_type='EVIDENCE'
-                        AND all_e.snapshot->>'claim_id'=CAST(er.claim_id AS text)
-                   ) AS current_claim_level
-            FROM evidence_records er
-            JOIN source_anchors sa ON sa.id=er.source_anchor_id AND sa.status='VALID'
-            JOIN source_versions sv ON sv.id=sa.source_version_id
-            JOIN source_documents sd ON sd.id=sv.source_document_id AND sd.status<>'ARCHIVED'
-            JOIN release_items rie ON rie.release_id=:release AND rie.object_type='EVIDENCE'
-                AND rie.object_id=er.id AND rie.tenant_id=:tenant
-            JOIN release_items ric ON ric.release_id=rie.release_id AND ric.object_type='CLAIM'
-                AND ric.object_id=er.claim_id
-            JOIN release_search_documents rs ON rs.release_id=ric.release_id
-                AND rs.object_type='CLAIM' AND rs.object_id=ric.object_id
-            WHERE er.status='ACCEPTED' AND er.claim_id IN :ids
-                AND rie.snapshot->>'claim_id'=CAST(ric.object_id AS text)
-                AND rie.snapshot->>'source_anchor_id'=CAST(sa.id AS text)
-                AND NOT EXISTS (SELECT 1 FROM source_invalidations si
-                    WHERE si.source_version_id=sv.id AND si.tenant_id=:tenant)
-            ORDER BY er.claim_id,er.created_at
-        """).bindparams(bindparam("ids", expanding=True))
-        rows = (
-            (
-                await connection.execute(
-                    statement,
-                    {"release": release_id, "tenant": principal.tenant_id, "ids": claim_ids},
-                )
-            )
-            .mappings()
-            .all()
+        scope, _, items = await self._query_scope(connection, principal, "RELEASE", release_id)
+        _, citations = await query_engine.ground(
+            connection, principal, UUID(str(scope["space_id"])), release_id, "RELEASE", hits, items
         )
-        clearance = CLASSIFICATION_LEVEL[principal.clearance.value]
-        return [
-            {
-                "id": str(new_uuid7()),
-                "release_id": str(release_id),
-                "evidence_id": str(row["evidence_id"]),
-                "source_version_id": str(row["source_version_id"]),
-                "source_anchor_id": str(row["source_anchor_id"]),
-                "claim_id": str(row["claim_id"]) if row["claim_id"] else None,
-                "relation_id": str(row["relation_id"]) if row["relation_id"] else None,
-                "excerpt": None,
-                "locator": {"locators": row["locators"]},
-                "status": "VALID",
-            }
-            for row in rows
-            if row["current_claim_level"] is not None
-            and row["current_claim_level"] <= clearance
-            and all(
-                CLASSIFICATION_LEVEL[str(row[k])] <= clearance
-                for k in ("classification", "document_classification", "claim_classification")
-            )
-        ]
+        return citations
 
     async def _supported_hits(
         self,
@@ -2325,11 +2640,10 @@ class ReleaseRepository(ReviewRepository):
                 .mappings()
                 .all()
             )
-        await self.authorize_space(
+        principal = await self.principal_for_space(
             principal=principal,
             space_id=UUID(str(answer["space_id"])),
             action="query.answer.read",
-            trace_id=str(new_uuid7()),
         )
         async with self._database.engine.connect() as connection:
             policy = (
@@ -2416,11 +2730,10 @@ class ReleaseRepository(ReviewRepository):
         from nexweave_api.release_graph import read_graph
 
         release = await self.get_release(principal=principal, release_id=release_id)
-        await self.authorize_space(
+        principal = await self.principal_for_space(
             principal=principal,
             space_id=UUID(str(release["space_id"])),
             action="graph.read",
-            trace_id=str(new_uuid7()),
         )
         async with self._database.engine.connect() as connection:
             graph = await read_graph(

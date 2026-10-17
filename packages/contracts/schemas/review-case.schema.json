@@ -65,6 +65,15 @@
   },
   "additionalProperties": false,
   "properties": {
+    "content_revisions": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Content Revisions",
+      "type": "array"
+    },
     "created_at": {
       "format": "date-time",
       "title": "Created At",
@@ -144,6 +153,15 @@
     "updated_by": {
       "format": "uuid7",
       "title": "Updated By",
+      "type": "string"
+    },
+    "workflow_delivery_status": {
+      "default": "PENDING",
+      "enum": [
+        "PENDING",
+        "DELIVERED"
+      ],
+      "title": "Workflow Delivery Status",
       "type": "string"
     },
     "workflow_id": {

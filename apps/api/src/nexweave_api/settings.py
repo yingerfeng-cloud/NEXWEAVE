@@ -4,6 +4,8 @@ from urllib.parse import urlsplit, urlunsplit
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from nexweave_contracts.runtime import IMPLEMENTATION_VERSION
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -15,7 +17,7 @@ class Settings(BaseSettings):
 
     env: str = "development"
     log_level: str = "INFO"
-    build_version: str = "0.9.5-d1"
+    build_version: str = IMPLEMENTATION_VERSION
     database_url: str = "postgresql+asyncpg://nexweave:local@localhost:5432/nexweave"
     object_store_endpoint: str = "http://localhost:9000"
     object_store_health_url: str = "http://localhost:9000/health"

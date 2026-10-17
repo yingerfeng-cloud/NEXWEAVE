@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from nexweave_api.derived_reads import DerivedReadGate
 from nexweave_api.errors import ApiProblem
 from nexweave_domain import Principal
 
@@ -116,6 +117,16 @@ async def read_graph(
             "Graph budget exceeded",
             "This Release exceeds the bounded graph budget.",
         )
+    space_id = (
+        await connection.execute(
+            text("SELECT space_id FROM releases WHERE id=:id AND tenant_id=:tenant"),
+            {"id": release_id, "tenant": principal.tenant_id},
+        )
+    ).scalar_one()
+    gate = DerivedReadGate(connection, principal, UUID(str(space_id)))
+    node_rows = [
+        r for r in node_rows if await gate.can_read("ENTITY", r["object_id"], dict(r["snapshot"]))
+    ]
     nodes = {
         str(r["object_id"]): {
             k: dict(r["snapshot"])[k] for k in ("id", "type_key", "normalized_key", "display_name")
@@ -165,6 +176,7 @@ async def read_graph(
             "Graph budget exceeded",
             "This Release exceeds the bounded graph budget.",
         )
+    rows = [r for r in rows if await gate.can_read("RELATION", r["object_id"], dict(r["snapshot"]))]
     edges = [
         {**dict(r["snapshot"]), "evidence_ids": [str(i) for i in r["evidence_ids"]]} for r in rows
     ]

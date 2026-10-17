@@ -12,6 +12,7 @@ from uuid import UUID
 from sqlalchemy import bindparam, text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from nexweave_api.derived_reads import DerivedReadGate
 from nexweave_api.errors import ApiProblem
 from nexweave_api.model_gateway import LocalModelGateway
 from nexweave_api.repository import JsonDict, _json_value
@@ -236,6 +237,9 @@ class KnowledgeRepository(SemanticRepository):
             return await self._get_compile_job_in_connection(connection, compile_job_id)
 
     async def list_compile_jobs(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="compile.read"
+        )
         async with self._database.engine.connect() as connection:
             rows = (
                 (
@@ -249,13 +253,22 @@ class KnowledgeRepository(SemanticRepository):
                 .mappings()
                 .all()
             )
-        return [_json_value(row) for row in rows]
+            gate = DerivedReadGate(connection, principal, space_id, self.record_denial)
+            return [
+                _json_value(row) for row in rows if await gate.can_read("COMPILE_JOB", row["id"])
+            ]
 
     async def get_compile_job(self, *, principal: Principal, compile_job_id: UUID) -> JsonDict:
         async with self._database.engine.connect() as connection:
             row = await self._get_compile_job_in_connection(
                 connection, compile_job_id, principal.tenant_id
             )
+            principal = await self.principal_for_space(
+                principal=principal, space_id=UUID(str(row["space_id"])), action="compile.read"
+            )
+            await DerivedReadGate(
+                connection, principal, UUID(str(row["space_id"])), self.record_denial
+            ).require("COMPILE_JOB", compile_job_id)
         return row
 
     async def _get_compile_job_in_connection(
@@ -1249,6 +1262,9 @@ class KnowledgeRepository(SemanticRepository):
         )
 
     async def list_entities(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="knowledge.read"
+        )
         async with self._database.engine.connect() as connection:
             rows = (
                 (
@@ -1262,9 +1278,13 @@ class KnowledgeRepository(SemanticRepository):
                 .mappings()
                 .all()
             )
-        return [_json_value(row) for row in rows]
+            gate = DerivedReadGate(connection, principal, space_id, self.record_denial)
+            return [_json_value(row) for row in rows if await gate.can_read("ENTITY", row["id"])]
 
     async def list_wiki_pages(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="page.read"
+        )
         async with self._database.engine.connect() as connection:
             rows = (
                 (
@@ -1278,7 +1298,8 @@ class KnowledgeRepository(SemanticRepository):
                 .mappings()
                 .all()
             )
-        return [_json_value(row) for row in rows]
+            gate = DerivedReadGate(connection, principal, space_id, self.record_denial)
+            return [_json_value(row) for row in rows if await gate.can_read("WIKI_PAGE", row["id"])]
 
     async def get_wiki_link_graph(
         self,
@@ -1290,6 +1311,12 @@ class KnowledgeRepository(SemanticRepository):
         node_limit: int,
     ) -> JsonDict:
         """Build a bounded Wiki-link navigation projection from existing link facts."""
+        visible_pages = await self.list_wiki_pages(principal=principal, space_id=space_id)
+        visible_ids = {UUID(str(page["id"])) for page in visible_pages}
+        if focus_page_id is not None and focus_page_id not in visible_ids:
+            raise ApiProblem(
+                404, "RESOURCE_NOT_FOUND", "Wiki page unavailable", "Page unavailable."
+            )
         page_statement = text(
             f"SELECT {PAGE_COLUMNS} FROM wiki_pages "
             "WHERE tenant_id=:tenant AND space_id=:space AND id IN :ids"
@@ -1387,6 +1414,12 @@ class KnowledgeRepository(SemanticRepository):
                 if len(all_links) > link_cap:
                     truncated = True
                     all_links = all_links[:link_cap]
+                all_links = [
+                    link
+                    for link in all_links
+                    if UUID(str(link["source_page_id"])) in visible_ids
+                    and UUID(str(link["target_page_id"])) in visible_ids
+                ]
                 adjacency: dict[UUID, set[UUID]] = {}
                 for link in all_links:
                     source, target = (
@@ -1434,6 +1467,14 @@ class KnowledgeRepository(SemanticRepository):
                     if UUID(str(link["source_page_id"])) in node_ids
                     and UUID(str(link["target_page_id"])) in node_ids
                 ]
+        page_rows = [row for row in page_rows if UUID(str(row["id"])) in visible_ids]
+        node_ids = {UUID(str(row["id"])) for row in page_rows}
+        link_rows = [
+            link
+            for link in link_rows
+            if UUID(str(link["source_page_id"])) in node_ids
+            and UUID(str(link["target_page_id"])) in node_ids
+        ]
         outbound_counts = {node_id: 0 for node_id in node_ids}
         backlink_counts = {node_id: 0 for node_id in node_ids}
         for link in link_rows:
@@ -1485,6 +1526,13 @@ class KnowledgeRepository(SemanticRepository):
                     "Wiki page not found",
                     "The Wiki page is unavailable.",
                 )
+            principal = await self.principal_for_space(
+                principal=principal, space_id=UUID(str(page["space_id"])), action="page.read"
+            )
+            gate = DerivedReadGate(
+                connection, principal, UUID(str(page["space_id"])), self.record_denial
+            )
+            await gate.require("WIKI_PAGE", page_id)
             current = None
             if page["current_version_id"]:
                 current = (
@@ -1553,6 +1601,19 @@ class KnowledgeRepository(SemanticRepository):
                 .mappings()
                 .all()
             )
+            outbound = [
+                link
+                for link in outbound
+                if await gate.can_read("WIKI_PAGE", link["target_page_id"])
+            ]
+            backlinks = [
+                link
+                for link in backlinks
+                if await gate.can_read("WIKI_PAGE", link["source_page_id"])
+            ]
+            evidence = [
+                item for item in evidence if await gate.can_read("EVIDENCE_CANDIDATE", item["id"])
+            ]
             followed = (
                 await connection.execute(
                     text(
@@ -1577,6 +1638,9 @@ class KnowledgeRepository(SemanticRepository):
         self, *, principal: Principal, page_id: UUID
     ) -> list[JsonDict]:
         page = await self.get_wiki_page(principal=principal, page_id=page_id)
+        principal = await self.principal_for_space(
+            principal=principal, space_id=UUID(str(page["space_id"])), action="page.read"
+        )
         async with self._database.engine.connect() as connection:
             rows = (
                 (
@@ -1591,9 +1655,14 @@ class KnowledgeRepository(SemanticRepository):
                 .mappings()
                 .all()
             )
-        if UUID(str(page["tenant_id"])) != principal.tenant_id:
-            return []
-        return [_json_value(row) for row in rows]
+            gate = DerivedReadGate(
+                connection, principal, UUID(str(page["space_id"])), self.record_denial
+            )
+            return [
+                _json_value(row)
+                for row in rows
+                if await gate.can_read("WIKI_PAGE_VERSION", row["id"])
+            ]
 
     async def get_wiki_page_version(
         self, *, principal: Principal, page_id: UUID, version_id: UUID

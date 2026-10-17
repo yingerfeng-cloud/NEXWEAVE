@@ -33,6 +33,7 @@ from nexweave_api.m1_routes import router as m1_router
 from nexweave_api.object_storage import ClamAvInstreamMalwareScanner, S3ObjectStorage
 from nexweave_api.release_routes import router as release_router
 from nexweave_api.repository import PlatformRepository
+from nexweave_api.review_delivery import ReviewDelivery
 from nexweave_api.review_routes import router as review_router
 from nexweave_api.semantic_routes import router as semantic_router
 from nexweave_api.settings import Settings, get_settings
@@ -86,6 +87,7 @@ def create_app(
         ):
             await resolved_object_storage.ensure_bucket()
         recovery_task = None
+        review_recovery_task = None
         if manage_runtime_services:
             forecast_repository = ForecastRepository(
                 resolved_database,
@@ -102,9 +104,18 @@ def create_app(
                 ),
             )
             recovery_task = asyncio.create_task(recovery.run())
+            review_recovery_task = asyncio.create_task(
+                ReviewDelivery(
+                    cast(IntegrationRepository, resolved_repository), resolved_workflow_gateway
+                ).run()
+            )
         try:
             yield
         finally:
+            if review_recovery_task:
+                review_recovery_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await review_recovery_task
             if recovery_task:
                 recovery_task.cancel()
                 with suppress(asyncio.CancelledError):

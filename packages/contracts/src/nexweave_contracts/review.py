@@ -117,6 +117,10 @@ class ReviewActionCreate(ContractModel):
     assignee_id: UUID7 | None = None
 
 
+class ReviewRestartCreate(ContractModel):
+    reason: str = Field(min_length=1, max_length=4000, pattern=r"\S")
+
+
 class ReviewTaskResponse(ContractModel):
     id: UUID7
     stage: str
@@ -145,6 +149,8 @@ class ReviewCaseResponse(ContractModel):
     updated_at: datetime
     updated_by: UUID7
     tasks: tuple[ReviewTaskResponse, ...] = ()
+    content_revisions: tuple[dict[str, Any], ...] = ()
+    workflow_delivery_status: Literal["PENDING", "DELIVERED"] = "PENDING"
 
 
 class ReviewCaseListResponse(ContractModel):

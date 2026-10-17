@@ -306,6 +306,14 @@ export type ReviewTask = {
   escalation_count: number;
 };
 export type ReviewCase = {
+  workflow_delivery_status?: "PENDING" | "DELIVERED";
+  content_revisions?: Array<{
+    revision: number;
+    original_author_id: string;
+    edited_by?: string | null;
+    content_snapshot: Record<string, unknown>;
+    content_checksum: string;
+  }>;
   id: string;
   workflow_task_id: string;
   workflow_id: string;
@@ -1053,6 +1061,15 @@ export class NexweaveClient {
       "POST",
       `/api/v1/spaces/${spaceId}/review-cases`,
       body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
+  restartReviewCase(caseId: string, reason: string, idempotencyKey: string) {
+    return this.request<ReviewCase>(
+      "POST",
+      `/api/v1/review-cases/${caseId}/restart`,
+      { reason },
       { "Idempotency-Key": idempotencyKey },
     );
   }

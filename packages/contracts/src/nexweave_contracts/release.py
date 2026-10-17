@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import UUID7, Field, model_validator
 
@@ -23,6 +24,19 @@ class EvaluationCaseInput(ContractModel):
     expected_terms: tuple[str, ...] = ()
     expect_refusal: bool = False
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def meaningful_expectations(self) -> "EvaluationCaseInput":
+        refusal = self.expect_refusal or self.case_type in {
+            "UNANSWERABLE",
+            "INSUFFICIENT_EVIDENCE",
+            "COUNTERFACTUAL",
+        }
+        if not self.question.strip() or any(not term.strip() for term in self.expected_terms):
+            raise ValueError("questions and expected terms must be nonblank")
+        if not refusal and not (self.expected_claim_ids or self.expected_terms):
+            raise ValueError("answerable cases require expected claims or answer terms")
+        return self
 
 
 class EvaluationSuiteCreate(ContractModel):
@@ -148,6 +162,7 @@ class ReleasePublish(ContractModel):
 
 
 class ReleaseResponse(ContractModel):
+    manifest_visibility: Literal["FULL", "METADATA_ONLY"] = "FULL"
     id: UUID7
     tenant_id: UUID7
     space_id: UUID7
@@ -199,6 +214,18 @@ class QueryCreate(ContractModel):
     filters: dict[str, Any] = Field(default_factory=dict)
     top_k: int = Field(default=5, ge=1, le=20)
     client_request_id: str = Field(min_length=1, max_length=128)
+
+    @model_validator(mode="after")
+    def supported_filters(self) -> "QueryCreate":
+        if set(self.filters) - {"predicate_key", "subject_entity_id"} or any(
+            not isinstance(value, str) or not value.strip() for value in self.filters.values()
+        ):
+            raise ValueError("supported string filters: predicate_key, subject_entity_id")
+        if self.strategy == "ATTRIBUTE" and not self.filters:
+            raise ValueError("ATTRIBUTE requires an explicit supported filter")
+        if "subject_entity_id" in self.filters:
+            self.filters["subject_entity_id"] = str(UUID(self.filters["subject_entity_id"]))
+        return self
 
 
 class CitationResponse(ContractModel):

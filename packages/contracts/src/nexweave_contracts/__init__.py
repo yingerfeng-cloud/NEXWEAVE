@@ -115,6 +115,7 @@ from nexweave_contracts.review import (
     ReviewPolicyCreate,
     ReviewPolicyResponse,
     ReviewQualityStats,
+    ReviewRestartCreate,
     ReviewTaskResponse,
 )
 from nexweave_contracts.semantic import (
@@ -294,6 +295,7 @@ __all__ = [
     "PromptVersionResponse",
     "ResourceMetadata",
     "ReviewActionCreate",
+    "ReviewRestartCreate",
     "ReviewCaseCreate",
     "ReviewCaseListResponse",
     "ReviewCaseResponse",

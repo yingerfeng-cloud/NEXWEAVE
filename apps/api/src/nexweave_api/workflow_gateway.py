@@ -159,6 +159,17 @@ class TemporalWorkflowGateway:
                 return None
             raise _temporal_problem(exc) from exc
 
+    async def completed_review_result(self, workflow_id: str) -> dict[str, Any] | None:
+        client = await self._connected_client()
+        try:
+            handle = client.get_workflow_handle(workflow_id)
+            description = await handle.describe()
+            if description.status is None or description.status.name != "COMPLETED":
+                return None
+            return dict(await handle.result())
+        except Exception as exc:
+            raise _temporal_problem(exc) from exc
+
     async def _connected_client(self) -> Client:
         await self.connect()
         assert self._client is not None

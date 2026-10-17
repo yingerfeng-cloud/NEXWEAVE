@@ -223,8 +223,12 @@ class WorkflowRepository(PlatformRepository):
             if not already:
                 await connection.execute(
                     text(
-                        "UPDATE workflow_tasks SET temporal_run_id = :run, status = 'STARTING', "
-                        "version = version + 1, projection_in_sync = false, updated_at = :now, "
+                        "UPDATE workflow_tasks SET status = CASE WHEN temporal_run_id=:run THEN status ELSE 'STARTING' END, "
+                        "progress = CASE WHEN temporal_run_id=:run THEN progress ELSE 0 END, "
+                        "current_step = CASE WHEN temporal_run_id=:run THEN current_step ELSE NULL END, "
+                        "result_summary = CASE WHEN temporal_run_id=:run THEN result_summary ELSE '{}'::jsonb END, "
+                        "temporal_run_id = :run, "
+                        "version = version + 1, projection_in_sync = CASE WHEN temporal_run_id=:run THEN projection_in_sync ELSE false END, updated_at = :now, "
                         "updated_by = :actor WHERE id = :id"
                     ),
                     {"run": run_id, "now": now, "actor": actor_id, "id": task_id},
@@ -466,13 +470,33 @@ class WorkflowRepository(PlatformRepository):
             if await self._workflow_event_exists(connection, task_id, event_key):
                 return _task_value(row)
             now = datetime.now(UTC)
-            status = WorkflowTaskStatus(str(payload["status"]))
+            incoming_status = WorkflowTaskStatus(str(payload["status"]))
+            status = incoming_status
+            run_id = str(payload["run_id"]) if payload.get("run_id") else None
+            terminal = {"SUCCEEDED", "FAILED", "REJECTED", "CANCELLED", "TIMED_OUT"}
+            stale_run = bool(row["temporal_run_id"] and run_id and row["temporal_run_id"] != run_id)
+            terminal_late = (
+                row["status"] in terminal
+                and not stale_run
+                and (
+                    incoming_status.value != row["status"]
+                    or str(payload["event_type"]).startswith("COMMAND_")
+                )
+            )
+            ignored = stale_run or terminal_late
             step_key = payload.get("step_key")
             progress = int(payload.get("progress", row["progress"]))
             result = payload.get("result_summary", row["result_summary"])
+            if ignored:
+                status = WorkflowTaskStatus(row["status"])
+                step_key, progress, result = (
+                    row["current_step"],
+                    row["progress"],
+                    row["result_summary"],
+                )
             await connection.execute(
                 text(
-                    "UPDATE workflow_tasks SET status = :status, progress = :progress, "
+                    "UPDATE workflow_tasks SET temporal_run_id=COALESCE(temporal_run_id,:run), status = :status, progress = :progress, "
                     "current_step = :step, result_summary = CAST(:result AS jsonb), "
                     "error_code = :error_code, error_detail = :error_detail, "
                     "projection_revision = projection_revision + 1, projection_in_sync = true, "
@@ -480,17 +504,18 @@ class WorkflowRepository(PlatformRepository):
                 ),
                 {
                     "status": status.value,
+                    "run": run_id,
                     "progress": progress,
                     "step": step_key,
                     "result": json.dumps(result, default=str),
-                    "error_code": payload.get("error_code"),
-                    "error_detail": payload.get("error_detail"),
+                    "error_code": row["error_code"] if ignored else payload.get("error_code"),
+                    "error_detail": row["error_detail"] if ignored else payload.get("error_detail"),
                     "now": now,
                     "actor": UUID(str(payload["actor_id"])),
                     "id": task_id,
                 },
             )
-            if step_key:
+            if step_key and not ignored:
                 await connection.execute(
                     text(
                         "UPDATE workflow_steps SET status = :step_status, attempt = :attempt, "
@@ -521,10 +546,21 @@ class WorkflowRepository(PlatformRepository):
                 space_id=row["space_id"],
                 event_key=event_key,
                 event_type=str(payload["event_type"]),
-                status=status,
+                status=incoming_status,
                 step_key=str(step_key) if step_key else None,
                 message=str(payload.get("message", "")),
-                details=dict(payload.get("details", {})),
+                details={
+                    **dict(payload.get("details", {})),
+                    **(
+                        {
+                            "projection_ignored": "STALE_RUN"
+                            if stale_run
+                            else "TERMINAL_ALREADY_RECORDED"
+                        }
+                        if ignored
+                        else {}
+                    ),
+                },
                 occurred_at=now,
             )
             next_revision = int(row["projection_revision"]) + 1

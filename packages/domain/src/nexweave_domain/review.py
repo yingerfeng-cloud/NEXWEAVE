@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from uuid import UUID
 
+from nexweave_domain.access import Role
+
 
 class ReviewRuleViolation(ValueError):
     def __init__(self, code: str, detail: str) -> None:
@@ -76,11 +78,30 @@ def validate_review_policy(policy: ReviewPolicy) -> None:
 
 
 def validate_final_approval_separation(
-    *, risk: RiskLevel, creator_id: UUID, reviewer_ids: Iterable[UUID], approver_id: UUID
+    *,
+    risk: RiskLevel,
+    creator_id: UUID,
+    reviewer_ids: Iterable[UUID],
+    approver_id: UUID,
+    editor_ids: Iterable[UUID] = (),
 ) -> None:
-    if risk is RiskLevel.HIGH and (approver_id == creator_id or approver_id in set(reviewer_ids)):
+    if risk is RiskLevel.HIGH and (
+        approver_id == creator_id or approver_id in set(reviewer_ids) | set(editor_ids)
+    ):
         raise ReviewRuleViolation(
             "REVIEW_DUTY_SEPARATION", "High-risk final approval must be by an independent person."
+        )
+
+
+def validate_stage_role(stage: ReviewStage, roles: Iterable[Role]) -> None:
+    required = {
+        ReviewStage.ENGINEERING: Role.KNOWLEDGE_ENGINEER,
+        ReviewStage.EXPERT: Role.REVIEWER,
+        ReviewStage.APPROVAL: Role.PUBLISHER,
+    }[stage]
+    if required not in set(roles):
+        raise ReviewRuleViolation(
+            "REVIEW_STAGE_ROLE_REQUIRED", f"This stage requires {required.value}."
         )
 
 

@@ -129,6 +129,7 @@ async def test_source_list_includes_only_versions_within_clearance():
         clearance=DataClassification.INTERNAL,
     )
 
+    repository.principal_for_space = AsyncMock(return_value=principal)
     result = await repository.list_sources(principal=principal, space_id=new_uuid7())
 
     assert [version["id"] for version in result[0]["versions"]] == [str(visible_id)]
@@ -166,6 +167,7 @@ async def test_query_replay_rejects_other_release_before_returning_answer():
     connection.execute = AsyncMock(return_value=query)
     repo = MagicMock()
     repo._database.engine.connect.return_value = connection
+    repo.principal_for_space = AsyncMock(return_value=MagicMock())
     repo.get_release = AsyncMock(return_value={"space_id": str(new_uuid7())})
     repo.get_query_answer = AsyncMock(
         return_value={

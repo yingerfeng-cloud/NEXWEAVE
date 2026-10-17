@@ -972,6 +972,9 @@ class SourceRepository(WorkflowRepository):
             )
 
     async def list_sources(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="source.read"
+        )
         async with self._database.engine.connect() as connection:
             rows = (
                 (

@@ -49,6 +49,7 @@ class SpaceSecurityFacts:
     archived: bool
     member_roles: frozenset[Role]
     membership_active: bool
+    member_clearance: DataClassification | None = None
 
 
 def _json_value(value: Any) -> JsonDict:
@@ -619,7 +620,7 @@ class PlatformRepository:
                 (
                     await connection.execute(
                         text(
-                            f"SELECT id, status FROM space_members WHERE tenant_id = :tenant "  # noqa: S608
+                            f"SELECT id, status, clearance FROM space_members WHERE tenant_id = :tenant "  # noqa: S608
                             f"AND space_id = :space AND subject_type = :subject_type "  # noqa: S608
                             f"AND {member_column} = :actor ORDER BY version DESC LIMIT 1"  # noqa: S608
                         ),
@@ -653,6 +654,9 @@ class PlatformRepository:
             archived=row["status"] == "ARCHIVED",
             member_roles=roles,
             membership_active=member is not None and member["status"] == "ACTIVE",
+            member_clearance=DataClassification(member["clearance"])
+            if member is not None and member["status"] == "ACTIVE"
+            else None,
         )
 
     async def authorize_space(
@@ -675,6 +679,7 @@ class PlatformRepository:
                 membership_active=facts.membership_active,
                 classification=classification or facts.classification,
                 resource_archived=facts.archived,
+                member_clearance=facts.member_clearance,
             ),
         )
         if not decision.allowed:
@@ -691,6 +696,24 @@ class PlatformRepository:
             code = "RESOURCE_NOT_FOUND" if status == 404 else "ACCESS_DENIED"
             raise ApiProblem(status, code, "Access denied", "The requested action is not allowed.")
         return facts
+
+    async def principal_for_space(
+        self, *, principal: Principal, space_id: UUID, action: str
+    ) -> Principal:
+        """Authorize the entry and cap all downstream reads by current membership."""
+        from nexweave_domain.access import CLASSIFICATION_LEVEL
+
+        facts = await self.authorize_space(
+            principal=principal, space_id=space_id, action=action, trace_id=str(new_uuid7())
+        )
+        if facts.member_clearance is None:
+            return principal
+        return replace(
+            principal,
+            clearance=min(
+                (principal.clearance, facts.member_clearance), key=CLASSIFICATION_LEVEL.__getitem__
+            ),
+        )
 
     async def authorize_tenant(self, *, principal: Principal, action: str, trace_id: str) -> None:
         decision = authorize(

@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request, status
 
 from nexweave_api.m1_routes import IdempotencyKey, PrincipalDependency, _trace_id
+from nexweave_api.review_delivery import ReviewDelivery
 from nexweave_api.review_repository import ReviewRepository
 from nexweave_api.workflow_gateway import TemporalWorkflowGateway
 from nexweave_contracts import (
@@ -26,6 +27,7 @@ from nexweave_contracts import (
     ReviewPolicyResponse,
     ReviewQualityStats,
 )
+from nexweave_contracts.review import ReviewRestartCreate
 from nexweave_domain import WorkflowType
 
 router = APIRouter(prefix="/api/v1", tags=["claims", "conflicts", "reviews"])
@@ -130,7 +132,7 @@ async def create_review_case(
     await repository.authorize_space(
         principal=principal, space_id=space_id, action="review.create", trace_id=trace_id
     )
-    policy = await repository.get_review_policy(principal=principal, policy_id=body.policy_id)
+    await repository.get_review_policy(principal=principal, policy_id=body.policy_id)
     business_key = (
         f"{body.target_type}:{body.target_id}:{sha256(idempotency_key.encode()).hexdigest()[:16]}"
     )
@@ -158,24 +160,8 @@ async def create_review_case(
         workflow_task_id=UUID(str(task["id"])),
         trace_id=trace_id,
     )
-    execution = await _gateway(request).start(
-        workflow_name="nexweave.human-review.v2",
-        workflow_id=str(task["workflow_id"]),
-        payload={
-            "workflow_type": WorkflowType.HUMAN_REVIEW.value,
-            "task_id": str(task["id"]),
-            "review_case_id": str(case["id"]),
-            "actor_id": str(principal.actor_id),
-            "trace_id": trace_id,
-            "approval_timeout_seconds": int(policy["timeout_seconds"]),
-        },
-    )
-    await repository.mark_workflow_started(
-        task_id=UUID(str(task["id"])),
-        run_id=execution.run_id,
-        actor_id=principal.actor_id,
-        trace_id=trace_id,
-    )
+    await ReviewDelivery(repository, _gateway(request)).deliver(UUID(str(case["id"])))
+    case = await repository.get_review_case(principal=principal, case_id=UUID(str(case["id"])))
     return ReviewCaseResponse.model_validate(case)
 
 
@@ -190,6 +176,27 @@ async def list_review_cases(
     return ReviewCaseListResponse.model_validate(
         {"items": await repository.list_review_cases(principal=principal, space_id=space_id)}
     )
+
+
+@router.post("/review-cases/{case_id}/restart", response_model=ReviewCaseResponse)
+async def restart_review(
+    request: Request,
+    case_id: UUID,
+    body: ReviewRestartCreate,
+    principal: PrincipalDependency,
+    idempotency_key: IdempotencyKey,
+) -> ReviewCaseResponse:
+    repository = _repository(request)
+    case = await repository.restart_review_case(
+        principal=principal,
+        case_id=case_id,
+        reason=body.reason,
+        idempotency_key=idempotency_key,
+        trace_id=_trace_id(request),
+    )
+    await ReviewDelivery(repository, _gateway(request)).deliver(case_id)
+    case = await repository.get_review_case(principal=principal, case_id=case_id)
+    return ReviewCaseResponse.model_validate(case)
 
 
 @router.post("/review-cases/{case_id}/tasks/{task_id}/actions", response_model=ReviewCaseResponse)
@@ -216,14 +223,8 @@ async def act_on_review(
         payload=body.model_dump(mode="json"),
         trace_id=_trace_id(request),
     )
-    if updated["status"] in {"APPROVED", "REJECTED"}:
-        await _gateway(request).command(
-            workflow_id=str(updated["workflow_id"]),
-            command_id=idempotency_key,
-            action="APPROVE" if updated["status"] == "APPROVED" else "REJECT",
-            reason=body.reason,
-            actor_id=str(principal.actor_id),
-        )
+    await ReviewDelivery(repository, _gateway(request)).deliver(case_id)
+    updated = await repository.get_review_case(principal=principal, case_id=case_id)
     return ReviewCaseResponse.model_validate(updated)
 
 

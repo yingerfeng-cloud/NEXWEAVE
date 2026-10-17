@@ -11,9 +11,17 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from nexweave_api.derived_reads import DerivedReadGate
 from nexweave_api.errors import ApiProblem
 from nexweave_api.knowledge_repository import KnowledgeRepository
 from nexweave_api.repository import JsonDict, _json_value
+from nexweave_api.review_content import (
+    checked_revision,
+    content,
+    load_target,
+    modify_target,
+    record_revision,
+)
 from nexweave_domain import (
     ConflictResolution,
     Principal,
@@ -27,6 +35,7 @@ from nexweave_domain import (
     validate_final_approval_separation,
     validate_review_policy,
 )
+from nexweave_domain.review import validate_stage_role
 
 
 class ReviewRepository(KnowledgeRepository):
@@ -131,6 +140,9 @@ class ReviewRepository(KnowledgeRepository):
         return [_json_value(row) for row in rows]
 
     async def list_claims(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="claim.read"
+        )
         async with self._database.engine.connect() as connection:
             rows = (
                 (
@@ -144,7 +156,8 @@ class ReviewRepository(KnowledgeRepository):
                 .mappings()
                 .all()
             )
-        return [_json_value(row) for row in rows]
+            gate = DerivedReadGate(connection, principal, space_id, self.record_denial)
+            return [_json_value(row) for row in rows if await gate.can_read("CLAIM", row["id"])]
 
     async def list_evidence(self, *, principal: Principal, claim_id: UUID) -> list[JsonDict]:
         async with self._database.engine.connect() as connection:
@@ -160,7 +173,15 @@ class ReviewRepository(KnowledgeRepository):
                 .mappings()
                 .all()
             )
-        return [_json_value(row) for row in rows]
+            if not rows:
+                return []
+            space_id = UUID(str(rows[0]["space_id"]))
+            principal = await self.principal_for_space(
+                principal=principal, space_id=space_id, action="claim.read"
+            )
+            gate = DerivedReadGate(connection, principal, space_id, self.record_denial)
+            await gate.require("CLAIM", claim_id)
+            return [_json_value(row) for row in rows if await gate.can_read("EVIDENCE", row["id"])]
 
     async def create_review_case(
         self,
@@ -171,6 +192,9 @@ class ReviewRepository(KnowledgeRepository):
         workflow_task_id: UUID,
         trace_id: str,
     ) -> JsonDict:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="review.create"
+        )
         policy = await self.get_review_policy(
             principal=principal, policy_id=UUID(str(payload["policy_id"]))
         )
@@ -181,6 +205,31 @@ class ReviewRepository(KnowledgeRepository):
                 "Review policy conflict",
                 "Policy does not match this space and risk level.",
             )
+        async with self._database.engine.connect() as connection:
+            existing = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT id,target_id,target_type,policy_id,risk_level,reason FROM review_cases WHERE workflow_task_id=:id AND tenant_id=:tenant"
+                        ),
+                        {"id": workflow_task_id, "tenant": principal.tenant_id},
+                    )
+                )
+                .mappings()
+                .first()
+            )
+        if existing is not None:
+            if any(
+                str(existing[k]) != str(payload[k])
+                for k in ("target_id", "target_type", "policy_id", "risk_level", "reason")
+            ):
+                raise ApiProblem(
+                    409,
+                    "IDEMPOTENCY_KEY_REUSED",
+                    "Review inputs changed",
+                    "Use a fresh request ID.",
+                )
+            return await self.get_review_case(principal=principal, case_id=existing["id"])
         target_table = {
             "CLAIM_CANDIDATE": "claim_candidates",
             "RELATION_CANDIDATE": "candidate_relations",
@@ -191,7 +240,7 @@ class ReviewRepository(KnowledgeRepository):
                 (
                     await connection.execute(
                         text(
-                            f"SELECT id,created_by FROM {target_table} WHERE tenant_id=:tenant AND space_id=:space AND id=:id"  # noqa: S608
+                            f"SELECT * FROM {target_table} WHERE tenant_id=:tenant AND space_id=:space AND id=:id"  # noqa: S608
                         ),
                         {
                             "tenant": principal.tenant_id,
@@ -210,6 +259,9 @@ class ReviewRepository(KnowledgeRepository):
                     "Review target unavailable",
                     "The draft target is unavailable.",
                 )
+            await DerivedReadGate(connection, principal, space_id, self.record_denial).require(
+                payload["target_type"], payload["target_id"]
+            )
             case_id, now = new_uuid7(), datetime.now(UTC)
             try:
                 await connection.execute(
@@ -238,6 +290,29 @@ class ReviewRepository(KnowledgeRepository):
                     "Review already exists",
                     "A review case already exists for this target.",
                 ) from exc
+            await connection.execute(
+                text(
+                    "INSERT INTO review_deliveries (id,review_case_id,kind,payload,created_at) VALUES (:id,:case,'START',CAST(:payload AS jsonb),:now)"
+                ),
+                {
+                    "id": new_uuid7(),
+                    "case": case_id,
+                    "now": now,
+                    "payload": json.dumps(
+                        {
+                            "workflow_type": "HUMAN_REVIEW",
+                            "task_id": str(workflow_task_id),
+                            "review_case_id": str(case_id),
+                            "actor_id": str(principal.actor_id),
+                            "trace_id": trace_id,
+                            "approval_timeout_seconds": int(policy["timeout_seconds"]),
+                        }
+                    ),
+                },
+            )
+            await record_revision(
+                connection, case_id, content(target), 1, UUID(str(target["created_by"])), None, now
+            )
             for sequence, stage in enumerate(policy["stages"], start=1):
                 await connection.execute(
                     text(
@@ -291,6 +366,33 @@ class ReviewRepository(KnowledgeRepository):
                     "Review case unavailable",
                     "The review case is unavailable.",
                 )
+            principal = await self.principal_for_space(
+                principal=principal, space_id=UUID(str(case["space_id"])), action="review.read"
+            )
+            await DerivedReadGate(
+                connection, principal, UUID(str(case["space_id"])), self.record_denial
+            ).require(case["target_type"], case["target_id"])
+            revisions = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT revision,content_snapshot,content_checksum,original_author_id,edited_by,created_at "
+                            "FROM review_target_revisions WHERE review_case_id=:id ORDER BY revision"
+                        ),
+                        {"id": case_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            pending_delivery = (
+                await connection.execute(
+                    text(
+                        "SELECT count(*) FROM review_deliveries WHERE review_case_id=:id AND delivered_at IS NULL"
+                    ),
+                    {"id": case_id},
+                )
+            ).scalar_one()
             tasks = (
                 (
                     await connection.execute(
@@ -304,6 +406,8 @@ class ReviewRepository(KnowledgeRepository):
                 .all()
             )
         value = _json_value(case)
+        value["workflow_delivery_status"] = "PENDING" if pending_delivery else "DELIVERED"
+        value["content_revisions"] = [_json_value(r) for r in revisions]
         value["tasks"] = [_json_value(task) for task in tasks]
         return value
 
@@ -321,9 +425,130 @@ class ReviewRepository(KnowledgeRepository):
                 .scalars()
                 .all()
             )
-        return [
-            await self.get_review_case(principal=principal, case_id=UUID(str(item))) for item in ids
-        ]
+        visible = []
+        for item in ids:
+            try:
+                visible.append(
+                    await self.get_review_case(principal=principal, case_id=UUID(str(item)))
+                )
+            except ApiProblem as exc:
+                if exc.status != 404:
+                    raise
+        return visible
+
+    async def restart_review_case(
+        self,
+        *,
+        principal: Principal,
+        case_id: UUID,
+        reason: str,
+        idempotency_key: str,
+        trace_id: str,
+    ) -> JsonDict:
+        case = await self.get_review_case(principal=principal, case_id=case_id)
+        principal = await self.principal_for_space(
+            principal=principal, space_id=UUID(str(case["space_id"])), action="review.create"
+        )
+
+        async def mutation(connection: AsyncConnection) -> JsonDict:
+            current = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT rc.*,rp.timeout_seconds FROM review_cases rc JOIN review_policies rp ON rp.id=rc.policy_id "
+                            "WHERE rc.id=:id AND rc.tenant_id=:tenant FOR UPDATE OF rc"
+                        ),
+                        {"id": case_id, "tenant": principal.tenant_id},
+                    )
+                )
+                .mappings()
+                .one()
+            )
+            if current["status"] not in {"OPEN", "WAITING_EVIDENCE", "OVERDUE"}:
+                raise ApiProblem(
+                    409,
+                    "REVIEW_NOT_RESTARTABLE",
+                    "Review cannot restart",
+                    "Completed reviews stay immutable.",
+                )
+            value = await load_target(connection, current)
+            previous = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT revision,original_author_id FROM review_target_revisions "
+                            "WHERE review_case_id=:id ORDER BY revision DESC LIMIT 1"
+                        ),
+                        {"id": case_id},
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            now = datetime.now(UTC)
+            await record_revision(
+                connection,
+                case_id,
+                value,
+                int(previous["revision"]) + 1 if previous else 1,
+                previous["original_author_id"] if previous else UUID(value["created_by"]),
+                None,  # Rebinding is audited separately; it is not a material content edit.
+                now,
+            )
+            await connection.execute(
+                text(
+                    "UPDATE review_tasks SET status='PENDING',claimed_by=NULL,assignee_id=NULL,updated_at=:now WHERE review_case_id=:id"
+                ),
+                {"id": case_id, "now": now},
+            )
+            await connection.execute(
+                text(
+                    "UPDATE review_cases SET status='OPEN',current_stage='ENGINEERING',updated_at=:now,updated_by=:actor WHERE id=:id"
+                ),
+                {"id": case_id, "now": now, "actor": principal.actor_id},
+            )
+            await connection.execute(
+                text(
+                    "INSERT INTO review_deliveries (id,review_case_id,kind,payload,created_at) "
+                    "VALUES (:id,:case,'START',CAST(:payload AS jsonb),:now) ON CONFLICT (review_case_id,kind) DO NOTHING"
+                ),
+                {
+                    "id": new_uuid7(),
+                    "case": case_id,
+                    "now": now,
+                    "payload": json.dumps(
+                        {
+                            "workflow_type": "HUMAN_REVIEW",
+                            "task_id": str(current["workflow_task_id"]),
+                            "review_case_id": str(case_id),
+                            "actor_id": str(principal.actor_id),
+                            "trace_id": trace_id,
+                            "approval_timeout_seconds": int(current["timeout_seconds"]),
+                        }
+                    ),
+                },
+            )
+            await self._insert_audit(
+                connection,
+                principal=principal,
+                action="review.restart",
+                resource_type="ReviewCase",
+                resource_id=case_id,
+                space_id=UUID(str(current["space_id"])),
+                trace_id=trace_id,
+                outcome="SUCCEEDED",
+                metadata={"reason": reason, "version_reset": True},
+            )
+            return {"case_id": str(case_id)}
+
+        await self._idempotent(
+            principal=principal,
+            operation=f"review.restart:{case_id}",
+            key=idempotency_key,
+            request={"reason": reason},
+            mutation=mutation,
+        )
+        return await self.get_review_case(principal=principal, case_id=case_id)
 
     async def act_on_review(
         self,
@@ -334,6 +559,11 @@ class ReviewRepository(KnowledgeRepository):
         payload: dict[str, Any],
         trace_id: str,
     ) -> JsonDict:
+        current_case = await self.get_review_case(principal=principal, case_id=case_id)
+        principal = await self.principal_for_space(
+            principal=principal, space_id=UUID(str(current_case["space_id"])), action="review.act"
+        )
+        facts = await self.get_space_facts(UUID(str(current_case["space_id"])), principal)
         async with self._database.engine.begin() as connection:
             case = (
                 (
@@ -366,6 +596,17 @@ class ReviewRepository(KnowledgeRepository):
                     "Review task is not active",
                     "Reload the review case before acting.",
                 )
+            try:
+                validate_stage_role(
+                    ReviewStage(task["stage"]), facts.member_roles | principal.tenant_roles
+                )
+            except ReviewRuleViolation as exc:
+                raise ApiProblem(403, exc.code, "Stage role required", str(exc)) from exc
+            revision = await checked_revision(connection, case)
+            if task["assignee_id"] not in (None, principal.actor_id):
+                raise ApiProblem(
+                    409, "REVIEW_TASK_ASSIGNED", "Task assigned", "Acting user is not the assignee."
+                )
             now, decision = datetime.now(UTC), ReviewDecision(payload["decision"])
             if task["claimed_by"] not in (None, principal.actor_id):
                 raise ApiProblem(
@@ -374,10 +615,28 @@ class ReviewRepository(KnowledgeRepository):
                     "Review task claimed",
                     "The task is claimed by another reviewer.",
                 )
+            if not str(payload["reason"]).strip():
+                raise ApiProblem(
+                    422, "REVIEW_REASON_REQUIRED", "Reason required", "Explain the decision."
+                )
+            after_content = revision["content_snapshot"]
+            if decision is ReviewDecision.MODIFY:
+                after_content = await modify_target(
+                    connection, case, payload.get("change_set", {}), principal.actor_id, now
+                )
+            elif payload.get("change_set"):
+                raise ApiProblem(
+                    422,
+                    "REVIEW_CHANGE_SET_INVALID",
+                    "Edit requires MODIFY",
+                    "Use MODIFY for content changes.",
+                )
             before = {
                 "case_status": case["status"],
                 "task_status": task["status"],
                 "target_id": str(case["target_id"]),
+                "content": revision["content_snapshot"],
+                "content_checksum": revision["content_checksum"],
             }
             await connection.execute(
                 text(
@@ -397,7 +656,7 @@ class ReviewRepository(KnowledgeRepository):
                     "reason": payload["reason"],
                     "changes": json.dumps(payload.get("change_set", {})),
                     "before": json.dumps(before),
-                    "after": json.dumps({"decision": decision.value}),
+                    "after": json.dumps({"decision": decision.value, "content": after_content}),
                     "now": now,
                     "actor": principal.actor_id,
                 },
@@ -442,6 +701,29 @@ class ReviewRepository(KnowledgeRepository):
                 )
             else:
                 await self._advance_review(connection, principal, case, task, decision, now)
+            final_status = (
+                await connection.execute(
+                    text("SELECT status FROM review_cases WHERE id=:id"), {"id": case_id}
+                )
+            ).scalar_one()
+            if final_status in {"APPROVED", "REJECTED"}:
+                await connection.execute(
+                    text(
+                        "INSERT INTO review_deliveries (id,review_case_id,kind,payload,created_at) VALUES (:id,:case,'DECISION',CAST(:payload AS jsonb),:now) ON CONFLICT (review_case_id,kind) DO NOTHING"
+                    ),
+                    {
+                        "id": new_uuid7(),
+                        "case": case_id,
+                        "now": now,
+                        "payload": json.dumps(
+                            {
+                                "action": "APPROVE" if final_status == "APPROVED" else "REJECT",
+                                "actor_id": str(principal.actor_id),
+                                "reason": payload["reason"],
+                            }
+                        ),
+                    },
+                )
             await self._insert_audit(
                 connection,
                 principal=principal,
@@ -467,17 +749,36 @@ class ReviewRepository(KnowledgeRepository):
         if decision is ReviewDecision.MODIFY:
             await connection.execute(
                 text(
-                    "UPDATE review_tasks SET status='PENDING',claimed_by=NULL,updated_at=:now WHERE id=:id"
+                    "UPDATE review_tasks SET status='PENDING',claimed_by=NULL,updated_at=:now WHERE review_case_id=:id"
                 ),
-                {"now": now, "id": task["id"]},
+                {"now": now, "id": case["id"]},
+            )
+            await connection.execute(
+                text(
+                    "UPDATE review_cases SET current_stage='ENGINEERING',status='OPEN',updated_at=:now,updated_by=:actor WHERE id=:id"
+                ),
+                {"id": case["id"], "now": now, "actor": principal.actor_id},
             )
             return
         if task["stage"] == "APPROVAL":
+            revision = await checked_revision(connection, case)
+            editors = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT edited_by FROM review_target_revisions WHERE review_case_id=:id AND edited_by IS NOT NULL"
+                        ),
+                        {"id": case["id"]},
+                    )
+                )
+                .scalars()
+                .all()
+            )
             prior_ids = (
                 (
                     await connection.execute(
                         text(
-                            "SELECT claimed_by FROM review_tasks WHERE review_case_id=:case AND stage <> 'APPROVAL'"
+                            "SELECT ra.created_by FROM review_actions ra JOIN review_tasks rt ON rt.id=ra.review_task_id WHERE ra.review_case_id=:case AND rt.stage <> 'APPROVAL' AND ra.decision='ACCEPT'"
                         ),
                         {"case": case["id"]},
                     )
@@ -488,7 +789,8 @@ class ReviewRepository(KnowledgeRepository):
             try:
                 validate_final_approval_separation(
                     risk=RiskLevel(case["risk_level"]),
-                    creator_id=UUID(str(case["created_by"])),
+                    creator_id=UUID(str(revision["original_author_id"])),
+                    editor_ids=[UUID(str(item)) for item in editors],
                     reviewer_ids=[UUID(str(item)) for item in prior_ids if item],
                     approver_id=principal.actor_id,
                 )
@@ -546,12 +848,16 @@ class ReviewRepository(KnowledgeRepository):
     async def _promote_target(
         self, connection: AsyncConnection, principal: Principal, case: Any, now: datetime
     ) -> None:
+        await checked_revision(connection, case)
+        await DerivedReadGate(
+            connection, principal, UUID(str(case["space_id"])), self.record_denial
+        ).require(case["target_type"], case["target_id"])
         if case["target_type"] == "RELATION_CANDIDATE":
             evidence = (
                 (
                     await connection.execute(
                         text(
-                            "SELECT sa.status AS anchor_status FROM evidence_candidates ec "
+                            "SELECT ec.stance,sa.status AS anchor_status FROM evidence_candidates ec "
                             "JOIN source_anchors sa ON sa.id=ec.source_anchor_id "
                             "WHERE ec.relation_candidate_id=:id"
                         ),
@@ -563,7 +869,10 @@ class ReviewRepository(KnowledgeRepository):
             )
             try:
                 validate_evidence_gate(
-                    has_valid_evidence=any(item["anchor_status"] == "VALID" for item in evidence)
+                    has_valid_evidence=any(
+                        item["anchor_status"] == "VALID" and item["stance"] == "SUPPORTS"
+                        for item in evidence
+                    )
                 )
             except ReviewRuleViolation as exc:
                 raise ApiProblem(409, exc.code, "Evidence required", str(exc)) from exc
@@ -679,7 +988,10 @@ class ReviewRepository(KnowledgeRepository):
         )
         try:
             validate_evidence_gate(
-                has_valid_evidence=any(item["anchor_status"] == "VALID" for item in evidence)
+                has_valid_evidence=any(
+                    item["anchor_status"] == "VALID" and item["stance"] == "SUPPORTS"
+                    for item in evidence
+                )
             )
         except ReviewRuleViolation as exc:
             raise ApiProblem(409, exc.code, "Evidence required", str(exc)) from exc
@@ -745,13 +1057,24 @@ class ReviewRepository(KnowledgeRepository):
                 .mappings()
                 .all()
             )
-        return [_json_value(row) for row in rows]
+        visible = []
+        for row in rows:
+            try:
+                visible.append(await self.get_conflict(principal=principal, conflict_id=row["id"]))
+            except ApiProblem as exc:
+                if exc.status != 404:
+                    raise
+        return visible
 
     async def materialize_conflicts(
         self, *, principal: Principal, space_id: UUID, trace_id: str
     ) -> list[JsonDict]:
         """Promote M5 detection facts into clustered M6 cases without losing candidates."""
         async with self._database.engine.begin() as connection:
+            await connection.execute(
+                text("SELECT id FROM knowledge_spaces WHERE id=:id FOR NO KEY UPDATE"),
+                {"id": space_id},
+            )
             candidates = (
                 (
                     await connection.execute(
@@ -859,6 +1182,31 @@ class ReviewRepository(KnowledgeRepository):
                 "Conflict unavailable",
                 "The conflict is unavailable.",
             )
+        principal = await self.principal_for_space(
+            principal=principal, space_id=UUID(str(row["space_id"])), action="conflict.read"
+        )
+        async with self._database.engine.connect() as connection:
+            items = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT object_type,object_id FROM conflict_items WHERE conflict_case_id=:id"
+                        ),
+                        {"id": conflict_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            if not items:
+                raise ApiProblem(
+                    404, "RESOURCE_NOT_FOUND", "Conflict unavailable", "Conflict unavailable."
+                )
+            gate = DerivedReadGate(
+                connection, principal, UUID(str(row["space_id"])), self.record_denial
+            )
+            for item in items:
+                await gate.require(item["object_type"], item["object_id"])
         return _json_value(row)
 
     async def resolve_conflict(

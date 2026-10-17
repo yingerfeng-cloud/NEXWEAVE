@@ -328,7 +328,9 @@ async def get_release(
         action="release.read",
         trace_id=_trace_id(request),
     )
-    return ReleaseResponse.model_validate(release)
+    return ReleaseResponse.model_validate(
+        await repository.release_metadata_view(principal=principal, release=release)
+    )
 
 
 @router.get("/releases/{release_id}/export", response_class=Response)

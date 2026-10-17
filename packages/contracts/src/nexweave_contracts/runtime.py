@@ -1,5 +1,5 @@
 """Code identity; independent from deployment-supplied build labels."""
 
-IMPLEMENTATION_VERSION = "0.9.5-d1"
+IMPLEMENTATION_VERSION = "0.9.5-r1fix-a1"
 MILESTONE = "M9.5"
-PHASE = "D"
+PHASE = "R1_REVIEW_A"
