@@ -9,6 +9,9 @@ node_modules
 .mypy_cache
 .ruff_cache
 .env
+.env.*
+.nexweave-data
+NEXWEAVE_Review_Evidence_*.zip
 .DS_Store
 NEXWEAVE_完整分阶段开发任务书_V1.0
 docs

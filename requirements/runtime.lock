@@ -43,8 +43,8 @@ pydantic==2.11.7
 pydantic-settings==2.10.1
 pydantic_core==2.33.2
 pycparser==3.0
-pypdf==6.16.2
-PyJWT==2.13.0
+pypdf==6.21.0
+PyJWT==2.15.1
 python-docx==1.2.0
 python-dotenv==1.2.3
 python-dateutil==2.9.0.post0
@@ -58,6 +58,6 @@ temporalio==1.31.0
 types-protobuf==7.35.1.20260823
 typing-inspection==0.4.4
 typing_extensions==4.16.0
-urllib3==2.7.0
+urllib3==2.8.0
 uvicorn==0.35.0
 wrapt==2.3.0

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,7 +17,9 @@ from verify_m95 import upload
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = "http://127.0.0.1:8080/api/v1"
-OUTPUT = ROOT / ".nexweave-data/stage-a-r1.json"
+OUTPUT = Path(
+    os.environ.get("NEXWEAVE_R1_VERIFICATION_OUTPUT", str(ROOT / ".nexweave-data/stage-a-r1.json"))
+)
 
 
 def main() -> None:

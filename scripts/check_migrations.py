@@ -266,7 +266,16 @@ async def verify_m5_schema(database_url: str, *, expected_present: bool) -> None
         if expected_present and (
             tables != M5_TABLES
             or triggers != M5_TRIGGERS
-            or head not in {"0006_m5", "0007_m6", "0008_m7", "0009_m8", "0010_m95", "0011_m95a"}
+            or head
+            not in {
+                "0006_m5",
+                "0007_m6",
+                "0008_m7",
+                "0009_m8",
+                "0010_m95",
+                "0011_m95a",
+                "0012_r1_review",
+            }
         ):
             raise RuntimeError(
                 f"M5 schema verification failed: tables={sorted(tables)}, "
@@ -310,7 +319,8 @@ async def verify_m6_schema(database_url: str, *, expected_present: bool) -> None
         if expected_present and (
             tables != M6_TABLES
             or triggers != M6_TRIGGERS
-            or head not in {"0007_m6", "0008_m7", "0009_m8", "0010_m95", "0011_m95a"}
+            or head
+            not in {"0007_m6", "0008_m7", "0009_m8", "0010_m95", "0011_m95a", "0012_r1_review"}
         ):
             raise RuntimeError(
                 f"M6 schema verification failed: tables={sorted(tables)}, "
@@ -360,7 +370,7 @@ async def verify_m7_schema(database_url: str, *, expected_present: bool) -> None
         if expected_present and (
             tables != M7_TABLES
             or triggers != M7_TRIGGERS
-            or head not in {"0008_m7", "0009_m8", "0010_m95", "0011_m95a"}
+            or head not in {"0008_m7", "0009_m8", "0010_m95", "0011_m95a", "0012_r1_review"}
             or vector_columns != 1
         ):
             raise RuntimeError(
@@ -393,7 +403,8 @@ async def verify_m8_schema(database_url: str, *, expected_present: bool) -> None
             )
             head = await connection.scalar(text("SELECT version_num FROM alembic_version"))
         if expected_present and (
-            tables != M8_TABLES or head not in {"0009_m8", "0010_m95", "0011_m95a"}
+            tables != M8_TABLES
+            or head not in {"0009_m8", "0010_m95", "0011_m95a", "0012_r1_review"}
         ):
             raise RuntimeError(
                 f"M8 schema verification failed: tables={sorted(tables)}, head={head}"
@@ -525,6 +536,41 @@ async def verify_legacy_data(database_url: str, tenant_id: str, source_id: str) 
         await engine.dispose()
 
 
+async def verify_r1_review_schema(database_url: str, present: bool) -> None:
+    engine = create_async_engine(database_url)
+    try:
+        async with engine.connect() as connection:
+            names = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT table_name FROM information_schema.tables "
+                            "WHERE table_schema='public' "
+                            "AND table_name IN ('review_target_revisions','review_deliveries')"
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            if set(names) != (
+                {"review_target_revisions", "review_deliveries"} if present else set()
+            ):
+                raise RuntimeError("R1 review migration tables do not match expected state")
+            trigger = (
+                await connection.execute(
+                    text(
+                        "SELECT count(*) FROM pg_trigger "
+                        "WHERE tgname='review_target_revisions_immutable'"
+                    )
+                )
+            ).scalar_one()
+            if bool(trigger) != present:
+                raise RuntimeError("R1 review immutable trigger mismatch")
+    finally:
+        await engine.dispose()
+
+
 async def main() -> None:
     source_url = os.environ.get("NEXWEAVE_DATABASE_URL")
     if not source_url:
@@ -547,6 +593,11 @@ async def main() -> None:
         await verify_m95_schema(disposable_url, True)
         tenant_id, source_id = await seed_legacy_data(disposable_url)
         await verify_m95a_schema(disposable_url, True)
+        await verify_r1_review_schema(disposable_url, True)
+        run(disposable_url, "downgrade", "0011_m95a")
+        await verify_r1_review_schema(disposable_url, False)
+        run(disposable_url, "upgrade", "head")
+        await verify_r1_review_schema(disposable_url, True)
         run(disposable_url, "downgrade", "0010_m95")
         await verify_m95a_schema(disposable_url, False)
         await verify_m95_schema(disposable_url, True)
@@ -571,7 +622,7 @@ async def main() -> None:
         await verify_legacy_data(disposable_url, tenant_id, source_id)
         await verify_m95_schema(disposable_url, True)
         print(
-            "Disposable M0→M9.5 upgrade/downgrade/re-upgrade passed, "
+            "Disposable M0→R1 review upgrade/downgrade/re-upgrade passed, "
             "pgvector projection and M0-M4 sentinel data preserved"
         )
     finally:

@@ -11,7 +11,9 @@ COPY apps/web apps/web
 RUN pnpm --filter @nexweave/web build
 
 FROM nginx:1.31.4-alpine3.24@sha256:db35bfc6b2951e7f8a72db5db120288c127ffaeeb4a6d4b95a26fead017d5913 AS runtime
-RUN apk upgrade --no-cache
+COPY infra/security/alpine324-packages.txt /tmp/nxw-security-packages.txt
+RUN xargs -r apk add --no-cache --upgrade < /tmp/nxw-security-packages.txt \
+    && rm /tmp/nxw-security-packages.txt
 RUN rm /etc/nginx/conf.d/default.conf
 COPY apps/web/nginx.conf /etc/nginx/nginx.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html

@@ -61,7 +61,7 @@ services:
     networks: [platform, parser-isolated]
 
   clamav:
-    image: nexweave-clamav:1.4.3-deb12u2
+    image: nexweave-clamav:1.4.3-deb12u2-r1fix-a1
     build:
       context: .
       dockerfile: infra/clamav/Dockerfile
@@ -119,7 +119,7 @@ services:
     environment:
       NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
       NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
-      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-d1}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-r1fix-a1}
       NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
       NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
       NEXWEAVE_OBJECT_STORE_HEALTH_URL: ${NEXWEAVE_OBJECT_STORE_HEALTH_URL:-http://rustfs:9000/health}
@@ -203,7 +203,7 @@ services:
     environment:
       NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
       NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
-      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-d1}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-r1fix-a1}
       NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
       NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
       NEXWEAVE_REDIS_URL: ${NEXWEAVE_REDIS_URL:-redis://redis:6379/0}
@@ -238,7 +238,7 @@ services:
     environment:
       NEXWEAVE_ENV: ${NEXWEAVE_ENV:-development}
       NEXWEAVE_LOG_LEVEL: ${NEXWEAVE_LOG_LEVEL:-INFO}
-      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-d1}
+      NEXWEAVE_BUILD_VERSION: ${NEXWEAVE_BUILD_VERSION:-0.9.5-r1fix-a1}
       NEXWEAVE_DATABASE_URL: ${NEXWEAVE_DATABASE_URL:?run make env first}
       NEXWEAVE_OBJECT_STORE_ENDPOINT: ${NEXWEAVE_OBJECT_STORE_ENDPOINT:-http://rustfs:9000}
       NEXWEAVE_OBJECT_STORE_BUCKET: ${NEXWEAVE_OBJECT_STORE_BUCKET:-nexweave-dev}

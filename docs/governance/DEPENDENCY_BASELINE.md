@@ -1,4 +1,4 @@
-# M4 Dependency and Supply-chain Baseline
+# NEXWEAVE Dependency and Supply-chain Baseline
 
 > M3 implementation adds only the isolated Parser Worker document libraries and the real ClamAV service described below. Preview is plain text, so the unused `nh3` dependency was removed. No real OCR Provider is selected.
 
@@ -104,3 +104,29 @@ benchmark; TimesFM, private and industrial providers remain architecture alterna
 ### 2026-09-09 阶段 A
 
 本轮无新增第三方依赖。进程锁、信号、监督循环使用 Python 标准库；持久投递与心跳复用既有 SQLAlchemy/asyncpg/Temporal。Chronos 可选运行环境、模型 revision/哈希和锁定依赖沿用 M9.5，不扩大网络或供应链范围。`fcntl` 本地管理器适用于当前 macOS/Linux，Windows 需另行适配，不声称已支持。
+
+## R1 Review batch A security updates 2026-10-17
+
+These changes repair the existing stack; no new application runtime library or model is added.
+Exact Python pins are synchronized across runtime/dev/forecast locks. Official release sources:
+[PyJWT](https://pyjwt.readthedocs.io/en/stable/changelog.html),
+[pypdf](https://pypdf.readthedocs.io/en/stable/meta/CHANGELOG.html),
+[urllib3](https://urllib3.readthedocs.io/en/stable/changelog.html).
+
+| Component | Exact replacement | Purpose and license | Alternative / risk |
+|---|---|---|---|
+| PyJWT | 2.13.0 → 2.15.1 | Existing JWT/OIDC verification; MIT | IdentityProviderPort replacement; downgrade reopens known issues. Production still excludes HMAC/dev login. |
+| pypdf | 6.16.2 → 6.21.0 | Existing isolated PDF parser; BSD-3-Clause | ParserPort replacement; parsing remains sandboxed and scanned. |
+| urllib3 | 2.7.0 → 2.8.0 | Existing HTTP transitive dependency; MIT | Replace owning adapter/client; proxy/streaming hardening requires regression. |
+| Debian 12 libpcre2-8-0 | 10.42-1+deb12u2 | Existing OS library; BSD-3-Clause | Maintained base image; pin must be reviewed when repositories retire versions. |
+| Debian 12 perl-base | 5.36.0-7+deb12u4 | Existing OS runtime; Artistic/GPL dual licensing | Maintained base image or remove Perl only after packaging review. |
+| Alpine libexpat / libuuid | 2.8.5-r0 / 2.42.3-r1 | Existing Nginx OS dependencies; MIT / BSD-3-Clause | Maintained Nginx base; no arbitrary mirror or unsigned package. |
+| Alpine pcre2 / tiff | 10.49-r0 / 4.7.2-r0 | Existing Nginx OS dependencies; BSD-3-Clause / libtiff | Same dependency-removal or base-refresh alternative. |
+| Alpine libcrypto3 / libssl3 | 3.5.9-r0 | Existing TLS libraries; Apache-2.0 | Current official repository version, replacing unavailable minimum 3.5.8. |
+| actions/download-artifact | v4.3.0, d3f86a106a0bac45b974a628896c90dbdf5c8093 | Fetch scanned digest receipts before promotion; MIT | GitHub API artifact retrieval, with equivalent digest/commit validation. |
+
+OS pins live in `infra/security/debian12-packages.txt` and `alpine324-packages.txt`.
+Debian uses the official signed repository over HTTPS. Alpine uses the official configured
+repositories; licenses above were checked from installed APK metadata. Base image digests,
+ClamAV version and RustFS digest remain pinned. No audit ignore or lower severity threshold
+was added. Local ARM64 scans do not substitute for CI's required amd64/arm64 scans/signatures.

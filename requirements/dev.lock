@@ -63,7 +63,7 @@ pydantic==2.11.7
 pydantic-settings==2.10.1
 pydantic_core==2.33.2
 pycparser==3.0
-PyJWT==2.13.0
+PyJWT==2.15.1
 Pygments==2.21.0
 pyparsing==3.3.2
 pytest==8.4.1
@@ -86,6 +86,6 @@ toml==0.10.2
 types-protobuf==7.35.1.20260823
 typing-inspection==0.4.4
 typing_extensions==4.16.0
-urllib3==2.7.0
+urllib3==2.8.0
 uvicorn==0.35.0
 wrapt==2.3.0
