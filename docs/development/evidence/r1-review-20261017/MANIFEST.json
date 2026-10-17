@@ -1,0 +1,17 @@
+{
+  "sha256": {
+    "README.md": "28cc9cc3e955465989368124dbfe9b7023c0c2532ebc0655d8ef64a0f330cca1",
+    "baseline-security-observations.log": "6e1f09b2fdf63e5593a46a2df8d0d2f7a717a2c2930c3e2cd594a07d9d359a20",
+    "browser-refused.png": "1b0905d3a4da9c50ac7f8f2c063215008b11a5b90be598ef7cf1ef6bd37e1ac6",
+    "browser-source.png": "8508a1d77d7cc3cac8bf309c449b52103e368f4bafb9696e256bb0558d3f596f",
+    "browser-supported.png": "b8814ede0931f84a8911f1df739965da6c0890d062d36f4db88c5ddfc4ca5c3d",
+    "database.log": "754d0293c9585a043af79dd2e0e3844c159a2a2953c3cb461fcd342a312d9e1c",
+    "legacy-gates.log": "7df657812a25b3a860174614484fee60cd2bc4cb9e0f64b331daf8d060227ca2",
+    "migrations.log": "76fc7966dc2683a482054802536e73d85cdeb43924ad017fd85fc49208e15b5c",
+    "quality.log": "84a30544884e7bf8455fdc02e03942c64b70dc16d99f86f53cd26c20650b3d11",
+    "real-r1-chain.log": "336bd8c79e3ab96a7102261c746e8acbd24d8a9387cbf4f8cb2cc1f039aaa444",
+    "review-outage.log": "b1f0cae8c0a224b3ce8ad9c3748cf59acecdd35c3fedeec6c0519c724cf7d396",
+    "temporal-activity-substitutes.log": "2826a5e72c9f873a0370a41fe46a67989c4a682af951a8514eeb48dfd0b0e61b",
+    "verification.json": "1e1279c490ca14e6844c593f02508eff2dd3c321fb2a09ae5529e0017353fd3b"
+  }
+}

@@ -1,0 +1,20 @@
+.venv/bin/python scripts/verify_m1.py
+Temporal worker health workflow passed
+M1 E2E passed: Web deep links -> authenticated API -> tenant/space policy -> PostgreSQL audit/outbox -> immutable RustFS object -> Temporal worker
+.venv/bin/python scripts/verify_m2.py
+ Container nexweave-r1-review-worker-kernel-1 Stopping 
+ Container nexweave-r1-review-worker-kernel-1 Stopped 
+ Container nexweave-r1-review-postgres-1 Waiting 
+ Container nexweave-r1-review-postgres-1 Healthy 
+ Container nexweave-r1-review-temporal-1 Waiting 
+ Container nexweave-r1-review-postgres-1 Waiting 
+ Container nexweave-r1-review-postgres-1 Healthy 
+ Container nexweave-r1-review-temporal-1 Healthy 
+ Container nexweave-r1-review-worker-kernel-1 Starting 
+ Container nexweave-r1-review-worker-kernel-1 Started 
+M2 real verification passed: seven workflows, all-type cancellation, Update idempotency, Activity and failed-run retries, approval, pause/resume, compensation, reconciliation, worker restart and replay
+.venv/bin/python scripts/verify_m3.py
+M3 real chain verified: TXT/DOCX/XLSX, scanned PDF OCR_REQUIRED, idempotent complete, reparse, invalidation, batch and transactional Outbox.
+Not covered by this script: real OCR (not configured), broker publication, production HA/DR, parser cancellation/crash-window recovery, replay of an archived accepted M2 history, multi-architecture image promotion and external CI.
+.venv/bin/python scripts/verify_m4.py
+M4 real chain verified: signed registry, dependency composition, deterministic candidate, separate validation/publication, upgrade, disable, rollback, revocation and isolation.

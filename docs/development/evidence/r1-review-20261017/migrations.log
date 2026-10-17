@@ -1,0 +1,41 @@
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_m0, Create the M0 platform foundation without knowledge business tables.
+INFO  [alembic.runtime.migration] Running upgrade 0001_m0 -> 0002_m1, Add M1 identity, workspace, governance and managed-object services.
+INFO  [alembic.runtime.migration] Running upgrade 0002_m1 -> 0003_m2, Add M2 Temporal task projections and append-only workflow event log.
+INFO  [alembic.runtime.migration] Running upgrade 0003_m2 -> 0004_m3, Add M3 Source, immutable Raw metadata and versioned parse results.
+INFO  [alembic.runtime.migration] Running upgrade 0004_m3 -> 0005_m4, Add M4 immutable semantic model, Pack registry and installation facts.
+INFO  [alembic.runtime.migration] Running upgrade 0005_m4 -> 0006_m5, Add M5 governed Compile, candidate knowledge and Wiki draft facts.
+INFO  [alembic.runtime.migration] Running upgrade 0006_m5 -> 0007_m6, Add M6 governed Claims, Evidence, Conflicts and HumanReview facts.
+INFO  [alembic.runtime.migration] Running upgrade 0007_m6 -> 0008_m7, Add M7 quality, immutable Release, projections, graph and trusted queries.
+INFO  [alembic.runtime.migration] Running upgrade 0008_m7 -> 0009_m8, Add M8 Connector executions and Obsidian exchange facts.
+INFO  [alembic.runtime.migration] Running upgrade 0009_m8 -> 0010_m95, M9.5 scoped operational bindings and immutable numerical forecast artifacts.
+INFO  [alembic.runtime.migration] Running upgrade 0010_m95 -> 0011_m95a, Durable forecast delivery and ephemeral worker health for Stage A.
+INFO  [alembic.runtime.migration] Running upgrade 0011_m95a -> 0012_r1_review, Bind R1 reviews to immutable server-side content revisions.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 0012_r1_review -> 0011_m95a, Bind R1 reviews to immutable server-side content revisions.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 0011_m95a -> 0012_r1_review, Bind R1 reviews to immutable server-side content revisions.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 0012_r1_review -> 0011_m95a, Bind R1 reviews to immutable server-side content revisions.
+INFO  [alembic.runtime.migration] Running downgrade 0011_m95a -> 0010_m95, Durable forecast delivery and ephemeral worker health for Stage A.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 0010_m95 -> 0009_m8, M9.5 scoped operational bindings and immutable numerical forecast artifacts.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 0009_m8 -> 0008_m7, Add M8 Connector executions and Obsidian exchange facts.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 0008_m7 -> 0007_m6, Add M7 quality, immutable Release, projections, graph and trusted queries.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade 0007_m6 -> 0008_m7, Add M7 quality, immutable Release, projections, graph and trusted queries.
+INFO  [alembic.runtime.migration] Running upgrade 0008_m7 -> 0009_m8, Add M8 Connector executions and Obsidian exchange facts.
+INFO  [alembic.runtime.migration] Running upgrade 0009_m8 -> 0010_m95, M9.5 scoped operational bindings and immutable numerical forecast artifacts.
+INFO  [alembic.runtime.migration] Running upgrade 0010_m95 -> 0011_m95a, Durable forecast delivery and ephemeral worker health for Stage A.
+INFO  [alembic.runtime.migration] Running upgrade 0011_m95a -> 0012_r1_review, Bind R1 reviews to immutable server-side content revisions.
+Disposable M0→R1 review upgrade/downgrade/re-upgrade passed, pgvector projection and M0-M4 sentinel data preserved

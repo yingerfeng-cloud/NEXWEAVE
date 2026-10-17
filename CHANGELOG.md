@@ -1,5 +1,15 @@
 # Changelog
 
+## R1 independent review repairs batch A — 2026-10-17
+
+- Shared current-source/read gates, membership clearance caps, fail-closed full exports and explicitly restricted release metadata.
+- Immutable reviewed target revisions, authoritative authors/editors, stage role checks, material Claim edits and explicit legacy-review restart.
+- Shared Query/Evaluation retrieval, evidence and answer execution with actual per-question traces; supported attribute filters and meaningful expectations.
+- Final publication revalidation, frozen entity identities and historical projection rebuilds from Release snapshots.
+- Durable review delivery, bounded waits, real Temporal reconciliation and terminal/stale-run projection protection; Web proxy DNS recovery.
+- Additive migration 0012, current integration/rollback/outage CI gates and complete-set image promotion after all scans; exact Python and OS security pins.
+- Validation levels and remaining B/C work are recorded in the 2026-10-17 repair report. Historical acceptance records and the acceptance tag are unchanged; no industrial or production acceptance is claimed.
+
 ## R1 software acceptance — 2026-09-14
 
 User accepted the R1 software functionality and authorized freezing the current delivery as `r1-software-accepted-20260914`. Includes existing M9.5 extensions and follow-up UX/read-boundary fixes. Domain expert approval and industrial effectiveness remain outside this acceptance; no M10 authorization.

@@ -1,0 +1,207 @@
+.venv/bin/python -m ruff format --check .
+193 files already formatted
+pnpm format:check
+$ pnpm --filter @nexweave/web format:check
+$ prettier --check .
+Checking formatting...
+All matched files use Prettier code style!
+.venv/bin/python -m ruff check .
+All checks passed!
+pnpm lint
+$ pnpm --filter @nexweave/web lint
+$ eslint . --max-warnings 0
+.venv/bin/python -m mypy
+Success: no issues found in 103 source files
+pnpm typecheck
+$ pnpm --filter @nexweave/web typecheck
+$ tsc -b --pretty false
+.venv/bin/python -m pytest -m "not integration"
+============================= test session starts ==============================
+platform darwin -- Python 3.12.14, pytest-8.4.1, pluggy-1.6.0
+rootdir: <REPO>
+configfile: pyproject.toml
+testpaths: tests, apps/api/tests, packages/domain/tests, packages/contracts/tests, workers/health/tests, workers/kernel/tests, workers/parser/tests
+plugins: asyncio-1.1.0, anyio-4.14.2
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 191 items / 18 deselected / 173 selected
+
+tests/architecture/test_dependency_boundaries.py .                       [  0%]
+tests/contract/test_json_schemas.py .                                    [  1%]
+tests/contract/test_m0_fixture.py .                                      [  1%]
+tests/contract/test_m1_application_ports.py ...                          [  3%]
+tests/contract/test_m1_contracts.py ...                                  [  5%]
+tests/contract/test_m1_sdk.py ..                                         [  6%]
+tests/contract/test_m2_sdk.py .                                          [  6%]
+tests/contract/test_m3_contracts.py ...                                  [  8%]
+tests/contract/test_m3_sdk.py ..                                         [  9%]
+tests/contract/test_openapi_snapshot.py .                                [ 10%]
+apps/api/tests/test_app.py ........                                      [ 15%]
+apps/api/tests/test_clamav.py ..                                         [ 16%]
+apps/api/tests/test_m4_semantic_security.py ......                       [ 19%]
+apps/api/tests/test_m5_model_gateway.py .                                [ 20%]
+apps/api/tests/test_m8_connector_provider.py ..                          [ 21%]
+apps/api/tests/test_source_routes.py .........                           [ 26%]
+apps/api/tests/test_stage_a.py ..........                                [ 32%]
+apps/api/tests/test_stage_b_binding.py .........                         [ 37%]
+apps/api/tests/test_stage_c_knowledge.py .....                           [ 40%]
+apps/api/tests/test_stage_d_reads.py ...........                         [ 46%]
+packages/domain/tests/test_identifiers.py ..                             [ 47%]
+packages/domain/tests/test_m1_access_workspace.py ....                   [ 50%]
+packages/domain/tests/test_m2_workflow.py ....                           [ 52%]
+packages/domain/tests/test_m3_source.py ..                               [ 53%]
+packages/domain/tests/test_m4_semantic.py ...................            [ 64%]
+packages/domain/tests/test_m5_knowledge.py ....                          [ 67%]
+packages/domain/tests/test_m6_review.py ...                              [ 68%]
+packages/domain/tests/test_m7_release.py ...                             [ 70%]
+packages/domain/tests/test_m95_forecast.py ............                  [ 77%]
+packages/domain/tests/test_m9_equipment_rca_pack.py ......               [ 80%]
+packages/domain/tests/test_states.py .                                   [ 81%]
+packages/contracts/tests/test_committed_schemas.py .                     [ 82%]
+packages/contracts/tests/test_contract_models.py .......                 [ 86%]
+packages/contracts/tests/test_m2_workflow_contracts.py ..                [ 87%]
+packages/contracts/tests/test_m5_compile_contracts.py ..                 [ 88%]
+packages/contracts/tests/test_m8_integration_contracts.py ...            [ 90%]
+workers/health/tests/test_workflow_boundary.py .                         [ 90%]
+workers/kernel/tests/test_workflow_definitions.py ...                    [ 92%]
+workers/parser/tests/test_real_parsers.py ...........                    [ 98%]
+workers/parser/tests/test_source_activities.py ..                        [100%]
+
+====================== 173 passed, 18 deselected in 2.89s ======================
+pnpm test
+$ pnpm --filter @nexweave/web test
+$ vitest run
+
+ RUN  v3.2.4 <REPO>/apps/web
+
+stderr | src/BindingWizard.test.tsx > binds governed resources, invalidates edited precheck, and reuses save identity after network failure
+NEXWEAVE API request failed {
+  kind: 'SERVER_ERROR',
+  code: 'DEPENDENCY_UNAVAILABLE',
+  status: 503,
+  requestId: undefined,
+  rawMessage: '连接中断'
+}
+
+stderr | src/SourceCenter.test.tsx > recovers a failed list and persists server-side filters in the URL
+NEXWEAVE API request failed {
+  kind: 'SERVER_ERROR',
+  code: 'DEPENDENCY_UNAVAILABLE',
+  status: 503,
+  requestId: undefined,
+  rawMessage: '资料目录暂时不可用'
+}
+
+ ✓ src/SpacesPage.test.tsx (2 tests) 173ms
+stderr | src/SourceCenter.test.tsx > clears the previous preview when re-authorization fails
+NEXWEAVE API request failed {
+  kind: 'NOT_FOUND',
+  code: 'RESOURCE_NOT_FOUND',
+  status: 404,
+  requestId: undefined,
+  rawMessage: '请求的内容不存在，或已不再可用。'
+}
+
+ ✓ src/WikiLinkGraph.test.tsx (3 tests) 215ms
+ ✓ src/CompileCenter.test.tsx (5 tests) 228ms
+ ✓ src/M7Knowledge.test.tsx (5 tests) 238ms
+ ✓ src/BindingWizard.test.tsx (1 test) 321ms
+   ✓ binds governed resources, invalidates edited precheck, and reuses save identity after network failure  321ms
+ ✓ src/SourceCenter.test.tsx (5 tests) 251ms
+stderr | src/LivingKnowledge.test.tsx > network retry reuses command identity and selects the new immutable run
+NEXWEAVE UI operation failed Error: 网络暂时不可用
+    at <REPO>/apps/web/src/LivingKnowledge.test.tsx:110:28
+    at file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runFiles (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1787:3)
+    at startTests (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1820:3)
+
+ ✓ src/LivingKnowledge.test.tsx (2 tests) 220ms
+ ✓ src/AppNavigation.test.tsx (1 test) 122ms
+ ✓ src/api.test.ts (3 tests) 7ms
+ ✓ src/livingComparison.test.ts (1 test) 1ms
+stderr | src/ForecastKnowledge.test.tsx > explains empty releases and permits retry after a failed load
+NEXWEAVE UI operation failed Error: offline
+    at <REPO>/apps/web/src/ForecastKnowledge.test.tsx:95:28
+    at file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at runSuite (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runFiles (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1787:3)
+    at startTests (file://<REPO>/node_modules/.pnpm/@vitest+runner@3.2.4/node_modules/@vitest/runner/dist/chunk-hooks.js:1820:3)
+
+ ✓ src/M4Semantic.test.tsx (2 tests) 88ms
+ ✓ src/ForecastKnowledge.test.tsx (3 tests) 95ms
+stderr | src/App.test.tsx > shows a retryable authentication error instead of blanking the application
+NEXWEAVE API request failed {
+  kind: 'ACCESS_DENIED',
+  code: 'AUTHENTICATION_REQUIRED',
+  status: 401,
+  requestId: undefined,
+  rawMessage: '身份不可用'
+}
+
+stderr | src/App.test.tsx > retries a failed audit projection without losing the authenticated shell
+NEXWEAVE API request failed {
+  kind: 'SERVER_ERROR',
+  code: 'DEPENDENCY_UNAVAILABLE',
+  status: 503,
+  requestId: undefined,
+  rawMessage: '审计暂时不可用'
+}
+
+ ✓ src/App.test.tsx (10 tests) 570ms
+
+ Test Files  13 passed (13)
+      Tests  43 passed (43)
+   Start at  18:28:40
+   Duration  1.61s (transform 820ms, setup 641ms, collect 2.77s, tests 2.53s, environment 3.76s, prepare 607ms)
+
+.venv/bin/python -m pytest packages/contracts/tests tests/contract
+============================= test session starts ==============================
+platform darwin -- Python 3.12.14, pytest-8.4.1, pluggy-1.6.0
+rootdir: <REPO>
+configfile: pyproject.toml
+plugins: asyncio-1.1.0, anyio-4.14.2
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 32 items
+
+packages/contracts/tests/test_committed_schemas.py .                     [  3%]
+packages/contracts/tests/test_contract_models.py .......                 [ 25%]
+packages/contracts/tests/test_m2_workflow_contracts.py ..                [ 31%]
+packages/contracts/tests/test_m5_compile_contracts.py ..                 [ 37%]
+packages/contracts/tests/test_m8_integration_contracts.py ...            [ 46%]
+tests/contract/test_json_schemas.py .                                    [ 50%]
+tests/contract/test_m0_fixture.py .                                      [ 53%]
+tests/contract/test_m1_application_ports.py ...                          [ 62%]
+tests/contract/test_m1_contracts.py ...                                  [ 71%]
+tests/contract/test_m1_sdk.py ..                                         [ 78%]
+tests/contract/test_m2_sdk.py .                                          [ 81%]
+tests/contract/test_m3_contracts.py ...                                  [ 90%]
+tests/contract/test_m3_sdk.py ..                                         [ 96%]
+tests/contract/test_openapi_snapshot.py .                                [100%]
+
+============================== 32 passed in 1.28s ==============================
+pnpm --filter @nexweave/web exec prettier --check ../../packages/sdk/typescript
+Checking formatting...
+All matched files use Prettier code style!
+pnpm --filter @nexweave/web exec tsc -p ../../packages/sdk/typescript/tsconfig.json
+pnpm build
+$ pnpm --filter @nexweave/web build
+$ tsc -b && vite build
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 54 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.56 kB │ gzip:   0.37 kB
+dist/assets/index-C9G0lB-5.css   83.06 kB │ gzip:  15.28 kB
+dist/assets/index-BQjge9F1.js   375.98 kB │ gzip: 116.21 kB
+✓ built in 485ms

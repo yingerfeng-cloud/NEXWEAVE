@@ -1,0 +1,4 @@
+export: INTERNAL consumer returned HTTP 200 with confidential snapshot; explicit object classification returns 403
+.review: original author accepted as HIGH final approver when ReviewCase creator differs; actual-author control denied
+.
+2 passed in 0.77s

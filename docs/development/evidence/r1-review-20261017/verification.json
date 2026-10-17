@@ -1,0 +1,122 @@
+{
+  "scope": "R1 review batch A local technical verification; synthetic inputs; not Web end-to-end or industrial acceptance",
+  "review_baseline": "a8436b79f3ccec084984df2595b409c12f9a47b4",
+  "implementation_version": "0.9.5-r1fix-a1",
+  "input_zip_sha256": "a7f5571c00975ef4d36f33c54dae789be8c74dea50aeef31bd3b02ef63488efd",
+  "input_manifest_files_verified": 22,
+  "checks": {
+    "python_nonintegration": 173,
+    "web": 43,
+    "contract_subset_already_counted": 32,
+    "real_database_integration": 13,
+    "temporal_with_substitute_activities": 1,
+    "real_r1_http_chain": "PASS",
+    "real_review_start_and_decision_outage_recovery": "PASS",
+    "migration_upgrade_downgrade_upgrade": "PASS",
+    "m1_m4_real_integration": "PASS",
+    "remote_ci": "NOT_RUN_NO_PUSH",
+    "dual_architecture_promotion": "NOT_RUN",
+    "official_time_skipping_x86_64": "NOT_RUN_ON_LOCAL_ARM64"
+  },
+  "audits": {
+    "python_runtime_vulnerabilities": 0,
+    "python_report_sha256": "afa895965ae10b8657a93bda9a17903e28ebef68f0ad9ff3cffe12fac622c3c0",
+    "node_prod_vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "node_report_sha256": "57ce2f84b4c3d56f745ff3ea2b037c9679add6e166ba1cee2c3e4ad20cb5dd94",
+    "trivy_version": "0.74.0",
+    "container_policy": "scanners=vuln,severity=HIGH/CRITICAL,ignore-unfixed=true,exit-code=1 (unchanged CI policy)",
+    "images": [
+      {
+        "name": "api",
+        "created_at": "2026-10-17T10:28:48.503662261Z",
+        "image_id": "sha256:dcc5d0bcc38f222d077ba40e406367f5829813db6b3d38c92949a81906fdf1c6",
+        "architecture": "arm64",
+        "os": {
+          "Family": "debian",
+          "Name": "12.15"
+        },
+        "fixable_high_critical": 0,
+        "raw_report_sha256": "031b9d32b89cf91f6e9c89a8cd53a37602ac166aa85151a03f406339aecdbbc8"
+      },
+      {
+        "name": "worker-health",
+        "created_at": "2026-10-17T10:24:45.394818968Z",
+        "image_id": "sha256:bd13b309ac189e99e80895cdf9bab4f7a23d453d6b63d93ed83bdeeb7a80004f",
+        "architecture": "arm64",
+        "os": {
+          "Family": "debian",
+          "Name": "12.15"
+        },
+        "fixable_high_critical": 0,
+        "raw_report_sha256": "5e9b65444d5b20b470cb73cf014bd05cbb2ed05201ce136d05ad09e2156349a5"
+      },
+      {
+        "name": "worker-kernel",
+        "created_at": "2026-10-17T10:24:47.374516511Z",
+        "image_id": "sha256:4375626777fb3f6a22ebd6d71bfb4df0390306f2ced231d04d571928879ea3d3",
+        "architecture": "arm64",
+        "os": {
+          "Family": "debian",
+          "Name": "12.15"
+        },
+        "fixable_high_critical": 0,
+        "raw_report_sha256": "eda939ededce75f9628faf48a9afc9310a0539bdf1acbfa9ef7b6c363471f1ab"
+      },
+      {
+        "name": "worker-parser",
+        "created_at": "2026-10-17T10:24:49.214232928Z",
+        "image_id": "sha256:6f068cba93e3f7115c995b35089dc2649ba16cc1aad254f55e936877e5ef9a5a",
+        "architecture": "arm64",
+        "os": {
+          "Family": "debian",
+          "Name": "12.15"
+        },
+        "fixable_high_critical": 0,
+        "raw_report_sha256": "cf371f75eb1a8ee7618299e484ca249dfa5e1ac69d9ae9f9800614e857eae923"
+      },
+      {
+        "name": "web",
+        "created_at": "2026-10-17T10:24:49.562001262Z",
+        "image_id": "sha256:1b981e68391a88cfd6b7dd000c63ea4abc02f87150f448979dc12aa292c420c3",
+        "architecture": "arm64",
+        "os": {
+          "Family": "alpine",
+          "Name": "3.24.1"
+        },
+        "fixable_high_critical": 0,
+        "raw_report_sha256": "4aba28cd7fdd47fc158eb406ad7a9c52fdd2d788976c3f434d0bad1ad98edca8"
+      },
+      {
+        "name": "clamav",
+        "created_at": "2026-10-17T09:54:28.253583669Z",
+        "image_id": "sha256:5ba99d682029934f3ac8415ab6e0576fff397b8b524b040470dcd9e6341b5f4e",
+        "architecture": "arm64",
+        "os": {
+          "Family": "debian",
+          "Name": "12.15"
+        },
+        "fixable_high_critical": 0,
+        "raw_report_sha256": "a257dd998fd013b9c72df5f2119025198af403c35629ce11f99bf25ed55ff425"
+      },
+      {
+        "name": "rustfs",
+        "created_at": "2026-10-17T09:57:04.959994588Z",
+        "image_id": "sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b",
+        "architecture": "arm64",
+        "os": {
+          "Family": "alpine",
+          "Name": "3.24.1"
+        },
+        "fixable_high_critical": 0,
+        "raw_report_sha256": "2ae1d9eec451a69df171358f3943efac30020f6a09f3a22ea425c6c67f0af88e"
+      }
+    ]
+  },
+  "verified_code_commit": "d82433d3a973b2bd341a34549b166ea7c789bc28"
+}
