@@ -255,6 +255,51 @@ export type ConflictCase = {
   suggested_action?: string | null;
   details: Record<string, unknown>;
   created_at: string;
+  items?: Array<ReviewTarget & { side: string }>;
+  decisions?: Array<{
+    resolution: string;
+    reason: string;
+    conditions: Record<string, unknown>;
+    created_at: string;
+    created_by: string;
+  }>;
+};
+
+export type ReviewEvidence = {
+  id: string;
+  stance: string;
+  source_anchor_id: string;
+  source_version_id: string;
+  filename: string;
+  anchor_status: string;
+  excerpt_hash: string;
+  locators: unknown[];
+};
+export type ReviewTarget = {
+  id: string;
+  target_type: string;
+  content: Record<string, unknown>;
+  entity_labels?: Record<string, string>;
+  evidence: ReviewEvidence[];
+  open_review_case_id?: string | null;
+};
+export type ReviewPolicy = {
+  id: string;
+  risk_level: "LOW" | "MEDIUM" | "HIGH";
+  stages: string[];
+  version: number;
+  timeout_seconds: number;
+  status: string;
+};
+export type Relation = {
+  id: string;
+  schema_version_id: string;
+  relation_type_key: string;
+  source_entity_id: string;
+  target_entity_id: string;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  status: string;
 };
 
 export type ReviewTask = {
@@ -280,6 +325,60 @@ export type ReviewCase = {
   created_by: string;
   created_at: string;
   tasks: ReviewTask[];
+  reason?: string;
+  updated_by?: string;
+  actor_labels?: Record<string, string>;
+  target_context?: ReviewTarget;
+  content_revisions?: Array<{
+    revision: number;
+    content_snapshot: Record<string, unknown>;
+    content_checksum: string;
+    original_author_id: string;
+    edited_by?: string | null;
+  }>;
+  actions?: Array<{
+    id: string;
+    stage: string;
+    decision: string;
+    reason: string;
+    created_by: string;
+    created_at: string;
+    before_snapshot: Record<string, unknown>;
+    after_snapshot: Record<string, unknown>;
+  }>;
+  workflow_delivery_status?: string;
+};
+
+export type EvaluationRun = {
+  result_visibility?: "FULL" | "METADATA_ONLY";
+  id: string;
+  target_id: string;
+  suite_id: string;
+  status: string;
+  gate_passed?: boolean | null;
+  metrics: Record<string, unknown>;
+  results: Array<{
+    case_key: string;
+    passed: boolean;
+    answer_status: string;
+    error_code?: string | null;
+    details: {
+      question?: string;
+      expected_claim_ids?: string[];
+      expected_terms?: string[];
+      actual?: {
+        direct_answer: string;
+        answer_reason: string;
+        citations: Array<{
+          evidence_id: string;
+          source_version_id: string;
+          source_anchor_id: string;
+        }>;
+        retrieval_trace?: unknown[];
+      };
+      scoring?: Record<string, unknown>;
+    };
+  }>;
 };
 
 export type WorkflowType =
@@ -693,6 +792,10 @@ export type EvaluationCase = {
   expected_claim_ids: string[];
   expected_terms: string[];
   expect_refusal: boolean;
+  expected_refusal_reason?:
+    | "NO_MATCHING_KNOWLEDGE"
+    | "EVIDENCE_UNAVAILABLE"
+    | null;
   metadata: Record<string, unknown>;
 };
 
@@ -733,6 +836,7 @@ export type ReleaseCandidate = {
   workflow_id: string;
   status: string;
   manifest_checksum: string;
+  manifest?: Record<string, unknown>;
   gate_summary: Record<string, unknown>;
   index_config: Record<string, unknown>;
   notes: string;

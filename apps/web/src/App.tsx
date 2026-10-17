@@ -34,6 +34,7 @@ import { WikiLinkGraphCenter } from "./WikiLinkGraph";
 import { WikiWorkbench } from "./WikiWorkbench";
 
 const SESSION_KEY = "nexweave.m1.access-token";
+const SESSION_EXPIRY_KEY = "nexweave.session.expires";
 const SPACE_KEY = "nexweave.m1.space";
 
 const NAVIGATION: readonly NavigationItem[] = [
@@ -62,7 +63,14 @@ const NAVIGATION: readonly NavigationItem[] = [
 ] as const;
 
 export function App() {
-  const [token, setToken] = useState(() => sessionStorage.getItem(SESSION_KEY));
+  const [token, setToken] = useState(() => {
+    if (location.pathname === "/auth/callback") {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_EXPIRY_KEY);
+      return null;
+    }
+    return sessionStorage.getItem(SESSION_KEY);
+  });
   const [principal, setPrincipal] = useState<Principal | null>(null);
   const [booting, setBooting] = useState(Boolean(token));
   const [locationKey, setLocationKey] = useState(readLocationKey);
@@ -130,20 +138,55 @@ export function App() {
     };
   }, [api, loadSpaces, token]);
 
+  useEffect(() => {
+    if (!token) return;
+    const invalidate = () => {
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_EXPIRY_KEY);
+      setToken(null);
+      setPrincipal(null);
+      setGlobalError("会话已过期或失效，请重新登录。");
+    };
+    window.addEventListener("nexweave:session-expired", invalidate);
+    const expiry = Number(sessionStorage.getItem(SESSION_EXPIRY_KEY));
+    const timer =
+      expiry > 0
+        ? window.setTimeout(
+            invalidate,
+            Math.max(0, Math.min(expiry - Date.now(), 2147483647)),
+          )
+        : undefined;
+    return () => {
+      window.removeEventListener("nexweave:session-expired", invalidate);
+      window.clearTimeout(timer);
+    };
+  }, [token]);
+
   function navigate(next: string) {
     history.pushState({}, "", `/${next.replace(/^\/+/, "")}`);
     setLocationKey(readLocationKey());
   }
 
   function selectSpace(id: string) {
+    if (id !== selectedSpaceId)
+      navigate(`${route}${living ? "?view=living" : ""}`);
     setSelectedSpaceId(id);
     localStorage.setItem(SPACE_KEY, id);
   }
 
   function logOut() {
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_EXPIRY_KEY);
     setToken(null);
     setPrincipal(null);
+    void new NexweaveApi()
+      .authConfig()
+      .then((c) => {
+        if (c.logout_url) location.assign(c.logout_url);
+      })
+      .catch(() => {
+        /* The local session is already cleared. */
+      });
   }
 
   if (booting) return <LoadingScreen />;
@@ -151,8 +194,14 @@ export function App() {
     return (
       <LoginPage
         initialError={globalError}
-        onSession={(nextToken) => {
+        onSession={(nextToken, expiresIn) => {
           sessionStorage.setItem(SESSION_KEY, nextToken);
+          if (expiresIn)
+            sessionStorage.setItem(
+              SESSION_EXPIRY_KEY,
+              String(Date.now() + expiresIn * 1000),
+            );
+          setLocationKey(readLocationKey());
           setGlobalError("");
           setToken(nextToken);
         }}
@@ -180,7 +229,7 @@ export function App() {
       onLogout={logOut}
       onToggleDeveloperMode={() => setDeveloperMode((value) => !value)}
     >
-      <AppErrorBoundary key={locationKey}>
+      <AppErrorBoundary key={`${selectedSpaceId}:${locationKey}`}>
         {livingRoutes.includes(route) && (
           <div className="living-switch" aria-label="知识视图">
             <button

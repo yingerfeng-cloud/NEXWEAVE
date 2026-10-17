@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from nexweave_api.derived_reads import DerivedReadGate
@@ -16,6 +16,7 @@ from nexweave_api.errors import ApiProblem
 from nexweave_api.knowledge_repository import KnowledgeRepository
 from nexweave_api.repository import JsonDict, _json_value
 from nexweave_api.review_content import (
+    TABLES,
     checked_revision,
     content,
     load_target,
@@ -39,6 +40,182 @@ from nexweave_domain.review import validate_stage_role
 
 
 class ReviewRepository(KnowledgeRepository):
+    async def _review_context(
+        self,
+        connection: AsyncConnection,
+        principal: Principal,
+        space_id: UUID,
+        kind: str,
+        object_id: UUID,
+    ) -> JsonDict:
+        await DerivedReadGate(connection, principal, space_id, self.record_denial).require(
+            kind, object_id
+        )
+        table = {**TABLES, "CLAIM": "claims", "RELATION": "relations"}.get(kind)
+        if table is None:
+            raise ApiProblem(
+                404, "RESOURCE_NOT_FOUND", "Context unavailable", "Context unavailable."
+            )
+        row = (
+            (
+                await connection.execute(
+                    text(
+                        f"SELECT * FROM {table} WHERE id=:id AND tenant_id=:tenant AND space_id=:space"  # noqa: S608
+                    ),
+                    {"id": object_id, "tenant": principal.tenant_id, "space": space_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+        column = {
+            "CLAIM_CANDIDATE": "claim_candidate_id",
+            "RELATION_CANDIDATE": "relation_candidate_id",
+            "CLAIM": "claim_id",
+            "RELATION": "relation_id",
+        }.get(kind)
+        evidence_table = (
+            "evidence_records" if kind in {"CLAIM", "RELATION"} else "evidence_candidates"
+        )
+        evidence = []
+        if column:
+            evidence = list(
+                (
+                    await connection.execute(
+                        text(
+                            f"SELECT ec.*,sa.source_version_id,sa.status AS anchor_status,sa.locators,sv.filename "  # noqa: S608
+                            f"FROM {evidence_table} ec JOIN source_anchors sa ON sa.id=ec.source_anchor_id "
+                            f"JOIN source_versions sv ON sv.id=sa.source_version_id WHERE ec.{column}=:id ORDER BY ec.created_at"
+                        ),
+                        {"id": object_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+        if kind == "WIKI_PAGE_VERSION":
+            # The immutable page may include earlier generated/protected sections.
+            # Show every earlier page compilation anchor rather than inventing a
+            # supporting Claim or silently omitting inherited source dependencies.
+            evidence = list(
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT DISTINCT sa.id,sa.id AS source_anchor_id,sa.source_version_id,"
+                            "sa.status AS anchor_status,sa.locators,sa.excerpt_hash,sv.filename,"
+                            "'CONTEXT' AS stance FROM wiki_page_versions pv "
+                            "JOIN compile_job_sources cs ON cs.compile_job_id=pv.compile_job_id "
+                            "JOIN source_anchors sa ON sa.source_version_id=cs.source_version_id "
+                            "JOIN source_versions sv ON sv.id=sa.source_version_id "
+                            "WHERE pv.wiki_page_id=:page AND pv.revision<=:revision "
+                            "AND sa.parse_job_id=sv.active_parse_job_id"
+                        ),
+                        {"page": row["wiki_page_id"], "revision": row["revision"]},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+        entity_labels: dict[str, str] = {}
+        if kind in {"RELATION_CANDIDATE", "RELATION"}:
+            for entity_id in (row["source_entity_id"], row["target_entity_id"]):
+                if not await DerivedReadGate(connection, principal, space_id).can_read(
+                    "ENTITY", entity_id
+                ):
+                    continue
+                label = (
+                    await connection.execute(
+                        text(
+                            "SELECT display_name FROM knowledge_entities WHERE id=:id "
+                            "AND tenant_id=:tenant AND space_id=:space"
+                        ),
+                        {"id": entity_id, "tenant": principal.tenant_id, "space": space_id},
+                    )
+                ).scalar_one_or_none()
+                if label is not None:
+                    entity_labels[str(entity_id)] = str(label)
+        opened = (
+            await connection.execute(
+                text(
+                    "SELECT id FROM review_cases WHERE tenant_id=:tenant AND space_id=:space "
+                    "AND target_type=:kind AND target_id=:id AND status IN ('OPEN','WAITING_EVIDENCE','OVERDUE') ORDER BY created_at DESC LIMIT 1"
+                ),
+                {"tenant": principal.tenant_id, "space": space_id, "kind": kind, "id": object_id},
+            )
+        ).scalar_one_or_none()
+        return _json_value(
+            {
+                "id": object_id,
+                "target_type": kind,
+                "content": content(row),
+                "entity_labels": entity_labels,
+                "evidence": [dict(item) for item in evidence],
+                "open_review_case_id": opened,
+            }
+        )
+
+    async def list_review_targets(
+        self, *, principal: Principal, space_id: UUID, limit: int = 100
+    ) -> JsonDict:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="review.read"
+        )
+        values = []
+        async with self._database.engine.connect() as connection:
+            gate = DerivedReadGate(connection, principal, space_id)
+            for kind, table in TABLES.items():
+                rows = (
+                    (
+                        await connection.execute(
+                            text(
+                                f"SELECT t.id,t.created_at FROM {table} t WHERE tenant_id=:tenant AND space_id=:space "  # noqa: S608
+                                "AND (:kind!='WIKI_PAGE_VERSION' OR t.status!='APPROVED') "
+                                "AND NOT EXISTS (SELECT 1 FROM review_cases rc WHERE rc.target_type=:kind AND rc.target_id=t.id AND rc.status='APPROVED') "
+                                "ORDER BY t.created_at DESC,t.id DESC LIMIT :limit"
+                            ),
+                            {
+                                "tenant": principal.tenant_id,
+                                "space": space_id,
+                                "kind": kind,
+                                "limit": limit + 1,
+                            },
+                        )
+                    )
+                    .mappings()
+                    .all()
+                )
+                for row in rows:
+                    if await gate.can_read(kind, row["id"]):
+                        values.append((row["created_at"], kind, row["id"]))
+            values.sort(key=lambda r: (r[0], str(r[2])), reverse=True)
+            return {
+                "items": [
+                    await self._review_context(connection, principal, space_id, kind, object_id)
+                    for _, kind, object_id in values[:limit]
+                ],
+                "truncated": len(values) > limit,
+            }
+
+    async def list_relations(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="claim.read"
+        )
+        async with self._database.engine.connect() as connection:
+            rows = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT * FROM relations WHERE tenant_id=:tenant AND space_id=:space ORDER BY created_at DESC"
+                        ),
+                        {"tenant": principal.tenant_id, "space": space_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            gate = DerivedReadGate(connection, principal, space_id)
+            return [_json_value(row) for row in rows if await gate.can_read("RELATION", row["id"])]
+
     async def create_review_policy(
         self, *, principal: Principal, space_id: UUID, payload: dict[str, Any], trace_id: str
     ) -> JsonDict:
@@ -230,11 +407,7 @@ class ReviewRepository(KnowledgeRepository):
                     "Use a fresh request ID.",
                 )
             return await self.get_review_case(principal=principal, case_id=existing["id"])
-        target_table = {
-            "CLAIM_CANDIDATE": "claim_candidates",
-            "RELATION_CANDIDATE": "candidate_relations",
-            "SEMANTIC_PROPOSAL": "semantic_change_proposals",
-        }[payload["target_type"]]
+        target_table = TABLES[payload["target_type"]]
         async with self._database.engine.begin() as connection:
             target = (
                 (
@@ -372,6 +545,25 @@ class ReviewRepository(KnowledgeRepository):
             await DerivedReadGate(
                 connection, principal, UUID(str(case["space_id"])), self.record_denial
             ).require(case["target_type"], case["target_id"])
+            target_context = await self._review_context(
+                connection,
+                principal,
+                UUID(str(case["space_id"])),
+                case["target_type"],
+                case["target_id"],
+            )
+            actions = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT ra.*,rt.stage FROM review_actions ra JOIN review_tasks rt ON rt.id=ra.review_task_id WHERE ra.review_case_id=:id ORDER BY ra.created_at"
+                        ),
+                        {"id": case_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
             revisions = (
                 (
                     await connection.execute(
@@ -405,10 +597,32 @@ class ReviewRepository(KnowledgeRepository):
                 .mappings()
                 .all()
             )
+            actor_ids = {case["created_by"], case["updated_by"]}
+            for revision in revisions:
+                actor_ids.add(revision["original_author_id"])
+                if revision["edited_by"]:
+                    actor_ids.add(revision["edited_by"])
+            actor_ids.update(action["created_by"] for action in actions)
+            actor_ids.update(task["claimed_by"] for task in tasks if task["claimed_by"])
+            labels = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT id,display_name FROM user_identities WHERE tenant_id=:tenant AND id IN :ids"
+                        ).bindparams(bindparam("ids", expanding=True)),
+                        {"tenant": principal.tenant_id, "ids": list(actor_ids)},
+                    )
+                )
+                .mappings()
+                .all()
+            )
         value = _json_value(case)
         value["workflow_delivery_status"] = "PENDING" if pending_delivery else "DELIVERED"
         value["content_revisions"] = [_json_value(r) for r in revisions]
         value["tasks"] = [_json_value(task) for task in tasks]
+        value["target_context"] = target_context
+        value["actions"] = [_json_value(action) for action in actions]
+        value["actor_labels"] = {str(item["id"]): item["display_name"] for item in labels}
         return value
 
     async def list_review_cases(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
@@ -852,6 +1066,26 @@ class ReviewRepository(KnowledgeRepository):
         await DerivedReadGate(
             connection, principal, UUID(str(case["space_id"])), self.record_denial
         ).require(case["target_type"], case["target_id"])
+        if case["target_type"] == "WIKI_PAGE_VERSION":
+            context = await self._review_context(
+                connection,
+                principal,
+                UUID(str(case["space_id"])),
+                "WIKI_PAGE_VERSION",
+                case["target_id"],
+            )
+            if not context["evidence"] or any(
+                item["anchor_status"] != "VALID" for item in context["evidence"]
+            ):
+                raise ApiProblem(
+                    409,
+                    "REVIEW_EVIDENCE_REQUIRED",
+                    "Evidence required",
+                    "Review the page against current source anchors before approval.",
+                )
+            # ReviewCase is the authoritative approval fact. The Wiki version row
+            # and its status remain immutable, including pre-existing history.
+            return
         if case["target_type"] == "RELATION_CANDIDATE":
             evidence = (
                 (
@@ -1190,7 +1424,7 @@ class ReviewRepository(KnowledgeRepository):
                 (
                     await connection.execute(
                         text(
-                            "SELECT object_type,object_id FROM conflict_items WHERE conflict_case_id=:id"
+                            "SELECT side,object_type,object_id FROM conflict_items WHERE conflict_case_id=:id ORDER BY side"
                         ),
                         {"id": conflict_id},
                     )
@@ -1207,12 +1441,47 @@ class ReviewRepository(KnowledgeRepository):
             )
             for item in items:
                 await gate.require(item["object_type"], item["object_id"])
-        return _json_value(row)
+            contexts = [
+                {
+                    "side": item["side"],
+                    **await self._review_context(
+                        connection,
+                        principal,
+                        UUID(str(row["space_id"])),
+                        item["object_type"],
+                        item["object_id"],
+                    ),
+                }
+                for item in items
+            ]
+            decisions = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT resolution,reason,conditions,created_at,created_by FROM conflict_decisions WHERE conflict_case_id=:id ORDER BY created_at"
+                        ),
+                        {"id": conflict_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+        return _json_value(
+            {**dict(row), "items": contexts, "decisions": [dict(d) for d in decisions]}
+        )
 
     async def resolve_conflict(
         self, *, principal: Principal, conflict_id: UUID, payload: dict[str, Any], trace_id: str
     ) -> JsonDict:
+        current = await self.get_conflict(principal=principal, conflict_id=conflict_id)
+        await self.principal_for_space(
+            principal=principal, space_id=UUID(current["space_id"]), action="conflict.resolve"
+        )
         async with self._database.engine.begin() as connection:
+            await connection.execute(
+                text("SELECT id FROM knowledge_spaces WHERE id=:space FOR NO KEY UPDATE"),
+                {"space": UUID(current["space_id"])},
+            )
             case = (
                 (
                     await connection.execute(

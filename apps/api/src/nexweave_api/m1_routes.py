@@ -96,6 +96,8 @@ async def current_principal(
     if not token:
         raise AuthenticationFailed()
     verified = await request.app.state.identity_provider.verify(token)
+    if settings.identity_provider == "oidc":
+        return await _repository(request).resolve_principal(verified, issuer=settings.oidc_issuer)
     return await _repository(request).resolve_principal(verified)
 
 

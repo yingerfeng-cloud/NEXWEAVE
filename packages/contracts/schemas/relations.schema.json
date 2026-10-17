@@ -1,0 +1,129 @@
+{
+  "$defs": {
+    "RelationResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "format": "uuid7",
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "format": "uuid7",
+          "title": "Created By",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid7",
+          "title": "Id",
+          "type": "string"
+        },
+        "is_causal": {
+          "title": "Is Causal",
+          "type": "boolean"
+        },
+        "provenance": {
+          "additionalProperties": true,
+          "title": "Provenance",
+          "type": "object"
+        },
+        "relation_type_key": {
+          "title": "Relation Type Key",
+          "type": "string"
+        },
+        "schema_version_id": {
+          "format": "uuid7",
+          "title": "Schema Version Id",
+          "type": "string"
+        },
+        "source_entity_id": {
+          "format": "uuid7",
+          "title": "Source Entity Id",
+          "type": "string"
+        },
+        "space_id": {
+          "format": "uuid7",
+          "title": "Space Id",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "target_entity_id": {
+          "format": "uuid7",
+          "title": "Target Entity Id",
+          "type": "string"
+        },
+        "tenant_id": {
+          "format": "uuid7",
+          "title": "Tenant Id",
+          "type": "string"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid From"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "id",
+        "tenant_id",
+        "space_id",
+        "candidate_id",
+        "schema_version_id",
+        "relation_type_key",
+        "source_entity_id",
+        "target_entity_id",
+        "is_causal",
+        "status",
+        "provenance",
+        "created_at",
+        "created_by"
+      ],
+      "title": "RelationResponse",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "items": {
+        "$ref": "#/$defs/RelationResponse"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "RelationListResponse",
+  "type": "object"
+}

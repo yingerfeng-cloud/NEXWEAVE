@@ -14,7 +14,14 @@ import type {
   GovernanceObject,
 } from "./types";
 
-export function IntegrationCenter({
+export function IntegrationCenter(props: {
+  api: NexweaveApi;
+  spaceId: string;
+}) {
+  return <IntegrationView key={props.spaceId} {...props} />;
+}
+
+function IntegrationView({
   api,
   spaceId,
 }: {
@@ -28,6 +35,7 @@ export function IntegrationCenter({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [syncingId, setSyncingId] = useState("");
+  const [notice, setNotice] = useState("");
   const load = useCallback(async () => {
     if (!spaceId) {
       setItems([]);
@@ -73,6 +81,9 @@ export function IntegrationCenter({
       (event.target as HTMLFormElement).reset();
       await load();
       setError("");
+      setNotice(
+        "配置已保存；尚未测试连接。开始同步会实际读取允许范围并记录成功或失败。",
+      );
     } catch (nextError) {
       setError(messageOf(nextError));
     }
@@ -91,6 +102,27 @@ export function IntegrationCenter({
     }
   }
 
+  const pendingRuns = runs.some((run) =>
+    ["CREATED", "RUNNING", "STARTING"].includes(run.status),
+  );
+  useEffect(() => {
+    if (!pendingRuns) return;
+    let active = true;
+    const timer = window.setInterval(() => {
+      void Promise.all(runs.map((run) => api.connectorSyncRun(run.id)))
+        .then((next) => {
+          if (active) setRuns(next);
+        })
+        .catch((cause) => {
+          if (active) setError(messageOf(cause));
+        });
+    }, 2000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [api, runs, pendingRuns]);
+
   return (
     <section className="page">
       <PageHeader
@@ -107,6 +139,7 @@ export function IntegrationCenter({
         }
       />
       {error && <ErrorState message={error} onRetry={load} />}
+      {notice && <p role="status">{notice}</p>}
       {!spaceId && (
         <EmptyState
           title="先选择知识空间"
@@ -169,17 +202,17 @@ export function IntegrationCenter({
             </div>
           </details>
           <button className="primary" type="submit">
-            测试并保存
+            保存配置（不测试连接）
           </button>
         </form>
       )}
       <div className="data-card">
         <h2>已登记实例</h2>
         {loading ? (
-          <p>正在读取已连接的数据源…</p>
+          <p>正在读取已登记的数据源…</p>
         ) : items.length === 0 ? (
           <EmptyState
-            title="还没有已连接的数据源"
+            title="还没有已登记的数据源"
             description="从上方连接器目录选择类型，完成权限范围和连接配置后保存。"
             primaryAction={
               <button

@@ -68,6 +68,9 @@ from nexweave_contracts.forecast import (
     ForecastRuntime,
     TimeSeriesCapabilities,
 )
+from nexweave_contracts.release import GraphEntityListResponse
+from nexweave_contracts.review import RelationListResponse, ReviewTargetListResponse
+from nexweave_contracts.web_auth import WebAuthConfig
 
 SCHEMAS: dict[str, type[BaseModel]] = {
     "forecast-knowledge-context.schema.json": ForecastKnowledgeContext,
@@ -114,6 +117,10 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "conflict.schema.json": ConflictResponse,
     "review-case.schema.json": ReviewCaseResponse,
     "review-restart.schema.json": ReviewRestartCreate,
+    "review-targets.schema.json": ReviewTargetListResponse,
+    "relations.schema.json": RelationListResponse,
+    "web-auth.schema.json": WebAuthConfig,
+    "graph-entities.schema.json": GraphEntityListResponse,
     "review-policy.schema.json": ReviewPolicyResponse,
     "evaluation-completed-event-data.schema.json": EvaluationCompletedEventData,
     "release-candidate.schema.json": ReleaseCandidateResponse,

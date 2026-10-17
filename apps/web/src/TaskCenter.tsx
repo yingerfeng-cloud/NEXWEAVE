@@ -65,7 +65,7 @@ export function TaskCenter({
   );
 
   const refresh = useCallback(
-    async (requestedId?: string) => {
+    async (requestedId?: string, background = false) => {
       if (!spaceId) {
         setTasks([]);
         setDetail(null);
@@ -73,13 +73,14 @@ export function TaskCenter({
         return;
       }
       setError("");
-      setLoading(true);
+      if (!background) setLoading(true);
       try {
         const page = await api.workflowTasks(spaceId);
         setTasks(page.items);
         const target = requestedId === undefined ? readTaskId() : requestedId;
         if (target) {
           const value = await api.workflowTask(target);
+          if (readTaskId() !== target) return;
           setDetail(value);
           setSelectedId(target);
         } else {
@@ -89,13 +90,21 @@ export function TaskCenter({
       } catch (nextError) {
         setError(messageOf(nextError));
       } finally {
-        setLoading(false);
+        if (!background) setLoading(false);
       }
     },
     [api, spaceId],
   );
 
   useEffect(() => void refresh(readTaskId()), [refresh]);
+  useEffect(() => {
+    if (!spaceId) return;
+    const timer = window.setInterval(
+      () => void refresh(readTaskId(), true),
+      3000,
+    );
+    return () => window.clearInterval(timer);
+  }, [refresh, spaceId]);
   useEffect(() => {
     const restore = () => {
       const routeId = readTaskId();

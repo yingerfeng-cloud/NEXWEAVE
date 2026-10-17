@@ -43,6 +43,7 @@ describe("M7 trusted consumption pages", () => {
         ],
       }),
       graphTraverse,
+      graphEntities: vi.fn().mockResolvedValue({ items: [] }),
     } as unknown as NexweaveApi;
     render(<GraphCenter api={api} spaceId={release.space_id} />);
     await screen.findByText("2.0.0");
@@ -195,6 +196,7 @@ describe("M7 trusted consumption pages", () => {
     const api = {
       releases: vi.fn().mockResolvedValue({ items: [release] }),
       graphTraverse,
+      graphEntities: vi.fn().mockResolvedValue({ items: [] }),
     } as unknown as NexweaveApi;
     render(<GraphCenter api={api} spaceId={release.space_id} />);
     await screen.findByText("1.0.0");

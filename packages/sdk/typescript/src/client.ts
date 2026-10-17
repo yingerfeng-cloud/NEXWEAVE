@@ -306,6 +306,9 @@ export type ReviewTask = {
   escalation_count: number;
 };
 export type ReviewCase = {
+  actor_labels?: Record<string, string>;
+  target_context?: Record<string, unknown>;
+  actions?: Array<Record<string, unknown>>;
   workflow_delivery_status?: "PENDING" | "DELIVERED";
   content_revisions?: Array<{
     revision: number;
@@ -337,6 +340,8 @@ export type EvaluationSuite = {
 };
 
 export type ReleaseCandidate = {
+  manifest_visibility?: "FULL" | "METADATA_ONLY";
+  manifest?: Record<string, unknown>;
   id: string;
   space_id: string;
   version: string;
@@ -924,6 +929,33 @@ export class NexweaveClient {
     );
   }
 
+  listEvaluationRuns(spaceId: string) {
+    return this.request<Array<Record<string, unknown>>>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/evaluations/runs`,
+    );
+  }
+
+  getEvaluationRun(runId: string) {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v1/evaluations/runs/${runId}`,
+    );
+  }
+
+  createEvaluationRun(
+    spaceId: string,
+    body: Record<string, unknown>,
+    idempotencyKey: string,
+  ) {
+    return this.request<Record<string, unknown>>(
+      "POST",
+      `/api/v1/spaces/${spaceId}/evaluations/runs`,
+      body,
+      { "Idempotency-Key": idempotencyKey },
+    );
+  }
+
   createEvaluationSuite(spaceId: string, body: Record<string, unknown>) {
     return this.request<EvaluationSuite>(
       "POST",
@@ -1079,6 +1111,34 @@ export class NexweaveClient {
       "GET",
       `/api/v1/spaces/${spaceId}/review-cases`,
     );
+  }
+
+  listReviewTargets(spaceId: string, limit = 100) {
+    return this.request<{
+      items: Array<Record<string, unknown>>;
+      truncated: boolean;
+    }>(
+      "GET",
+      this.withQuery(`/api/v1/spaces/${spaceId}/review-targets`, { limit }),
+    );
+  }
+
+  listRelations(spaceId: string) {
+    return this.request<{ items: Array<Record<string, unknown>> }>(
+      "GET",
+      `/api/v1/spaces/${spaceId}/relations`,
+    );
+  }
+
+  listGraphEntities(releaseId: string) {
+    return this.request<{
+      items: Array<{
+        id: string;
+        display_name: string;
+        type_key: string;
+        normalized_key: string;
+      }>;
+    }>("GET", `/api/v1/releases/${releaseId}/graph/entities`);
   }
 
   listConflicts(spaceId: string) {

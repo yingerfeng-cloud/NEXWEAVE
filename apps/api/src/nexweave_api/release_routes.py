@@ -39,6 +39,7 @@ from nexweave_contracts import (
     ReleasePublish,
     ReleaseResponse,
 )
+from nexweave_contracts.release import GraphEntityListResponse
 from nexweave_domain import WorkflowType
 
 router = APIRouter(prefix="/api/v1", tags=["quality", "releases", "graph", "query"])
@@ -121,6 +122,13 @@ async def create_evaluation(
                 "target_type": body.target_type,
                 "target_id": str(body.target_id),
                 "suite_id": str(body.suite_id),
+                "retrieval_strategy": body.retrieval_strategy,
+                "retrieval_config_checksum": "sha256:"
+                + sha256(
+                    json.dumps(
+                        body.retrieval_config, sort_keys=True, separators=(",", ":")
+                    ).encode()
+                ).hexdigest(),
             },
             "start_paused": False,
         },
@@ -153,6 +161,18 @@ async def create_evaluation(
         trace_id=trace_id,
     )
     return EvaluationRunResponse.model_validate(run)
+
+
+@router.get("/spaces/{space_id}/evaluations/runs", response_model=list[EvaluationRunResponse])
+async def list_evaluations(
+    request: Request, space_id: UUID, principal: PrincipalDependency
+) -> list[EvaluationRunResponse]:
+    return [
+        EvaluationRunResponse.model_validate(run)
+        for run in await _repository(request).list_evaluation_runs(
+            principal=principal, space_id=space_id
+        )
+    ]
 
 
 @router.get("/evaluations/runs/{run_id}", response_model=EvaluationRunResponse)
@@ -505,6 +525,19 @@ async def get_answer(
         trace_id=_trace_id(request),
     )
     return QueryAnswerResponse.model_validate(answer)
+
+
+@router.get("/releases/{release_id}/graph/entities", response_model=GraphEntityListResponse)
+async def graph_entities(
+    request: Request, release_id: UUID, principal: PrincipalDependency
+) -> GraphEntityListResponse:
+    return GraphEntityListResponse.model_validate(
+        {
+            "items": await _repository(request).graph_entities(
+                principal=principal, release_id=release_id
+            )
+        }
+    )
 
 
 @router.get("/releases/{release_id}/graph/traverse", response_model=GraphTraverseResponse)

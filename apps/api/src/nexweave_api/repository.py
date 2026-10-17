@@ -230,16 +230,19 @@ class PlatformRepository:
             token_id=str(new_uuid7()),
         )
 
-    async def resolve_principal(self, verified: Principal) -> Principal:
+    async def resolve_principal(
+        self, verified: Principal, *, issuer: str | None = None
+    ) -> Principal:
         table = "user_identities" if verified.actor_type is ActorType.USER else "service_identities"
         subject_column = "subject" if verified.actor_type is ActorType.USER else "client_id"
+        issuer_column = "issuer" if verified.actor_type is ActorType.USER else "NULL AS issuer"
         async with self._database.engine.connect() as connection:
             row = (
                 (
                     await connection.execute(
                         text(
-                            f"SELECT id, tenant_id, {subject_column} AS subject, clearance, status "  # noqa: S608
-                            f"FROM {table} WHERE id = :id AND tenant_id = :tenant"  # noqa: S608
+                            f"SELECT id,tenant_id,{subject_column} AS subject,clearance,status,{issuer_column} FROM {table} "  # noqa: S608
+                            "WHERE id = :id AND tenant_id = :tenant"
                         ),
                         {"id": verified.actor_id, "tenant": verified.tenant_id},
                     )
@@ -249,6 +252,12 @@ class PlatformRepository:
             )
             if row is None or row["status"] != "ACTIVE" or row["subject"] != verified.subject:
                 raise AuthenticationFailed("The verified identity is disabled or not provisioned.")
+            if (
+                verified.actor_type is ActorType.USER
+                and issuer is not None
+                and row["issuer"] != issuer
+            ):
+                raise AuthenticationFailed("The verified issuer is not bound to this user.")
             roles = await self._tenant_roles(
                 connection, verified.tenant_id, verified.actor_type, verified.actor_id
             )

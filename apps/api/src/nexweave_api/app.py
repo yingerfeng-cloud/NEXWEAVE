@@ -13,6 +13,7 @@ from opentelemetry import trace
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp
 
+from nexweave_api.auth_routes import router as auth_router
 from nexweave_api.database import Database
 from nexweave_api.errors import ApiProblem
 from nexweave_api.forecast_execution import ForecastExecution
@@ -40,6 +41,7 @@ from nexweave_api.settings import Settings, get_settings
 from nexweave_api.source_routes import router as source_router
 from nexweave_api.telemetry import configure_telemetry
 from nexweave_api.trace_boundary import RequestTraceIsolation
+from nexweave_api.web_auth import BrowserOidc
 from nexweave_api.workflow_gateway import TemporalWorkflowGateway
 from nexweave_api.workflow_routes import router as workflow_router
 from nexweave_contracts import ProblemDetails
@@ -72,6 +74,15 @@ def create_app(
     resolved_object_storage = object_storage or S3ObjectStorage(resolved_settings)
     resolved_scanner = malware_scanner or ClamAvInstreamMalwareScanner(resolved_settings)
     resolved_workflow_gateway = workflow_gateway or TemporalWorkflowGateway(resolved_settings)
+    browser_oidc = (
+        BrowserOidc(
+            resolved_settings,
+            cast(OidcIdentityProvider, resolved_identity_provider),
+            resolved_repository,
+        )
+        if resolved_settings.oidc_web_enabled
+        else None
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -123,16 +134,19 @@ def create_app(
             await resolved_workflow_gateway.close()
             await probe.close()
             await resolved_database.close()
+            if browser_oidc:
+                await browser_oidc.close()
 
     application = FastAPI(
         title="NEXWEAVE Platform API",
         version=IMPLEMENTATION_VERSION,
-        description="R1 trusted knowledge with M9.5 Stage D trusted-read consolidation.",
+        description="R1 trusted knowledge with current authorization and auditable Web operations.",
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
         lifespan=lifespan,
     )
     application.state.settings = resolved_settings
+    application.state.browser_oidc = browser_oidc
     application.state.database = resolved_database
     application.state.repository = resolved_repository
     application.state.identity_provider = resolved_identity_provider
@@ -144,6 +158,7 @@ def create_app(
     )
     application.include_router(forecast_router)
     application.include_router(m1_router)
+    application.include_router(auth_router)
     application.include_router(workflow_router)
     application.include_router(source_router)
     application.include_router(semantic_router)

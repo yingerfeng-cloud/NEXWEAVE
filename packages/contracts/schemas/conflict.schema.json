@@ -27,6 +27,15 @@
       "default": null,
       "title": "Created By"
     },
+    "decisions": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Decisions",
+      "type": "array"
+    },
     "details": {
       "additionalProperties": true,
       "title": "Details",
@@ -36,6 +45,15 @@
       "format": "uuid7",
       "title": "Id",
       "type": "string"
+    },
+    "items": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Items",
+      "type": "array"
     },
     "kind": {
       "title": "Kind",

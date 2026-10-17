@@ -65,6 +65,22 @@
   },
   "additionalProperties": false,
   "properties": {
+    "actions": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Actions",
+      "type": "array"
+    },
+    "actor_labels": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Actor Labels",
+      "type": "object"
+    },
     "content_revisions": {
       "default": [],
       "items": {
@@ -122,6 +138,11 @@
     "status": {
       "title": "Status",
       "type": "string"
+    },
+    "target_context": {
+      "additionalProperties": true,
+      "title": "Target Context",
+      "type": "object"
     },
     "target_id": {
       "format": "uuid7",

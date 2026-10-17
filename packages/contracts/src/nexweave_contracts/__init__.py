@@ -108,6 +108,8 @@ from nexweave_contracts.review import (
     ConflictResolutionCreate,
     ConflictResponse,
     EvidenceResponse,
+    RelationListResponse,
+    RelationResponse,
     ReviewActionCreate,
     ReviewCaseCreate,
     ReviewCaseListResponse,
@@ -116,6 +118,8 @@ from nexweave_contracts.review import (
     ReviewPolicyResponse,
     ReviewQualityStats,
     ReviewRestartCreate,
+    ReviewTargetListResponse,
+    ReviewTargetResponse,
     ReviewTaskResponse,
 )
 from nexweave_contracts.semantic import (
@@ -176,6 +180,7 @@ from nexweave_contracts.source_events import (
     SourceVersionReadyEventData,
     SourceVersionSupersededEventData,
 )
+from nexweave_contracts.web_auth import OidcCodeExchange, WebAuthConfig, WebSessionResponse
 from nexweave_contracts.workflow import (
     WorkflowCommandRequest,
     WorkflowCommandResponse,
@@ -303,6 +308,13 @@ __all__ = [
     "ReviewPolicyResponse",
     "ReviewQualityStats",
     "ReviewTaskResponse",
+    "ReviewTargetResponse",
+    "ReviewTargetListResponse",
+    "RelationResponse",
+    "RelationListResponse",
+    "WebAuthConfig",
+    "OidcCodeExchange",
+    "WebSessionResponse",
     "RoleListResponse",
     "OrganizationListResponse",
     "ServiceIdentityCreate",

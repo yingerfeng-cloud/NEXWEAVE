@@ -1,7 +1,7 @@
 from functools import lru_cache
 from urllib.parse import urlsplit, urlunsplit
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from nexweave_contracts.runtime import IMPLEMENTATION_VERSION
@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     oidc_jwks_url: str = ""
     oidc_audience: str = "nexweave-api"
     oidc_algorithms: str = "RS256,ES256"
+    oidc_web_enabled: bool = False
+    oidc_authorization_endpoint: str = ""
+    oidc_token_endpoint: str = ""
+    oidc_end_session_endpoint: str = ""
+    oidc_client_id: str = ""
+    oidc_client_secret: SecretStr = SecretStr("")
+    public_web_url: str = ""
+    oidc_web_session_seconds: int = Field(default=3600, ge=300, le=86400)
     local_dev_identity_enabled: bool = False
     local_dev_signing_key: str = ""
     local_dev_subject: str = "local-admin"
@@ -67,6 +75,42 @@ class Settings(BaseSettings):
             raise ValueError("M3 requires the approved ClamAV malware scanner provider")
         if self.env != "development" and self.identity_provider != "oidc":
             raise ValueError("non-development environments require the OIDC identity provider")
+        if self.env != "development" and self.local_dev_identity_enabled:
+            raise ValueError("non-development environments prohibit development sessions")
+        if self.oidc_web_enabled:
+            if self.identity_provider != "oidc" or not all(
+                (
+                    self.oidc_authorization_endpoint,
+                    self.oidc_token_endpoint,
+                    self.oidc_client_id,
+                    self.public_web_url,
+                )
+            ):
+                raise ValueError(
+                    "OIDC Web requires authorization/token endpoints, client ID and public Web URL"
+                )
+            public = urlsplit(self.public_web_url)
+            if public.path not in {"", "/"} or public.query or public.fragment:
+                raise ValueError("public Web URL must be an origin with no query or path")
+            for endpoint in (
+                self.public_web_url,
+                self.oidc_authorization_endpoint,
+                self.oidc_token_endpoint,
+                self.oidc_end_session_endpoint,
+            ):
+                if not endpoint:
+                    continue
+                parsed = urlsplit(endpoint)
+                if not parsed.hostname or parsed.username or parsed.password or parsed.fragment:
+                    raise ValueError(
+                        "OIDC endpoints require absolute URLs without credentials or fragments"
+                    )
+                if parsed.scheme != "https" and not (
+                    self.env == "development"
+                    and parsed.scheme == "http"
+                    and parsed.hostname in {"localhost", "127.0.0.1", "::1"}
+                ):
+                    raise ValueError("OIDC Web endpoints require HTTPS except development loopback")
         if self.identity_provider == "oidc" and not (
             self.oidc_issuer and self.oidc_jwks_url and self.oidc_audience
         ):

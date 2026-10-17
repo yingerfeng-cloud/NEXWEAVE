@@ -19,6 +19,7 @@ from nexweave_domain import ScanStatus
 from nexweave_worker_parser.protocol import (
     PARSER_ID,
     PARSER_VERSION,
+    SUPPORTED_PARSER_VERSIONS,
     ParserPolicyError,
 )
 
@@ -89,7 +90,7 @@ class SourceActivities:
             _raise_activity_error(exc.code, exc.detail, retryable=False)
         if (
             context["parser_id"] != PARSER_ID
-            or context["parser_version"] != PARSER_VERSION
+            or context["parser_version"] not in SUPPORTED_PARSER_VERSIONS
             or capability.provider_id != PARSER_ID
             or capability.provider_version != PARSER_VERSION
         ):

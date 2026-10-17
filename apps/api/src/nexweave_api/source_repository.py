@@ -799,7 +799,7 @@ class SourceRepository(WorkflowRepository):
                     "correlation_id,trace_id,requested_by_actor_type,"
                     "created_at,created_by,updated_at,updated_by) VALUES "
                     "(:id,:tenant,:space,:source_version,:workflow,'QUEUED',1,'nexweave.parser.builtin',"
-                    "'1.0.0',CAST(:config AS jsonb),:config_checksum,'1.0','1.0',"
+                    "'1.0.1',CAST(:config AS jsonb),:config_checksum,'1.0','1.0',"
                     ":correlation,:trace,:actor_type,"
                     ":now,:actor,:now,:actor)"
                 ),
@@ -1178,10 +1178,10 @@ class SourceRepository(WorkflowRepository):
         idempotency_key: str,
         trace_id: str,
     ) -> JsonDict:
-        if (
-            payload["parser_id"] != "nexweave.parser.builtin"
-            or payload["parser_version"] != "1.0.0"
-        ):
+        if payload["parser_id"] != "nexweave.parser.builtin" or payload["parser_version"] not in {
+            "1.0.0",
+            "1.0.1",
+        }:
             raise ApiProblem(
                 422,
                 "PARSER_CAPABILITY_UNAVAILABLE",

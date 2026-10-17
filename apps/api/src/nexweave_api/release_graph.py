@@ -15,6 +15,35 @@ from nexweave_domain import Principal
 LEVEL = {"PUBLIC": 0, "INTERNAL": 1, "CONFIDENTIAL": 2, "HIGHLY_RESTRICTED": 3}
 
 
+async def visible_entities(
+    connection: AsyncConnection, principal: Principal, space_id: UUID, release_id: UUID
+) -> list[dict[str, Any]]:
+    rows = (
+        (
+            await connection.execute(
+                text(
+                    "SELECT object_id,snapshot FROM release_items WHERE tenant_id=:tenant "
+                    "AND release_id=:release AND object_type='ENTITY' "
+                    "ORDER BY object_id LIMIT 4001"
+                ),
+                {"tenant": principal.tenant_id, "release": release_id},
+            )
+        )
+        .mappings()
+        .all()
+    )
+    if len(rows) > 4000:
+        raise ApiProblem(
+            422, "GRAPH_BUDGET_EXCEEDED", "Graph budget exceeded", "Narrow the knowledge scope."
+        )
+    gate = DerivedReadGate(connection, principal, space_id)
+    return [
+        {k: row["snapshot"][k] for k in ("id", "type_key", "normalized_key", "display_name")}
+        for row in rows
+        if await gate.can_read("ENTITY", row["object_id"], dict(row["snapshot"]))
+    ]
+
+
 def traverse(
     nodes: dict[str, dict[str, Any]],
     edges: list[dict[str, Any]],

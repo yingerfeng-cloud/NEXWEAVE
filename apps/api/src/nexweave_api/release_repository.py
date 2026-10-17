@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from nexweave_api import query_engine
 from nexweave_api.derived_reads import DerivedReadGate
 from nexweave_api.errors import ApiProblem
+from nexweave_api.release_manifest import freeze_selected_entities, wiki_manifest_refs
 from nexweave_api.repository import JsonDict, _json_value
 from nexweave_api.review_repository import ReviewRepository
 from nexweave_domain import (
@@ -182,8 +183,15 @@ class ReleaseRepository(ReviewRepository):
         trace_id: str,
     ) -> JsonDict:
         suite_id, now = new_uuid7(), datetime.now(UTC)
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="quality.manage"
+        )
 
         async def mutation(connection: AsyncConnection) -> JsonDict:
+            gate = DerivedReadGate(connection, principal, space_id, self.record_denial)
+            for case in payload["cases"]:
+                for claim_id in case.get("expected_claim_ids", []):
+                    await gate.require("CLAIM", claim_id)
             schema = (
                 await connection.execute(
                     text(
@@ -243,7 +251,12 @@ class ReleaseRepository(ReviewRepository):
                         ],
                         "terms": list(item.get("expected_terms", [])),
                         "refusal": item.get("expect_refusal", False),
-                        "metadata": json.dumps(item.get("metadata", {})),
+                        "metadata": json.dumps(
+                            {
+                                **item.get("metadata", {}),
+                                "expected_refusal_reason": item.get("expected_refusal_reason"),
+                            }
+                        ),
                         "now": now,
                     },
                 )
@@ -274,7 +287,7 @@ class ReleaseRepository(ReviewRepository):
                 (
                     await connection.execute(
                         text(
-                            "SELECT case_key,case_type,question,expected_claim_ids,expected_terms,expect_refusal,metadata FROM evaluation_cases WHERE suite_id=:id ORDER BY case_key"
+                            "SELECT case_key,case_type,question,expected_claim_ids,expected_terms,expect_refusal,metadata,metadata->>'expected_refusal_reason' AS expected_refusal_reason FROM evaluation_cases WHERE suite_id=:id ORDER BY case_key"
                         ),
                         {"id": suite_id},
                     )
@@ -317,7 +330,7 @@ class ReleaseRepository(ReviewRepository):
                 (
                     await connection.execute(
                         text(
-                            "SELECT case_key,case_type,question,expected_claim_ids,expected_terms,expect_refusal,metadata FROM evaluation_cases WHERE suite_id=:id ORDER BY case_key"
+                            "SELECT case_key,case_type,question,expected_claim_ids,expected_terms,expect_refusal,metadata,metadata->>'expected_refusal_reason' AS expected_refusal_reason FROM evaluation_cases WHERE suite_id=:id ORDER BY case_key"
                         ),
                         {"id": suite_id},
                     )
@@ -325,6 +338,15 @@ class ReleaseRepository(ReviewRepository):
                 .mappings()
                 .all()
             )
+            principal = await self.principal_for_space(
+                principal=principal, space_id=UUID(str(suite["space_id"])), action="quality.read"
+            )
+            gate = DerivedReadGate(
+                connection, principal, UUID(str(suite["space_id"])), self.record_denial
+            )
+            for case in cases:
+                for claim_id in case["expected_claim_ids"]:
+                    await gate.require("CLAIM", claim_id)
         return _json_value({**suite, "cases": [dict(item) for item in cases]})
 
     async def list_evaluation_suites(
@@ -343,10 +365,16 @@ class ReleaseRepository(ReviewRepository):
                 .scalars()
                 .all()
             )
-        return [
-            await self.get_evaluation_suite(principal=principal, suite_id=UUID(str(value)))
-            for value in ids
-        ]
+        visible = []
+        for value in ids:
+            try:
+                visible.append(
+                    await self.get_evaluation_suite(principal=principal, suite_id=UUID(str(value)))
+                )
+            except ApiProblem as exc:
+                if exc.status != 404:
+                    raise
+        return visible
 
     async def create_release_candidate(
         self,
@@ -358,6 +386,9 @@ class ReleaseRepository(ReviewRepository):
         idempotency_key: str,
         trace_id: str,
     ) -> JsonDict:
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="release.create"
+        )
         try:
             validate_release_version(str(payload["version"]))
         except ReleaseRuleViolation as exc:
@@ -404,6 +435,10 @@ class ReleaseRepository(ReviewRepository):
                 "RELATION": sorted(set(payload.get("relation_ids", []))),
                 "WIKI_PAGE_VERSION": sorted(set(payload.get("wiki_page_version_ids", []))),
             }
+            gate = DerivedReadGate(connection, principal, space_id, self.record_denial)
+            for kind, object_ids in item_groups.items():
+                for object_id in object_ids:
+                    await gate.require(kind, object_id)
             manifest: dict[str, Any] = {
                 "version": payload["version"],
                 "schema_version_id": str(payload["schema_version_id"]),
@@ -433,12 +468,16 @@ class ReleaseRepository(ReviewRepository):
             evidence_rows, entity_ids, source_refs = await self._derive_manifest_refs(
                 connection, principal.tenant_id, space_id, item_groups
             )
+            wiki_entities, wiki_sources = await wiki_manifest_refs(
+                connection, principal.tenant_id, space_id, item_groups["WIKI_PAGE_VERSION"]
+            )
+            entity_ids.update(wiki_entities)
+            source_refs.extend(wiki_sources)
             manifest["evidence_ids"] = sorted(str(item["id"]) for item in evidence_rows)
             manifest["entity_ids"] = sorted(str(value) for value in entity_ids)
-            manifest["entity_snapshots"] = {
-                str(value): await self._object_snapshot(connection, "ENTITY", value)
-                for value in sorted(entity_ids, key=str)
-            }
+            manifest["entity_snapshots"] = await freeze_selected_entities(
+                connection, principal.tenant_id, space_id, entity_ids, item_groups
+            )
             manifest["source_refs"] = sorted(
                 source_refs, key=lambda item: (item["source_version_id"], item["source_anchor_id"])
             )
@@ -650,7 +689,33 @@ class ReleaseRepository(ReviewRepository):
 
     async def get_release_candidate(self, *, principal: Principal, candidate_id: UUID) -> JsonDict:
         async with self._database.engine.connect() as connection:
-            return await self._get_candidate(connection, principal.tenant_id, candidate_id)
+            row = await self._get_candidate(connection, principal.tenant_id, candidate_id)
+            principal = await self.principal_for_space(
+                principal=principal, space_id=UUID(row["space_id"]), action="release.read"
+            )
+            gate = DerivedReadGate(connection, principal, UUID(row["space_id"]))
+            manifest = row["manifest"]
+            refs = [(kind.upper(), i) for kind, ids in manifest["objects"].items() for i in ids]
+            refs += [("ENTITY", i) for i in manifest.get("entity_ids", [])]
+            refs += [("EVIDENCE", i) for i in manifest.get("evidence_ids", [])]
+            for kind, object_id in refs:
+                snapshot = (
+                    manifest.get("entity_snapshots", {}).get(str(object_id))
+                    if kind == "ENTITY"
+                    else None
+                )
+                if not await gate.can_read(kind, object_id, snapshot):
+                    return {
+                        **row,
+                        "manifest_visibility": "METADATA_ONLY",
+                        "manifest": {
+                            "view": "METADATA_ONLY",
+                            "notice": "完整候选清单包含当前不可读成员。",
+                        },
+                        "notes": "",
+                        "lint_findings": [],
+                    }
+            return {**row, "manifest_visibility": "FULL"}
 
     async def list_release_candidates(
         self, *, principal: Principal, space_id: UUID
@@ -668,10 +733,10 @@ class ReleaseRepository(ReviewRepository):
                 .scalars()
                 .all()
             )
-            return [
-                await self._get_candidate(connection, principal.tenant_id, UUID(str(value)))
-                for value in ids
-            ]
+        return [
+            await self.get_release_candidate(principal=principal, candidate_id=UUID(str(value)))
+            for value in ids
+        ]
 
     async def execute_release_validation(self, *, candidate_id: UUID, trace_id: str) -> JsonDict:
         now = datetime.now(UTC)
@@ -813,7 +878,7 @@ class ReleaseRepository(ReviewRepository):
                 (
                     await connection.execute(
                         text(
-                            "SELECT wp.schema_version_id,wv.status FROM wiki_page_versions wv JOIN wiki_pages wp ON wp.id=wv.wiki_page_id WHERE wv.id=:id"
+                            "SELECT wp.schema_version_id,wv.status,EXISTS (SELECT 1 FROM review_cases rc WHERE rc.target_type='WIKI_PAGE_VERSION' AND rc.target_id=wv.id AND rc.status='APPROVED') AS review_approved FROM wiki_page_versions wv JOIN wiki_pages wp ON wp.id=wv.wiki_page_id WHERE wv.id=:id"
                         ),
                         {"id": UUID(page_id)},
                     )
@@ -824,7 +889,7 @@ class ReleaseRepository(ReviewRepository):
             if (
                 row is None
                 or str(row["schema_version_id"]) != schema_id
-                or row["status"] != "APPROVED"
+                or (row["status"] != "APPROVED" and not row["review_approved"])
             ):
                 findings.append(
                     {
@@ -1001,11 +1066,13 @@ class ReleaseRepository(ReviewRepository):
                 or case["expect_refusal"]
             )
             terms = [str(t).casefold() for t in case["expected_terms"] if str(t).strip()]
+            refusal_reason = dict(case["metadata"]).get("expected_refusal_reason")
             valid_expectation = refusal_type or bool(expected or terms)
             passed = bool(
                 valid_expectation
                 and (
                     actual["status"] == "REFUSED"
+                    and (refusal_reason is None or actual["answer_reason"] == refusal_reason)
                     if refusal_type
                     else actual["status"] == "COMPLETED"
                     and bool(actual["citations"])
@@ -1033,10 +1100,14 @@ class ReleaseRepository(ReviewRepository):
                         {
                             "expected_claim_ids": sorted(expected),
                             "expected_terms": list(case["expected_terms"]),
+                            "question": case["question"],
                             "actual": actual,
                             "valid_expectation": valid_expectation,
                             "scoring": {
                                 "expected_refusal": bool(refusal_type),
+                                "expected_refusal_reason": refusal_reason,
+                                "refusal_reason_matches": refusal_reason is None
+                                or actual["answer_reason"] == refusal_reason,
                                 "expected_claims_retrieved": expected.issubset(
                                     {
                                         h["object_id"]
@@ -1277,18 +1348,36 @@ class ReleaseRepository(ReviewRepository):
             principal = await self.principal_for_space(
                 principal=principal, space_id=UUID(str(row["space_id"])), action="quality.read"
             )
-            scope, _, items = await self._query_scope(
-                connection, principal, row["target_type"], UUID(str(row["target_id"]))
-            )
-            if str(scope["space_id"]) != str(row["space_id"]):
-                raise ApiProblem(
-                    404, "RESOURCE_NOT_FOUND", "Scope unavailable", "Scope unavailable."
+            try:
+                await self.get_evaluation_suite(
+                    principal=principal, suite_id=UUID(str(row["suite_id"]))
                 )
-            gate = DerivedReadGate(
-                connection, principal, UUID(str(scope["space_id"])), self.record_denial
-            )
-            for item in items:
-                await gate.require(item["object_type"], item["object_id"], item["snapshot"])
+                scope, _, items = await self._query_scope(
+                    connection, principal, row["target_type"], UUID(str(row["target_id"]))
+                )
+                if str(scope["space_id"]) != str(row["space_id"]):
+                    raise ApiProblem(
+                        404, "RESOURCE_NOT_FOUND", "Scope unavailable", "Scope unavailable."
+                    )
+                gate = DerivedReadGate(
+                    connection, principal, UUID(str(scope["space_id"])), self.record_denial
+                )
+                for item in items:
+                    await gate.require(item["object_type"], item["object_id"], item["snapshot"])
+            except ApiProblem as exc:
+                if exc.status != 404:
+                    raise
+                return _json_value(
+                    {
+                        **row,
+                        "result_visibility": "METADATA_ONLY",
+                        "results": [],
+                        "metrics": {},
+                        "gate_passed": None,
+                        "retrieval_config": {},
+                        "error_code": "CURRENT_SCOPE_UNAVAILABLE",
+                    }
+                )
             results = (
                 (
                     await connection.execute(
@@ -1302,6 +1391,32 @@ class ReleaseRepository(ReviewRepository):
                 .all()
             )
         return _json_value({**row, "results": [dict(item) for item in results]})
+
+    async def list_evaluation_runs(self, *, principal: Principal, space_id: UUID) -> list[JsonDict]:
+        await self.principal_for_space(
+            principal=principal, space_id=space_id, action="quality.read"
+        )
+        async with self._database.engine.connect() as connection:
+            ids = (
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT id FROM evaluation_runs WHERE tenant_id=:tenant AND space_id=:space ORDER BY created_at DESC LIMIT 100"
+                        ),
+                        {"tenant": principal.tenant_id, "space": space_id},
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        visible = []
+        for run_id in ids:
+            try:
+                visible.append(await self.get_evaluation_run(principal=principal, run_id=run_id))
+            except ApiProblem as exc:
+                if exc.status != 404:
+                    raise
+        return visible
 
     async def record_release_approval(
         self,
@@ -2714,6 +2829,17 @@ class ReleaseRepository(ReviewRepository):
                 "uncertainty": "按当前权限与来源有效性重新核验；原始答案记录未修改。冲突需在有权限的冲突工作台另行核查。",
             }
         )
+
+    async def graph_entities(self, *, principal: Principal, release_id: UUID) -> list[JsonDict]:
+        from nexweave_api.release_graph import visible_entities
+
+        release = await self.get_release(principal=principal, release_id=release_id)
+        space_id = UUID(str(release["space_id"]))
+        principal = await self.principal_for_space(
+            principal=principal, space_id=space_id, action="graph.read"
+        )
+        async with self._database.engine.connect() as connection:
+            return await visible_entities(connection, principal, space_id, release_id)
 
     async def traverse_graph(
         self,

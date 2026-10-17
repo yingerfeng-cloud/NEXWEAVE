@@ -10,21 +10,11 @@ import { messageOf, NexweaveApi } from "./api";
 import {
   EmptyState,
   ErrorState,
-  GovernanceStepper,
   PageHeader,
   StatusPill,
   TechnicalDetails,
 } from "./design-system/ui";
-import type {
-  Claim,
-  EvaluationSuite,
-  GovernanceObject,
-  GraphTraverse,
-  KnowledgeRelease,
-  QueryAnswer,
-  ReleaseCandidate,
-  SchemaVersion,
-} from "./types";
+import type { GraphTraverse, KnowledgeRelease, QueryAnswer } from "./types";
 
 function failure(cause: unknown) {
   return messageOf(cause, "请求未能安全完成。");
@@ -83,336 +73,7 @@ function explainAnswer(answer: QueryAnswer): AnswerExplanation {
   );
 }
 
-export function QualityCenter({
-  api,
-  spaceId,
-}: {
-  api: NexweaveApi;
-  spaceId: string;
-}) {
-  const [suites, setSuites] = useState<EvaluationSuite[]>([]);
-  const [schemas, setSchemas] = useState<SchemaVersion[]>([]);
-  const [claims, setClaims] = useState<Claim[]>([]);
-  const [question, setQuestion] = useState(
-    "当前 Release 是否包含这条已审核主张？",
-  );
-  const [error, setError] = useState("");
-  const load = useCallback(async () => {
-    if (!spaceId) {
-      setSuites([]);
-      setSchemas([]);
-      setClaims([]);
-      setError("");
-      return;
-    }
-    try {
-      const [nextSuites, nextSchemas, nextClaims] = await Promise.all([
-        api.evaluationSuites(spaceId),
-        api.schemas(spaceId),
-        api.claims(spaceId),
-      ]);
-      setSuites(nextSuites);
-      setSchemas(
-        nextSchemas.items.filter((item) => item.status === "PUBLISHED"),
-      );
-      setClaims(nextClaims.items);
-      setError("");
-    } catch (cause) {
-      setError(failure(cause));
-    }
-  }, [api, spaceId]);
-  useEffect(() => void load(), [load]);
-
-  async function create(event: FormEvent) {
-    event.preventDefault();
-    const schema = schemas[0];
-    if (!schema) return;
-    try {
-      await api.createEvaluationSuite(spaceId, {
-        schema_version_id: schema.id,
-        suite_key: `space/quality-${Date.now()}`,
-        version: 1,
-        name: "Release regression gate",
-        minimum_pass_rate: 100,
-        cases: [
-          {
-            case_key: "approved-claim",
-            case_type: claims[0] ? "ANSWERABLE" : "INSUFFICIENT_EVIDENCE",
-            question,
-            expected_claim_ids: claims[0] ? [claims[0].id] : [],
-            expected_terms: [],
-            expect_refusal: !claims[0],
-            metadata: { created_from: "quality-center" },
-          },
-        ],
-      });
-      await load();
-    } catch (cause) {
-      setError(failure(cause));
-    }
-  }
-
-  return (
-    <section className="content-page">
-      <PageHeader
-        title="质量中心"
-        description="以标准问题集验证已审核知识，质量问题与门禁结果都可复查。"
-      />
-      <GovernanceStepper current="quality" />
-      {error && <ErrorState message={error} onRetry={load} />}
-      {!spaceId && (
-        <EmptyState
-          title="先选择知识空间"
-          description="质量问题集必须绑定到当前知识空间的已审核知识。"
-        />
-      )}
-      <form
-        className="data-card m7-form"
-        onSubmit={(event) => void create(event)}
-      >
-        <h2>新建回归问题集</h2>
-        <label>
-          验证问题
-          <input
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-          />
-        </label>
-        <button className="primary" type="submit" disabled={!schemas.length}>
-          以当前已审核知识创建
-        </button>
-      </form>
-      <div className="data-card">
-        <h2>问题集</h2>
-        {suites.map((suite) => (
-          <article className="list-row" key={suite.id}>
-            <strong>{suite.name}</strong>
-            <small>
-              {suite.suite_key} · v{suite.version} ·{" "}
-              <StatusPill value={suite.status} />
-            </small>
-            <span>
-              {suite.cases.length} 题 · 门槛 {suite.minimum_pass_rate}%
-            </span>
-          </article>
-        ))}
-        {!suites.length && (
-          <EmptyState
-            title="还没有质量问题集"
-            description="先准备已发布的知识模型和已审核主张，再创建第一组发布前验证问题。"
-          />
-        )}
-      </div>
-    </section>
-  );
-}
-
-export function ReleaseCenter({
-  api,
-  spaceId,
-}: {
-  api: NexweaveApi;
-  spaceId: string;
-}) {
-  const [candidates, setCandidates] = useState<ReleaseCandidate[]>([]);
-  const [releases, setReleases] = useState<KnowledgeRelease[]>([]);
-  const [suites, setSuites] = useState<EvaluationSuite[]>([]);
-  const [schemas, setSchemas] = useState<SchemaVersion[]>([]);
-  const [claims, setClaims] = useState<Claim[]>([]);
-  const [prompts, setPrompts] = useState<GovernanceObject[]>([]);
-  const [models, setModels] = useState<GovernanceObject[]>([]);
-  const [version, setVersion] = useState("1.0.0");
-  const [error, setError] = useState("");
-  const [publishing, setPublishing] = useState("");
-  const load = useCallback(async () => {
-    if (!spaceId) {
-      setCandidates([]);
-      setReleases([]);
-      setSuites([]);
-      setSchemas([]);
-      setClaims([]);
-      setPrompts([]);
-      setModels([]);
-      setError("");
-      return;
-    }
-    try {
-      const [
-        nextCandidates,
-        nextReleases,
-        nextSuites,
-        nextSchemas,
-        nextClaims,
-        nextPrompts,
-        nextModels,
-      ] = await Promise.all([
-        api.releaseCandidates(spaceId),
-        api.releases(spaceId),
-        api.evaluationSuites(spaceId),
-        api.schemas(spaceId),
-        api.claims(spaceId),
-        api.listGovernance("prompt-versions"),
-        api.listGovernance("model-profiles"),
-      ]);
-      setCandidates(nextCandidates.items);
-      setReleases(nextReleases.items);
-      setSuites(nextSuites);
-      setSchemas(
-        nextSchemas.items.filter((item) => item.status === "PUBLISHED"),
-      );
-      setClaims(nextClaims.items);
-      setPrompts(nextPrompts.items);
-      setModels(nextModels.items);
-      setError("");
-    } catch (cause) {
-      setError(failure(cause));
-    }
-  }, [api, spaceId]);
-  useEffect(() => void load(), [load]);
-
-  async function create(event: FormEvent) {
-    event.preventDefault();
-    if (
-      !schemas[0] ||
-      !suites[0] ||
-      !prompts[0] ||
-      !models[0] ||
-      !claims.length
-    )
-      return;
-    try {
-      await api.createReleaseCandidate(spaceId, {
-        version,
-        schema_version_id: schemas[0].id,
-        prompt_version_id: prompts[0].id,
-        model_profile_id: models[0].id,
-        evaluation_suite_id: suites[0].id,
-        claim_ids: claims.map((item) => item.id),
-        relation_ids: [],
-        wiki_page_version_ids: [],
-        index_config: {
-          version: "m7-r1",
-          fusion: "rrf",
-          vector_dimensions: 16,
-        },
-        notes: "Created from Release Center",
-      });
-      await load();
-    } catch (cause) {
-      setError(failure(cause));
-    }
-  }
-
-  async function publish(candidate: ReleaseCandidate) {
-    if (publishing) return;
-    setPublishing(candidate.id);
-    try {
-      await api.publishReleaseCandidate(
-        candidate.id,
-        "Release Center Publisher approval",
-      );
-      await load();
-    } catch (cause) {
-      setError(failure(cause));
-    } finally {
-      setPublishing("");
-    }
-  }
-
-  return (
-    <section className="content-page">
-      <PageHeader
-        title="发布中心"
-        description="创建发布候选，完成质量校验与独立审批后，生成不可变知识版本。"
-      />
-      <GovernanceStepper current="releases" />
-      {error && <ErrorState message={error} onRetry={load} />}
-      {!spaceId && (
-        <EmptyState
-          title="先选择知识空间"
-          description="发布候选必须绑定到当前知识空间的模型、质量门禁与已审核主张。"
-        />
-      )}
-      <form
-        className="data-card m7-form"
-        onSubmit={(event) => void create(event)}
-      >
-        <h2>创建发布候选</h2>
-        <label>
-          SemVer
-          <input
-            value={version}
-            onChange={(event) => setVersion(event.target.value)}
-          />
-        </label>
-        <button
-          className="primary"
-          type="submit"
-          disabled={!claims.length || !suites.length}
-        >
-          固定已审核知识
-        </button>
-      </form>
-      <div className="m7-grid">
-        <div className="data-card">
-          <h2>候选与门禁</h2>
-          {candidates.map((item) => (
-            <article className="list-row" key={item.id}>
-              <strong>{item.version}</strong>
-              <StatusPill value={item.status} />
-              <span className="release-gate-readable">
-                {releaseGateSummary(item.gate_summary)}
-              </span>
-              <TechnicalDetails>
-                <code>{item.manifest_checksum}</code>
-                <pre>{JSON.stringify(item.gate_summary, null, 2)}</pre>
-              </TechnicalDetails>
-              {item.status === "PENDING_APPROVAL" && (
-                <button
-                  type="button"
-                  disabled={Boolean(publishing)}
-                  onClick={() => void publish(item)}
-                >
-                  {publishing === item.id ? "发布中…" : "批准并发布"}
-                </button>
-              )}
-            </article>
-          ))}
-          {!candidates.length && (
-            <EmptyState
-              title="还没有发布候选"
-              description="质量问题集、知识模型与已审核主张准备完成后，可在上方创建候选版本。"
-            />
-          )}
-        </div>
-        <div className="data-card">
-          <h2>不可变历史</h2>
-          {releases.map((item) => (
-            <article className="list-row" key={item.id}>
-              <strong>{item.version}</strong>
-              <small>
-                <StatusPill value={item.status} /> ·{" "}
-                {new Date(item.published_at).toLocaleString()}
-              </small>
-              <span className="release-gate-readable">
-                {releaseGateSummary(item.gate_summary)}
-              </span>
-              <TechnicalDetails>
-                <code>{item.manifest_checksum}</code>
-              </TechnicalDetails>
-            </article>
-          ))}
-          {!releases.length && (
-            <EmptyState
-              title="还没有正式发布"
-              description="候选版本通过质量门禁并获得独立审批后，会进入不可变历史。"
-            />
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
+export { QualityCenter, ReleaseCenter } from "./QualityReleaseForms";
 
 export function AskCenter({
   api,
@@ -426,6 +87,9 @@ export function AskCenter({
   const [releases, setReleases] = useState<KnowledgeRelease[]>([]);
   const [releaseId, setReleaseId] = useState("");
   const [question, setQuestion] = useState("");
+  const [strategy, setStrategy] = useState("HYBRID");
+  const [predicateFilter, setPredicateFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
   const [answer, setAnswer] = useState<QueryAnswer | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -480,9 +144,16 @@ export function AskCenter({
     try {
       const result = await api.askRelease(releaseId, {
         question: question.trim(),
-        strategy: "HYBRID",
+        strategy,
         top_k: 5,
-        filters: {},
+        filters: {
+          ...(predicateFilter.trim()
+            ? { predicate_key: predicateFilter.trim() }
+            : {}),
+          ...(subjectFilter.trim()
+            ? { subject_entity_id: subjectFilter.trim() }
+            : {}),
+        },
         client_request_id: crypto.randomUUID(),
       });
       if (epoch === requestEpoch.current) setAnswer(result);
@@ -533,6 +204,53 @@ export function AskCenter({
         </label>
         <span>查询范围：当前知识空间 · 已发布知识</span>
       </div>
+      <details className="data-card">
+        <summary>检索策略与属性筛选</summary>
+        <label>
+          查询策略
+          <select
+            value={strategy}
+            onChange={(e) => {
+              requestEpoch.current += 1;
+              pending.current = false;
+              setBusy(false);
+              setAnswer(null);
+              setStrategy(e.target.value);
+            }}
+          >
+            <option value="HYBRID">混合检索</option>
+            <option value="KEYWORD">关键词</option>
+            <option value="SEMANTIC">语义检索（需真实模型配置）</option>
+            <option value="ATTRIBUTE">按属性筛选（须填写至少一项）</option>
+          </select>
+        </label>
+        <label>
+          主张属性 predicate_key
+          <input
+            value={predicateFilter}
+            onChange={(e) => {
+              requestEpoch.current += 1;
+              pending.current = false;
+              setBusy(false);
+              setAnswer(null);
+              setPredicateFilter(e.target.value);
+            }}
+          />
+        </label>
+        <label>
+          对象 subject_entity_id（UUID）
+          <input
+            value={subjectFilter}
+            onChange={(e) => {
+              requestEpoch.current += 1;
+              pending.current = false;
+              setBusy(false);
+              setAnswer(null);
+              setSubjectFilter(e.target.value);
+            }}
+          />
+        </label>
+      </details>
       <div className="ask-workspace">
         <div className="ask-conversation">
           {!answer ? (
@@ -702,25 +420,6 @@ function sourcePreviewPath(versionId: string, anchorId: string) {
   return `/source-versions/${encodeURIComponent(versionId)}/preview?${new URLSearchParams({ anchor_id: anchorId })}`;
 }
 
-function releaseGateSummary(summary: Record<string, unknown> | undefined) {
-  if (!summary) return "发布时已记录质量门禁";
-  const evaluation =
-    summary.evaluation_passed === true ? "评测通过" : "评测待核查";
-  const traceability =
-    typeof summary.traceability_percent === "number"
-      ? `可追溯 ${summary.traceability_percent}%`
-      : "可追溯性待核查";
-  const schema =
-    typeof summary.schema_compliance_percent === "number"
-      ? `Schema ${summary.schema_compliance_percent}%`
-      : "Schema 合规待核查";
-  const conflicts =
-    typeof summary.unresolved_blocking_conflicts === "number"
-      ? `阻断冲突 ${summary.unresolved_blocking_conflicts}`
-      : "阻断冲突待核查";
-  return `${evaluation} · ${traceability} · ${schema} · ${conflicts}`;
-}
-
 export function GraphCenter({
   api,
   spaceId,
@@ -733,6 +432,9 @@ export function GraphCenter({
   const [releases, setReleases] = useState<KnowledgeRelease[]>([]);
   const [releaseId, setReleaseId] = useState("");
   const [start, setStart] = useState("");
+  const [entities, setEntities] = useState<
+    Array<{ id: string; display_name: string; type_key: string }>
+  >([]);
   const [graph, setGraph] = useState<GraphTraverse | null>(null);
   const [error, setError] = useState("");
   const epoch = useRef(0);
@@ -754,6 +456,23 @@ export function GraphCenter({
     setError("");
     setBusy(false);
   }
+  useEffect(() => {
+    let active = true;
+    setEntities([]);
+    setStart("");
+    if (!releaseId) return;
+    void api
+      .graphEntities(releaseId)
+      .then((result) => {
+        if (active) setEntities(result.items);
+      })
+      .catch((cause) => {
+        if (active) setError(failure(cause));
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, releaseId]);
   useEffect(() => {
     const requests = epoch;
     let active = true;
@@ -836,6 +555,23 @@ export function GraphCenter({
           </select>
         </label>
         <label>
+          选择已发布实体
+          <select
+            value={start}
+            onChange={(event) => {
+              resetGraph();
+              setStart(event.target.value);
+            }}
+          >
+            <option value="">请选择当前可见的冻结实体</option>
+            {entities.map((entity) => (
+              <option key={entity.id} value={entity.id}>
+                {entity.display_name} · {entity.type_key}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
           起点实体
           <input
             value={start}
@@ -859,6 +595,14 @@ export function GraphCenter({
           <h2>
             {graph.nodes.length} 节点 · {graph.edges.length} 关系
           </h2>
+          <ul>
+            {graph.nodes.map((node) => (
+              <li key={String(node.id)}>
+                {String(node.display_name ?? node.id)} ·{" "}
+                {String(node.type_key ?? "实体")}
+              </li>
+            ))}
+          </ul>
           {graph.truncated && (
             <p role="status">
               结果已达到显示上限，仅展示部分关系，请缩小查询范围。

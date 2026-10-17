@@ -113,6 +113,15 @@
       "title": "Manifest Checksum",
       "type": "string"
     },
+    "manifest_visibility": {
+      "default": "FULL",
+      "enum": [
+        "FULL",
+        "METADATA_ONLY"
+      ],
+      "title": "Manifest Visibility",
+      "type": "string"
+    },
     "model_profile_id": {
       "format": "uuid7",
       "title": "Model Profile Id",

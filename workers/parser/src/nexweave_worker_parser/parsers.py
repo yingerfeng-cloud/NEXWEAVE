@@ -470,7 +470,14 @@ def _parse_markdown(content: bytes, builder: _Builder) -> None:
 
 def _parse_text(content: bytes, builder: _Builder) -> None:
     text = _decode_text(content)
-    paragraphs = re.finditer(r"\S(?:.*?\S)?(?=\n\s*\n|\Z)", text, flags=re.DOTALL)
+    # Keep frozen 1.0.0 jobs reproducible; corrected jobs include trailing whitespace
+    # in the boundary lookahead without moving the source UTF-8 byte offsets.
+    pattern = (
+        r"\S(?:.*?\S)?(?=\n\s*\n|\Z)"
+        if builder.request.parser_version == "1.0.0"
+        else r"\S(?:.*?\S)?(?=\n[ \t\r]*\n|\s*\Z)"
+    )
+    paragraphs = re.finditer(pattern, text, flags=re.DOTALL)
     for index, match in enumerate(paragraphs):
         value = _normalize_text(match.group(0))
         if value:

@@ -23,6 +23,7 @@ class EvaluationCaseInput(ContractModel):
     expected_claim_ids: tuple[UUID7, ...] = ()
     expected_terms: tuple[str, ...] = ()
     expect_refusal: bool = False
+    expected_refusal_reason: Literal["NO_MATCHING_KNOWLEDGE", "EVIDENCE_UNAVAILABLE"] | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -36,6 +37,8 @@ class EvaluationCaseInput(ContractModel):
             raise ValueError("questions and expected terms must be nonblank")
         if not refusal and not (self.expected_claim_ids or self.expected_terms):
             raise ValueError("answerable cases require expected claims or answer terms")
+        if self.expected_refusal_reason is not None and not refusal:
+            raise ValueError("refusal reasons apply only to refusal cases")
         return self
 
 
@@ -46,6 +49,12 @@ class EvaluationSuiteCreate(ContractModel):
     name: str = Field(min_length=1, max_length=255)
     cases: tuple[EvaluationCaseInput, ...] = Field(min_length=1, max_length=500)
     minimum_pass_rate: int = Field(default=100, ge=0, le=100)
+
+    @model_validator(mode="after")
+    def unique_case_keys(self) -> "EvaluationSuiteCreate":
+        if len({case.case_key for case in self.cases}) != len(self.cases):
+            raise ValueError("evaluation case keys must be unique")
+        return self
 
 
 class EvaluationSuiteResponse(EvaluationSuiteCreate):
@@ -64,6 +73,23 @@ class EvaluationRunCreate(ContractModel):
     retrieval_strategy: Literal["KEYWORD", "ATTRIBUTE", "SEMANTIC", "HYBRID"] = "HYBRID"
     retrieval_config: dict[str, Any] = Field(default_factory=dict)
 
+    @model_validator(mode="before")
+    @classmethod
+    def supported_retrieval_config(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        config = value.get("retrieval_config", {})
+        if not isinstance(config, dict) or set(config) - {"top_k", "filters"}:
+            raise ValueError("evaluation retrieval config supports top_k and filters only")
+        # Validate the same strategy/filter contract, without executing a question.
+        checked = QueryCreate(
+            question="configuration validation",
+            client_request_id="configuration",
+            strategy=value.get("retrieval_strategy", "HYBRID"),
+            **config,
+        )
+        return {**value, "retrieval_config": {"top_k": checked.top_k, "filters": checked.filters}}
+
 
 class EvaluationCaseResult(ContractModel):
     case_key: str
@@ -76,6 +102,7 @@ class EvaluationCaseResult(ContractModel):
 
 
 class EvaluationRunResponse(ContractModel):
+    result_visibility: Literal["FULL", "METADATA_ONLY"] = "FULL"
     id: UUID7
     tenant_id: UUID7
     space_id: UUID7
@@ -90,6 +117,7 @@ class EvaluationRunResponse(ContractModel):
     status: str
     metrics: dict[str, Any]
     gate_passed: bool | None = None
+    error_code: str | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
     created_at: datetime
@@ -128,6 +156,7 @@ class LintFindingResponse(ContractModel):
 
 
 class ReleaseCandidateResponse(ContractModel):
+    manifest_visibility: Literal["FULL", "METADATA_ONLY"] = "FULL"
     id: UUID7
     tenant_id: UUID7
     space_id: UUID7
@@ -212,7 +241,7 @@ class QueryCreate(ContractModel):
     question: str = Field(min_length=1, max_length=4000, pattern=r"\S")
     strategy: Literal["KEYWORD", "ATTRIBUTE", "SEMANTIC", "HYBRID"] = "HYBRID"
     filters: dict[str, Any] = Field(default_factory=dict)
-    top_k: int = Field(default=5, ge=1, le=20)
+    top_k: int = Field(default=5, ge=1, le=20, strict=True)
     client_request_id: str = Field(min_length=1, max_length=128)
 
     @model_validator(mode="after")
@@ -290,6 +319,17 @@ class GraphEdgeResponse(ContractModel):
     target_entity_id: UUID7
     depth: int
     evidence_ids: tuple[UUID7, ...] = ()
+
+
+class GraphNodeResponse(ContractModel):
+    id: UUID7
+    type_key: str
+    normalized_key: str
+    display_name: str
+
+
+class GraphEntityListResponse(ContractModel):
+    items: tuple[GraphNodeResponse, ...]
 
 
 class GraphTraverseResponse(ContractModel):

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import hashlib
+import hmac
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
@@ -88,9 +91,9 @@ class OidcIdentityProvider:
         self._issuer = settings.oidc_issuer
         self._audience = settings.oidc_audience
         self._algorithms = [item.strip() for item in settings.oidc_algorithms.split(",")]
-        self._jwks = PyJWKClient(settings.oidc_jwks_url, cache_keys=True)
+        self._jwks = PyJWKClient(settings.oidc_jwks_url, cache_keys=False, lifespan=300)
 
-    async def verify(self, token: str) -> Principal:
+    async def _access_claims(self, token: str) -> dict[str, Any]:
         try:
             signing_key = await asyncio.to_thread(self._jwks.get_signing_key_from_jwt, token)
             claims = jwt.decode(
@@ -103,4 +106,43 @@ class OidcIdentityProvider:
             )
         except jwt.PyJWTError as exc:
             raise AuthenticationFailed("The OIDC token is invalid or expired.") from exc
-        return _principal_from_claims(claims)
+        return claims
+
+    async def verify(self, token: str) -> Principal:
+        return _principal_from_claims(await self._access_claims(token))
+
+    async def verify_browser_tokens(
+        self, *, id_token: str, access_token: str, nonce: str, client_id: str
+    ) -> tuple[Principal, int]:
+        """OIDC Core 3.1.3.7, in addition to the API access-token checks."""
+        try:
+            key = await asyncio.to_thread(self._jwks.get_signing_key_from_jwt, id_token)
+            claims = jwt.decode(
+                id_token,
+                key.key,
+                algorithms=self._algorithms,
+                audience=client_id,
+                issuer=self._issuer,
+                options={"require": ["exp", "iat", "iss", "sub", "aud", "nonce"]},
+            )
+            if not hmac.compare_digest(str(claims["nonce"]), nonce):
+                raise AuthenticationFailed("OIDC login nonce did not match.")
+            audiences = _audience_tuple(claims["aud"])
+            if (len(audiences) > 1 and claims.get("azp") != client_id) or claims.get(
+                "azp", client_id
+            ) != client_id:
+                raise AuthenticationFailed("OIDC authorized party did not match.")
+            if "at_hash" in claims:
+                algorithm = str(jwt.get_unverified_header(id_token)["alg"])
+                digest = hashlib.new("sha" + algorithm[-3:], access_token.encode("ascii")).digest()
+                expected = base64.urlsafe_b64encode(digest[: len(digest) // 2]).decode().rstrip("=")
+                if not hmac.compare_digest(str(claims["at_hash"]), expected):
+                    raise AuthenticationFailed("OIDC access-token binding did not match.")
+            access_claims = await self._access_claims(access_token)
+            principal = _principal_from_claims(access_claims)
+            if principal.actor_type is not ActorType.USER or claims["sub"] != principal.subject:
+                raise AuthenticationFailed("OIDC login and API identities did not match.")
+            expires = min(int(access_claims["exp"]), int(claims["exp"]))
+            return principal, expires
+        except (jwt.PyJWTError, KeyError, TypeError, ValueError, UnicodeError) as exc:
+            raise AuthenticationFailed("The OIDC login response could not be verified.") from exc

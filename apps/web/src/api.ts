@@ -44,6 +44,10 @@ import type {
   Claim,
   ConflictCase,
   ReviewCase,
+  ReviewTarget,
+  ReviewPolicy,
+  Relation,
+  EvaluationRun,
   EvaluationSuite,
   GraphTraverse,
   KnowledgeRelease,
@@ -66,7 +70,7 @@ export class ApiError extends Error {
     readonly requestId?: string,
   ) {
     const kind = classifyError(status, code);
-    super(ERROR_MESSAGES[kind]);
+    super(ACTION_MESSAGES[code ?? ""] ?? ERROR_MESSAGES[kind]);
     this.name = "ApiError";
     this.kind = kind;
     this.rawMessage = rawMessage;
@@ -91,6 +95,17 @@ export type AppErrorKind =
   | "NETWORK_ERROR"
   | "SERVER_ERROR"
   | "UNKNOWN";
+
+const ACTION_MESSAGES: Record<string, string> = {
+  REVIEW_DUTY_SEPARATION:
+    "高风险审核要求独立批准人；内容原作者、实质编辑者和前序审核者不能终审。",
+  REVIEW_STAGE_ROLE_REQUIRED:
+    "当前审核阶段需要对应业务角色，请交由该阶段人员操作。",
+  REVIEW_VERSION_CHANGED: "被审正文已变化，请重新绑定当前版本并重审。",
+  REVIEW_VERSION_REQUIRED:
+    "此历史个案缺少权威被审版本，请重新绑定当前内容并重审。",
+  MODEL_PROVIDER_UNAVAILABLE: "所选模型服务不可用，请检查模型配置后重试。",
+};
 
 const ERROR_MESSAGES: Record<AppErrorKind, string> = {
   ACCESS_DENIED: "当前账号没有执行此操作的权限。",
@@ -144,6 +159,8 @@ export class NexweaveApi {
       headers.set("Content-Type", "application/json");
     const response = await fetch(`/api/v1${path}`, { ...init, headers });
     if (!response.ok) {
+      if (response.status === 401 && this.token)
+        window.dispatchEvent(new Event("nexweave:session-expired"));
       const problem = (await response.json().catch(() => ({}))) as {
         detail?: string;
         code?: string;
@@ -157,6 +174,22 @@ export class NexweaveApi {
       );
     }
     return (await response.json()) as T;
+  }
+
+  authConfig() {
+    return this.request<{
+      provider: "local" | "oidc";
+      issuer?: string | null;
+      login_enabled: boolean;
+      login_url: string | null;
+      logout_url: string | null;
+    }>("/auth/config");
+  }
+  exchangeOidc(code: string, state: string) {
+    return this.request<Session>("/auth/oidc/exchange", {
+      method: "POST",
+      body: JSON.stringify({ code, state }),
+    });
   }
 
   bindingEntities(spaceId: string) {
@@ -767,6 +800,49 @@ export class NexweaveApi {
     return this.request<ListResponse<Claim>>(`/spaces/${spaceId}/claims`);
   }
 
+  relations(spaceId: string) {
+    return this.request<ListResponse<Relation>>(`/spaces/${spaceId}/relations`);
+  }
+  reviewTargets(spaceId: string) {
+    return this.request<{ items: ReviewTarget[]; truncated: boolean }>(
+      `/spaces/${spaceId}/review-targets?limit=500`,
+    );
+  }
+  reviewPolicies(spaceId: string) {
+    return this.request<ReviewPolicy[]>(`/spaces/${spaceId}/review-policies`);
+  }
+  createReviewPolicy(spaceId: string, body: Record<string, unknown>) {
+    return this.request<ReviewPolicy>(`/spaces/${spaceId}/review-policies`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+  createReviewCase(spaceId: string, body: Record<string, unknown>) {
+    return this.request<ReviewCase>(`/spaces/${spaceId}/review-cases`, {
+      method: "POST",
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      body: JSON.stringify(body),
+    });
+  }
+  restartReview(caseId: string, reason: string) {
+    return this.request<ReviewCase>(`/review-cases/${caseId}/restart`, {
+      method: "POST",
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      body: JSON.stringify({ reason }),
+    });
+  }
+  detectConflicts(spaceId: string) {
+    return this.request<ListResponse<ConflictCase>>(
+      `/spaces/${spaceId}/conflicts/detect`,
+      { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } },
+    );
+  }
+  evidence(claimId: string) {
+    return this.request<
+      Array<{ id: string; stance: string; source_anchor_id: string }>
+    >(`/claims/${claimId}/evidence`);
+  }
+
   conflicts(spaceId: string) {
     return this.request<ListResponse<ConflictCase>>(
       `/spaces/${spaceId}/conflicts`,
@@ -797,7 +873,12 @@ export class NexweaveApi {
   reviewAction(
     reviewCase: ReviewCase,
     task: ReviewCase["tasks"][number],
-    body: { decision: string; reason: string },
+    body: {
+      decision: string;
+      reason: string;
+      change_set?: Record<string, unknown>;
+      assignee_id?: string;
+    },
   ) {
     return this.request<ReviewCase>(
       `/review-cases/${reviewCase.id}/tasks/${task.id}/actions`,
@@ -824,6 +905,23 @@ export class NexweaveApi {
         body: JSON.stringify(body),
       },
     );
+  }
+
+  evaluationRuns(spaceId: string) {
+    return this.request<EvaluationRun[]>(`/spaces/${spaceId}/evaluations/runs`);
+  }
+  evaluationRun(runId: string) {
+    return this.request<EvaluationRun>(`/evaluations/runs/${runId}`);
+  }
+  createEvaluationRun(spaceId: string, body: Record<string, unknown>) {
+    return this.request<EvaluationRun>(`/spaces/${spaceId}/evaluations/runs`, {
+      method: "POST",
+      headers: { "Idempotency-Key": crypto.randomUUID() },
+      body: JSON.stringify(body),
+    });
+  }
+  connectorSyncRun(runId: string) {
+    return this.request<ConnectorSyncRun>(`/connector-sync-runs/${runId}`);
   }
 
   releaseCandidates(spaceId: string) {
@@ -895,6 +993,12 @@ export class NexweaveApi {
     return this.request<GraphTraverse>(
       `/releases/${releaseId}/graph/traverse?${query}`,
     );
+  }
+
+  graphEntities(releaseId: string) {
+    return this.request<{
+      items: Array<{ id: string; display_name: string; type_key: string }>;
+    }>(`/releases/${releaseId}/graph/entities`);
   }
 
   invalidateSourceVersion(

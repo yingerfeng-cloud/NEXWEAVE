@@ -51,8 +51,8 @@ async def test_platform_endpoints_report_current_implementation() -> None:
     assert live.status_code == 200
     assert ready.status_code == 200
     assert version.json()["milestone"] == "M9.5"
-    assert version.json()["phase"] == "R1_REVIEW_A"
-    assert version.json()["implementation_version"] == "0.9.5-r1fix-a1"
+    assert version.json()["phase"] == "R1_REVIEW_B"
+    assert version.json()["implementation_version"] == "0.9.5-r1fix-b1"
     assert "local@" not in str(diagnostics.json())
     assert missing_business_route.status_code == 404
     assert probe.closed is True

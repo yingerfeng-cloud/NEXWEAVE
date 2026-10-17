@@ -8,7 +8,8 @@ from nexweave_contracts import ParserCapability
 from nexweave_domain import BlockType
 
 PARSER_ID = "nexweave.parser.builtin"
-PARSER_VERSION = "1.0.0"
+PARSER_VERSION = "1.0.1"
+SUPPORTED_PARSER_VERSIONS = ("1.0.0", PARSER_VERSION)
 DOCUMENT_MODEL_VERSION = "1.0"
 LOCATOR_VERSION = "1.0"
 SUPPORTED_TYPES = {

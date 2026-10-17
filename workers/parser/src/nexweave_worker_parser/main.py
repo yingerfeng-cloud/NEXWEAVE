@@ -51,7 +51,7 @@ async def run() -> None:
         extra={
             "namespace": settings.temporal_namespace,
             "activity_task_queue": settings.temporal_parser_activity_task_queue,
-            "parser_provider": "nexweave.parser.builtin/1.0.0",
+            "parser_provider": "nexweave.parser.builtin/1.0.1",
             "malware_scanner": "clamav",
         },
     )

@@ -275,6 +275,7 @@ async def verify_m5_schema(database_url: str, *, expected_present: bool) -> None
                 "0010_m95",
                 "0011_m95a",
                 "0012_r1_review",
+                "0013_r1_wiki",
             }
         ):
             raise RuntimeError(
@@ -320,7 +321,15 @@ async def verify_m6_schema(database_url: str, *, expected_present: bool) -> None
             tables != M6_TABLES
             or triggers != M6_TRIGGERS
             or head
-            not in {"0007_m6", "0008_m7", "0009_m8", "0010_m95", "0011_m95a", "0012_r1_review"}
+            not in {
+                "0007_m6",
+                "0008_m7",
+                "0009_m8",
+                "0010_m95",
+                "0011_m95a",
+                "0012_r1_review",
+                "0013_r1_wiki",
+            }
         ):
             raise RuntimeError(
                 f"M6 schema verification failed: tables={sorted(tables)}, "
@@ -370,7 +379,8 @@ async def verify_m7_schema(database_url: str, *, expected_present: bool) -> None
         if expected_present and (
             tables != M7_TABLES
             or triggers != M7_TRIGGERS
-            or head not in {"0008_m7", "0009_m8", "0010_m95", "0011_m95a", "0012_r1_review"}
+            or head
+            not in {"0008_m7", "0009_m8", "0010_m95", "0011_m95a", "0012_r1_review", "0013_r1_wiki"}
             or vector_columns != 1
         ):
             raise RuntimeError(
@@ -404,7 +414,7 @@ async def verify_m8_schema(database_url: str, *, expected_present: bool) -> None
             head = await connection.scalar(text("SELECT version_num FROM alembic_version"))
         if expected_present and (
             tables != M8_TABLES
-            or head not in {"0009_m8", "0010_m95", "0011_m95a", "0012_r1_review"}
+            or head not in {"0009_m8", "0010_m95", "0011_m95a", "0012_r1_review", "0013_r1_wiki"}
         ):
             raise RuntimeError(
                 f"M8 schema verification failed: tables={sorted(tables)}, head={head}"
@@ -594,6 +604,17 @@ async def main() -> None:
         tenant_id, source_id = await seed_legacy_data(disposable_url)
         await verify_m95a_schema(disposable_url, True)
         await verify_r1_review_schema(disposable_url, True)
+        review_engine = create_async_engine(disposable_url)
+        async with review_engine.connect() as connection:
+            constraint = await connection.scalar(
+                text(
+                    "SELECT pg_get_constraintdef(oid) FROM pg_constraint "
+                    "WHERE conname='ck_review_cases_target'"
+                )
+            )
+            if not constraint or "WIKI_PAGE_VERSION" not in constraint:
+                raise RuntimeError("Wiki version review target constraint missing")
+        await review_engine.dispose()
         run(disposable_url, "downgrade", "0011_m95a")
         await verify_r1_review_schema(disposable_url, False)
         run(disposable_url, "upgrade", "head")

@@ -515,6 +515,26 @@ class WorkflowRepository(PlatformRepository):
                     "id": task_id,
                 },
             )
+            if (
+                not ignored
+                and row["workflow_type"] == "QUALITY_EVALUATION"
+                and status.value in {"FAILED", "TIMED_OUT", "REJECTED", "CANCELLED"}
+            ):
+                await connection.execute(
+                    text(
+                        "UPDATE evaluation_runs SET status=:status,gate_passed=false,completed_at=:now,error_code=:error, "
+                        "metrics=metrics || CAST(:metrics AS jsonb) WHERE workflow_task_id=:task AND status IN ('CREATED','RUNNING')"
+                    ),
+                    {
+                        "status": "CANCELED" if status.value == "CANCELLED" else "FAILED",
+                        "now": now,
+                        "task": task_id,
+                        "error": payload.get("error_code") or status.value,
+                        "metrics": json.dumps(
+                            {"execution_error_code": payload.get("error_code") or status.value}
+                        ),
+                    },
+                )
             if step_key and not ignored:
                 await connection.execute(
                     text(

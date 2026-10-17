@@ -1222,7 +1222,7 @@ function VersionDetailPage({
                           解析器版本
                           <input
                             name="parser_version"
-                            defaultValue="1.0.0"
+                            defaultValue="1.0.1"
                             required
                           />
                         </label>

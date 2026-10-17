@@ -31,6 +31,8 @@ async def system():
         pytest.skip("Set NEXWEAVE_REVIEW_DATABASE_URL to an isolated migrated PostgreSQL database")
     settings = Settings(
         database_url=url,
+        # Explicit unavailable dependency; not real Temporal acceptance.
+        temporal_endpoint="127.0.0.1:1",
         local_dev_identity_enabled=True,
         local_dev_signing_key="synthetic-r1-regression-signing-key-20261017",
     )
@@ -405,6 +407,10 @@ async def test_current_permission_and_dependency_gates_across_routes(system):
         response = await s.client.get(f"/api/v1/spaces/{s.space}/claims", headers=s.headers(actor))
         assert response.status_code == 200, response.text
         assert len(response.json()["items"]) == count
+        entities = await s.client.get(
+            f"/api/v1/releases/{s.release}/graph/entities", headers=s.headers(actor)
+        )
+        assert entities.status_code == 200 and len(entities.json()["items"]) == count
         response = await s.client.get(
             f"/api/v1/spaces/{s.space}/wiki/pages", headers=s.headers(actor)
         )
@@ -456,6 +462,202 @@ async def test_current_permission_and_dependency_gates_across_routes(system):
     assert graph.status_code == 404
     exported = await s.client.get(f"/api/v1/releases/{s.release}/export", headers=s.headers(high))
     assert exported.status_code == 404
+
+
+async def test_web_review_context_conflict_decision_and_candidate_metadata_are_guarded(system):
+    s = system
+    low = await s.user(["knowledge_engineer", "reviewer"], member_clearance="INTERNAL")
+    high = await s.user(["knowledge_engineer", "reviewer", "space_admin"])
+    for actor, count in [(low, 1), (high, 2)]:
+        result = await s.client.get(
+            f"/api/v1/spaces/{s.space}/review-targets", headers=s.headers(actor)
+        )
+        assert result.status_code == 200, result.text
+        assert len(result.json()["items"]) == count
+        assert all(
+            item["content"]["statement"] and item["evidence"][0]["source_version_id"]
+            for item in result.json()["items"]
+        )
+    hidden = await s.client.get(f"/api/v1/release-candidates/{s.candidate}", headers=s.headers(low))
+    assert hidden.status_code == 200 and hidden.json()["manifest_visibility"] == "METADATA_ONLY"
+    assert "Pump secret" not in hidden.text and str(s.objects[1]["claim"]) not in hidden.text
+    visible = await s.client.get(
+        f"/api/v1/release-candidates/{s.candidate}", headers=s.headers(high)
+    )
+    assert visible.status_code == 200 and visible.json()["manifest_visibility"] == "FULL"
+    conflict = await s.put(
+        "conflict_cases",
+        cluster_key="synthetic-web-case",
+        kind="CONTRADICTORY_CLAIM",
+        severity="BLOCKING",
+        blocking=True,
+        status="OPEN",
+        details={},
+    )
+    for side, target in zip(("A", "B"), s.objects, strict=True):
+        await s.put(
+            "conflict_items",
+            conflict_case_id=conflict,
+            side=side,
+            object_type="CLAIM_CANDIDATE",
+            object_id=target["candidate"],
+            evidence_snapshot={},
+        )
+    low_list = await s.client.get(f"/api/v1/spaces/{s.space}/conflicts", headers=s.headers(low))
+    assert low_list.status_code == 200 and not low_list.json()["items"]
+    high_list = await s.client.get(f"/api/v1/spaces/{s.space}/conflicts", headers=s.headers(high))
+    assert high_list.status_code == 200, high_list.text
+    sides = high_list.json()["items"][0]["items"]
+    assert [item["side"] for item in sides] == ["A", "B"] and all(
+        item["evidence"] for item in sides
+    )
+    path = f"/api/v1/conflicts/{conflict}/decisions"
+    bad = await s.client.post(
+        path,
+        headers=s.headers(high),
+        json={"resolution": "CONDITIONAL", "reason": "Reviewed", "conditions": {}},
+    )
+    assert bad.status_code == 422
+    reader = await s.user(["knowledge_engineer", "reviewer"])
+    unauthorized = await s.client.post(
+        path,
+        headers=s.headers(reader),
+        json={"resolution": "RETAIN_BOTH", "reason": "Reader cannot decide"},
+    )
+    assert unauthorized.status_code == 403
+    resolved = await s.client.post(
+        path,
+        headers=s.headers(high),
+        json={
+            "resolution": "CONDITIONAL",
+            "reason": "Different operating windows explain both values",
+            "conditions": {"applicability": "Use the matching operating window"},
+        },
+    )
+    assert resolved.status_code == 200 and resolved.json()["status"] == "RESOLVED", resolved.text
+    final = await s.client.get(f"/api/v1/spaces/{s.space}/conflicts", headers=s.headers(high))
+    assert final.json()["items"][0]["decisions"][0]["conditions"]["applicability"]
+
+
+async def test_expected_refusal_reason_is_executed_and_failed_workflow_is_terminal(system):
+    s = system
+    original = await s.repo.get_evaluation_suite(principal=s.admin, suite_id=s.suite)
+    suite = await s.repo.create_evaluation_suite(
+        principal=s.admin,
+        space_id=s.space,
+        payload={
+            "schema_version_id": original["schema_version_id"],
+            "suite_key": "review.io/refusal",
+            "version": 1,
+            "name": "Refusal reason contract",
+            "minimum_pass_rate": 100,
+            "cases": [
+                {
+                    "case_key": key,
+                    "case_type": "COUNTERFACTUAL",
+                    "question": "Absent Z999",
+                    "expect_refusal": True,
+                    "expected_refusal_reason": reason,
+                }
+                for key, reason in [
+                    ("missing-object", "NO_MATCHING_KNOWLEDGE"),
+                    ("wrong-condition", "EVIDENCE_UNAVAILABLE"),
+                ]
+            ],
+        },
+        idempotency_key=str(new_uuid7()),
+        trace_id="test",
+    )
+    assert suite["cases"][0]["expected_refusal_reason"] == "NO_MATCHING_KNOWLEDGE"
+    async with s.database.engine.begin() as c:
+        run = await s.repo._evaluate(
+            c,
+            tenant_id=s.admin.tenant_id,
+            space_id=s.space,
+            suite_id=UUID(suite["id"]),
+            target_type="RELEASE",
+            target_id=s.release,
+            strategy="KEYWORD",
+            config={},
+            actor_id=s.admin.actor_id,
+        )
+    assert run["metrics"]["pass_rate"] == 50 and run["gate_passed"] is False
+    detail = await s.client.get(f"/api/v1/evaluations/runs/{run['id']}", headers=s.headers(s.admin))
+    assert detail.status_code == 200
+    assert [r["passed"] for r in detail.json()["results"]] == [True, False]
+    task = await s.put(
+        "workflow_tasks",
+        workflow_type="QUALITY_EVALUATION",
+        business_key=str(new_uuid7()),
+        display_name="Synthetic failure",
+        workflow_id="failure-" + str(new_uuid7()),
+    )
+    failed = await s.put(
+        "evaluation_runs",
+        suite_id=s.suite,
+        suite_version=1,
+        target_type="RELEASE",
+        target_id=s.release,
+        workflow_task_id=task,
+        retrieval_strategy="KEYWORD",
+        retrieval_config={},
+        status="CREATED",
+    )
+    await s.repo.apply_projection_event(
+        {
+            "task_id": str(task),
+            "actor_id": str(s.admin.actor_id),
+            "run_id": "synthetic-failure-run",
+            "trace_id": "test",
+            "event_type": "RUN_FAILED",
+            "event_key": "failure",
+            "status": "FAILED",
+            "error_code": "SYNTHETIC_PROVIDER_UNAVAILABLE",
+            "message": "Synthetic terminal projection",
+        }
+    )
+    response = await s.client.get(f"/api/v1/evaluations/runs/{failed}", headers=s.headers(s.admin))
+    assert response.status_code == 200 and response.json()["status"] == "FAILED", response.text
+    assert response.json()["gate_passed"] is False
+    assert response.json()["metrics"]["execution_error_code"] == "SYNTHETIC_PROVIDER_UNAVAILABLE"
+    listing = await s.client.get(
+        f"/api/v1/spaces/{s.space}/evaluations/runs", headers=s.headers(s.admin)
+    )
+    assert listing.status_code == 200 and str(failed) in listing.text
+
+
+async def test_oidc_subject_requires_the_provisioned_issuer(system):
+    from nexweave_api.errors import AuthenticationFailed
+
+    s = system
+    with pytest.raises(AuthenticationFailed):
+        await s.repo.resolve_principal(s.engineer, issuer="https://external-iam.example.test")
+    verified = await s.repo.resolve_principal(s.engineer, issuer=LocalDevIdentityProvider.issuer)
+    assert verified.actor_id == s.engineer.actor_id
+
+
+async def test_browser_user_issuer_configuration_allows_real_development_login(system):
+    s = system
+    config = await s.client.get("/api/v1/auth/config")
+    assert config.status_code == 200 and config.json()["issuer"] == LocalDevIdentityProvider.issuer
+    for issuer, expected in [("local", 401), (config.json()["issuer"], 200)]:
+        subject = "browser-identity-" + str(new_uuid7())
+        created = await s.client.post(
+            "/api/v1/users",
+            headers=s.headers(s.admin),
+            json={
+                "issuer": issuer,
+                "subject": subject,
+                "display_name": "Synthetic UI identity regression",
+                "clearance": "INTERNAL",
+                "tenant_roles": [],
+            },
+        )
+        assert created.status_code == 200, created.text
+        logged_in = await s.client.post("/api/v1/auth/dev/session", json={"subject": subject})
+        assert logged_in.status_code == expected
+        if expected == 200:
+            assert logged_in.json()["principal"]["actor_id"] == created.json()["id"]
 
 
 async def test_evaluation_executes_same_question_and_source_gate_as_query(system):
@@ -554,6 +756,16 @@ async def test_evaluation_executes_same_question_and_source_gate_as_query(system
     assert response.status_code == 201, response.text
     assert (await ask("Pump public"))["status"] == "REFUSED"
     assert not (await evaluate())["gate_passed"]
+    historical_evaluation = await s.client.get(
+        f"/api/v1/evaluations/runs/{positive_run['id']}", headers=s.headers(s.admin)
+    )
+    assert historical_evaluation.status_code == 200, historical_evaluation.text
+    assert historical_evaluation.json()["result_visibility"] == "METADATA_ONLY"
+    assert (
+        not historical_evaluation.json()["results"]
+        and historical_evaluation.json()["gate_passed"] is None
+    )
+    assert "Pump public" not in historical_evaluation.text
     response = await s.client.get(
         f"/api/v1/query-answers/{control['id']}", headers=s.headers(s.admin)
     )
@@ -725,6 +937,20 @@ async def test_high_risk_real_author_stage_roles_material_edit_and_delivery(syst
                 text("SELECT statement FROM claims WHERE candidate_id=:id"), {"id": target}
             )
         ).scalar_one()
+        denials = (
+            (
+                await c.execute(
+                    text(
+                        "SELECT metadata->>'reason' FROM audit_logs WHERE resource_id=:id "
+                        "AND action='review.act' AND outcome='DENIED'"
+                    ),
+                    {"id": UUID(case["id"])},
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert denials.count("REVIEW_DUTY_SEPARATION") == 2
         pending = (
             await c.execute(
                 text(
@@ -1140,6 +1366,12 @@ async def test_graph_relation_keeps_all_source_dependencies_after_invalidation(s
         for anchor, stance in zip(anchors, ["SUPPORTS", "OPPOSES"], strict=True)
     ]
     manifest = dict(fixed["manifest"])
+    listed_relations = await s.client.get(
+        f"/api/v1/spaces/{s.space}/relations", headers=s.headers(s.admin)
+    )
+    assert listed_relations.status_code == 200, listed_relations.text
+    assert listed_relations.json()["items"][0]["id"] == str(relation)
+    assert "valid_until" in listed_relations.json()["items"][0]
     manifest["objects"]["relation"] = [str(relation)]
     manifest["entity_ids"].append(str(target))
     manifest["evidence_ids"] += [str(i) for i in evidence]
@@ -1213,3 +1445,169 @@ async def test_graph_relation_keeps_all_source_dependencies_after_invalidation(s
     assert invalidated.status_code == 201, invalidated.text
     # The lower supporting source alone must not expose the compound relation.
     assert not (await graph(low))["edges"] and not (await graph(high))["edges"]
+
+
+async def test_immutable_wiki_version_has_real_independent_review_and_release_gate(system):
+    s = system
+    original = s.objects[0]
+    async with s.database.engine.connect() as c:
+        row = dict(
+            (
+                await c.execute(
+                    text("SELECT * FROM wiki_page_versions WHERE id=:id"),
+                    {"id": original["page_version"]},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    async with s.database.engine.begin() as c:
+        await c.execute(
+            text(
+                "UPDATE source_versions SET active_parse_job_id=(SELECT parse_job_id "
+                "FROM source_anchors WHERE source_version_id=:source LIMIT 1) "
+                "WHERE id=:source"
+            ),
+            {"source": original["source"]},
+        )
+    author = await s.user(["knowledge_engineer", "publisher"])
+    row.update(
+        id=new_uuid7(),
+        revision=2,
+        status="AI_DRAFT",
+        created_by=author.actor_id,
+        markdown="# Pump public\n\nTemperature is 70 degC.",
+        content_checksum="sha256:" + "c" * 64,
+    )
+    version_id = await s.put("wiki_page_versions", **row)
+    engineer = await s.user(["knowledge_engineer"])
+    expert = await s.user(["reviewer"])
+    approver = await s.user(["publisher"])
+    policy = await s.client.post(
+        f"/api/v1/spaces/{s.space}/review-policies",
+        headers=s.headers(s.admin),
+        json={
+            "risk_level": "HIGH",
+            "stages": ["ENGINEERING", "EXPERT", "APPROVAL"],
+            "timeout_seconds": 3600,
+        },
+    )
+    assert policy.status_code == 201, policy.text
+    response = await s.client.post(
+        f"/api/v1/spaces/{s.space}/review-cases",
+        headers=s.headers(engineer),
+        json={
+            "target_type": "WIKI_PAGE_VERSION",
+            "target_id": str(version_id),
+            "policy_id": policy.json()["id"],
+            "risk_level": "HIGH",
+            "reason": "Review complete immutable page against source context",
+        },
+    )
+    assert response.status_code == 202, response.text
+    case = response.json()
+    assert case["target_context"]["content"]["markdown"] == row["markdown"]
+    assert case["target_context"]["evidence"]
+
+    async def act(actor):
+        nonlocal case
+        task = next(t for t in case["tasks"] if t["stage"] == case["current_stage"])
+        r = await s.client.post(
+            f"/api/v1/review-cases/{case['id']}/tasks/{task['id']}/actions",
+            headers=s.headers(actor),
+            json={"decision": "ACCEPT", "reason": "Checked all page sections and current anchors"},
+        )
+        if r.status_code == 200:
+            case = r.json()
+        return r
+
+    assert (await act(expert)).status_code == 403
+    assert (await act(engineer)).status_code == 200
+    assert (await act(expert)).status_code == 200
+    denied = await act(author)
+    assert denied.status_code == 409 and denied.json()["code"] == "REVIEW_DUTY_SEPARATION"
+    assert (await act(approver)).status_code == 200
+    assert case["status"] == "APPROVED"
+    async with s.database.engine.connect() as c:
+        unchanged = (
+            (
+                await c.execute(
+                    text(
+                        "SELECT status,markdown,content_checksum FROM wiki_page_versions "
+                        "WHERE id=:id"
+                    ),
+                    {"id": version_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+        assert unchanged["status"] == "AI_DRAFT" and unchanged["markdown"] == row["markdown"]
+        fixed = dict(
+            (
+                await c.execute(
+                    text("SELECT * FROM release_candidates WHERE id=:id"), {"id": s.candidate}
+                )
+            )
+            .mappings()
+            .one()
+        )
+    manifest = dict(fixed["manifest"])
+    manifest["objects"] = {**manifest["objects"], "wiki_page_version": [str(version_id)]}
+    manifest["source_refs"] = [{"source_version_id": str(original["source"])}]
+    fixed["id"], fixed["manifest"] = s.candidate, manifest
+    async with s.database.engine.begin() as c:
+        findings = await s.repo._lint_candidate(c, fixed)
+        assert not any(f["code"] == "PAGE_NOT_APPROVED" for f in findings)
+    # A fresh version requires its own case, even when the previous version passed.
+    unreviewed = await s.put(
+        "wiki_page_versions",
+        **{**row, "id": new_uuid7(), "revision": 3, "content_checksum": "sha256:" + "d" * 64},
+    )
+    fixed["id"] = s.candidate
+    fixed["manifest"]["objects"]["wiki_page_version"] = [str(unreviewed)]
+    async with s.database.engine.begin() as c:
+        findings = await s.repo._lint_candidate(c, fixed)
+        assert any(f["code"] == "PAGE_NOT_APPROVED" for f in findings)
+
+
+async def test_manifest_entity_version_comes_from_selected_content_not_unselected_compile(system):
+    from nexweave_api.derived_reads import DerivedReadGate
+    from nexweave_api.release_manifest import freeze_selected_entities
+
+    s = system
+    selected, unselected = s.objects
+    replacement = await s.put(
+        "knowledge_entity_versions",
+        entity_id=selected["entity"],
+        compile_job_id=unselected["job"],
+        revision=2,
+        provenance={},
+        content_checksum="sha256:" + "e" * 64,
+    )
+    async with s.database.engine.begin() as c:
+        expected = await c.scalar(
+            text("SELECT current_version_id FROM knowledge_entities WHERE id=:id"),
+            {"id": selected["entity"]},
+        )
+        await c.execute(
+            text("UPDATE knowledge_entities SET current_version_id=:v WHERE id=:id"),
+            {"v": replacement, "id": selected["entity"]},
+        )
+    reader = await s.user(["consumer"], member_clearance="INTERNAL")
+    reader = await s.repo.principal_for_space(
+        principal=reader, space_id=s.space, action="query.release"
+    )
+    async with s.database.engine.connect() as c:
+        frozen = await freeze_selected_entities(
+            c,
+            s.admin.tenant_id,
+            s.space,
+            {selected["entity"]},
+            {"CLAIM": [selected["claim"]], "RELATION": [], "WIKI_PAGE_VERSION": []},
+        )
+        snapshot = frozen[str(selected["entity"])]
+        assert snapshot["current_version_id"] == str(expected)
+        gate = DerivedReadGate(c, reader, s.space)
+        assert not await gate.can_read("ENTITY", selected["entity"])
+        assert await gate.can_read("ENTITY", selected["entity"], snapshot)

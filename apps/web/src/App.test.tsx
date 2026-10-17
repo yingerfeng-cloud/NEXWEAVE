@@ -36,7 +36,9 @@ test("authenticates through the development identity provider and opens the M2 s
   render(<App />);
 
   expect(screen.getByRole("heading", { name: "进入平台" })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "验证身份并进入" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "验证身份并进入" }),
+  );
 
   await waitFor(() =>
     expect(
@@ -210,14 +212,26 @@ test("guards platform administration for a least-privilege consumer", async () =
 });
 
 test("shows a retryable authentication error instead of blanking the application", async () => {
-  vi.spyOn(globalThis, "fetch").mockResolvedValue(
-    new Response(
-      JSON.stringify({ code: "AUTHENTICATION_REQUIRED", detail: "身份不可用" }),
-      { status: 401 },
-    ),
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (input) =>
+    String(input).endsWith("/auth/config")
+      ? json({
+          provider: "local",
+          login_enabled: true,
+          login_url: null,
+          logout_url: null,
+        })
+      : new Response(
+          JSON.stringify({
+            code: "AUTHENTICATION_REQUIRED",
+            detail: "身份不可用",
+          }),
+          { status: 401 },
+        ),
   );
   render(<App />);
-  fireEvent.click(screen.getByRole("button", { name: "验证身份并进入" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "验证身份并进入" }),
+  );
 
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "当前账号没有执行此操作的权限",
@@ -254,6 +268,13 @@ test("retries a failed audit projection without losing the authenticated shell",
 
 async function mockApi(input: RequestInfo | URL, init?: RequestInit) {
   const url = String(input);
+  if (url.endsWith("/auth/config"))
+    return json({
+      provider: "local",
+      login_enabled: true,
+      login_url: null,
+      logout_url: null,
+    });
   if (url.endsWith("/auth/dev/session") && init?.method === "POST") {
     return json({
       access_token: "test-token",

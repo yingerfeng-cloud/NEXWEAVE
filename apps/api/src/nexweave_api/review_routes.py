@@ -7,8 +7,9 @@ from hashlib import sha256
 from typing import cast
 from uuid import UUID
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Query, Request, status
 
+from nexweave_api.errors import ApiProblem
 from nexweave_api.m1_routes import IdempotencyKey, PrincipalDependency, _trace_id
 from nexweave_api.review_delivery import ReviewDelivery
 from nexweave_api.review_repository import ReviewRepository
@@ -27,7 +28,11 @@ from nexweave_contracts import (
     ReviewPolicyResponse,
     ReviewQualityStats,
 )
-from nexweave_contracts.review import ReviewRestartCreate
+from nexweave_contracts.review import (
+    RelationListResponse,
+    ReviewRestartCreate,
+    ReviewTargetListResponse,
+)
 from nexweave_domain import WorkflowType
 
 router = APIRouter(prefix="/api/v1", tags=["claims", "conflicts", "reviews"])
@@ -90,6 +95,29 @@ async def list_claims(
     )
     return ClaimListResponse.model_validate(
         {"items": await repository.list_claims(principal=principal, space_id=space_id)}
+    )
+
+
+@router.get("/spaces/{space_id}/relations", response_model=RelationListResponse)
+async def list_relations(
+    request: Request, space_id: UUID, principal: PrincipalDependency
+) -> RelationListResponse:
+    return RelationListResponse.model_validate(
+        {"items": await _repository(request).list_relations(principal=principal, space_id=space_id)}
+    )
+
+
+@router.get("/spaces/{space_id}/review-targets", response_model=ReviewTargetListResponse)
+async def review_targets(
+    request: Request,
+    space_id: UUID,
+    principal: PrincipalDependency,
+    limit: int = Query(default=100, ge=1, le=500),
+) -> ReviewTargetListResponse:
+    return ReviewTargetListResponse.model_validate(
+        await _repository(request).list_review_targets(
+            principal=principal, space_id=space_id, limit=limit
+        )
     )
 
 
@@ -216,13 +244,28 @@ async def act_on_review(
         action="review.act",
         trace_id=_trace_id(request),
     )
-    updated = await repository.act_on_review(
-        principal=principal,
-        case_id=case_id,
-        task_id=task_id,
-        payload=body.model_dump(mode="json"),
-        trace_id=_trace_id(request),
-    )
+    try:
+        updated = await repository.act_on_review(
+            principal=principal,
+            case_id=case_id,
+            task_id=task_id,
+            payload=body.model_dump(mode="json"),
+            trace_id=_trace_id(request),
+        )
+    except ApiProblem as exc:
+        if exc.code in {"REVIEW_DUTY_SEPARATION", "REVIEW_STAGE_ROLE_REQUIRED"}:
+            # The rejected action transaction has rolled back; preserve the denial
+            # separately without persisting a claimed task or successful action.
+            await repository.record_denial(
+                principal=principal,
+                action="review.act",
+                resource_type="ReviewCase",
+                resource_id=case_id,
+                space_id=UUID(str(current["space_id"])),
+                trace_id=_trace_id(request),
+                reason=exc.code,
+            )
+        raise
     await ReviewDelivery(repository, _gateway(request)).deliver(case_id)
     updated = await repository.get_review_case(principal=principal, case_id=case_id)
     return ReviewCaseResponse.model_validate(updated)

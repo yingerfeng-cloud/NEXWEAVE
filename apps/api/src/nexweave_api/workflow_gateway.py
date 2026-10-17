@@ -24,10 +24,15 @@ class TemporalWorkflowGateway:
 
     async def connect(self) -> None:
         if self._client is None:
-            self._client = await Client.connect(
-                self._settings.temporal_endpoint,
-                namespace=self._settings.temporal_namespace,
-            )
+            try:
+                self._client = await Client.connect(
+                    self._settings.temporal_endpoint,
+                    namespace=self._settings.temporal_namespace,
+                )
+            except Exception as exc:
+                # Connect failures also use the provider-neutral dependency error;
+                # committed durable deliveries remain pending for recovery.
+                raise _temporal_problem(exc) from exc
 
     async def close(self) -> None:
         self._client = None

@@ -1,0 +1,59 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "issuer": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Issuer"
+    },
+    "login_enabled": {
+      "title": "Login Enabled",
+      "type": "boolean"
+    },
+    "login_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Login Url"
+    },
+    "logout_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Logout Url"
+    },
+    "provider": {
+      "enum": [
+        "local",
+        "oidc"
+      ],
+      "title": "Provider",
+      "type": "string"
+    }
+  },
+  "required": [
+    "provider",
+    "login_enabled"
+  ],
+  "title": "WebAuthConfig",
+  "type": "object"
+}

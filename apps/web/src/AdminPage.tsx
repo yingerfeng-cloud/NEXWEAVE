@@ -42,6 +42,7 @@ export function AdminPage({
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [identityIssuer, setIdentityIssuer] = useState("");
   const savingRef = useRef(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -78,6 +79,21 @@ export function AdminPage({
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => {
+    if (!creating || tab !== "users") return;
+    let active = true;
+    void api
+      .authConfig()
+      .then((config) => {
+        if (active) setIdentityIssuer(config.issuer ?? "");
+      })
+      .catch((cause) => {
+        if (active) setError(messageOf(cause));
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, creating, tab]);
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -207,7 +223,9 @@ export function AdminPage({
         >
           {error && <ErrorState message={error} onRetry={load} />}
           <fieldset className="modal-fields" disabled={saving}>
-            {tab === "users" && <CreateUserForm onSubmit={create} />}
+            {tab === "users" && (
+              <CreateUserForm onSubmit={create} issuer={identityIssuer} />
+            )}
             {tab === "models" && <CreateModelForm onSubmit={create} />}
             {tab === "prompts" && <CreatePromptForm onSubmit={create} />}
             {tab === "connectors" && <CreateConnectorForm onSubmit={create} />}
@@ -228,15 +246,17 @@ export function AdminPage({
 
 function CreateUserForm({
   onSubmit,
+  issuer,
 }: {
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  issuer: string;
 }) {
   return (
     <Panel title="创建用户">
       <form className="inline-form" onSubmit={onSubmit}>
         <label>
           身份来源
-          <input name="issuer" defaultValue="local" required />
+          <input name="issuer" value={issuer} readOnly required />
         </label>
         <label>
           账号标识
@@ -246,7 +266,7 @@ function CreateUserForm({
           显示名称
           <input name="display_name" placeholder="显示名称" required />
         </label>
-        <button className="primary" type="submit">
+        <button className="primary" type="submit" disabled={!issuer}>
           创建
         </button>
       </form>

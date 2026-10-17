@@ -385,7 +385,7 @@ class ImportBatchResponse(ContractModel):
 
 class ReparseRequest(ContractModel):
     parser_id: str = Field(default="nexweave.parser.builtin", min_length=1, max_length=128)
-    parser_version: str = Field(default="1.0.0", min_length=1, max_length=64)
+    parser_version: str = Field(default="1.0.1", min_length=1, max_length=64)
     config: ParserConfig = Field(default_factory=ParserConfig)
     ocr_provider_id: str | None = Field(default=None, max_length=128)
     ocr_provider_version: str | None = Field(default=None, max_length=64)

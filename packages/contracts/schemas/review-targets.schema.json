@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "ReviewTargetResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "additionalProperties": true,
+          "title": "Content",
+          "type": "object"
+        },
+        "entity_labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Entity Labels",
+          "type": "object"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "id": {
+          "format": "uuid7",
+          "title": "Id",
+          "type": "string"
+        },
+        "open_review_case_id": {
+          "anyOf": [
+            {
+              "format": "uuid7",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Open Review Case Id"
+        },
+        "target_type": {
+          "enum": [
+            "CLAIM_CANDIDATE",
+            "RELATION_CANDIDATE",
+            "SEMANTIC_PROPOSAL",
+            "WIKI_PAGE_VERSION"
+          ],
+          "title": "Target Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "target_type",
+        "content"
+      ],
+      "title": "ReviewTargetResponse",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "items": {
+        "$ref": "#/$defs/ReviewTargetResponse"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "truncated": {
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "items"
+  ],
+  "title": "ReviewTargetListResponse",
+  "type": "object"
+}

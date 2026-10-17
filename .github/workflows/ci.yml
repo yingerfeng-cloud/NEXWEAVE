@@ -96,7 +96,8 @@ jobs:
           trap - EXIT
           python scripts/verify_m9_pack.py
           NEXWEAVE_REVIEW_DATABASE_URL="$(python -c 'from scripts.verify_m1 import environment; from urllib.parse import urlsplit,urlunsplit; p=urlsplit(environment()["NEXWEAVE_DATABASE_URL"]); print(urlunsplit(p._replace(netloc=p.netloc.replace("@postgres:","@127.0.0.1:"))))')" \
-            python -m pytest -q apps/api/tests/test_r1_review_database.py -m integration
+          NEXWEAVE_TEST_REDIS_URL=redis://127.0.0.1:6379/7 \
+            python -m pytest -q apps/api/tests/test_r1_review_database.py apps/api/tests/test_r1_web_auth.py -m integration
           NEXWEAVE_TEMPORAL_TEST_ENDPOINT=127.0.0.1:7233 \
             NEXWEAVE_TEMPORAL_TEST_NAMESPACE=nexweave-dev \
             python -m pytest -q workers/kernel/tests/test_m4_pack_workflow.py -m integration

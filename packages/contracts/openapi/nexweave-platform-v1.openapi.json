@@ -1408,6 +1408,15 @@
             ],
             "title": "Created By"
           },
+          "decisions": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Decisions",
+            "type": "array"
+          },
           "details": {
             "additionalProperties": true,
             "title": "Details",
@@ -1417,6 +1426,15 @@
             "format": "uuid7",
             "title": "Id",
             "type": "string"
+          },
+          "items": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Items",
+            "type": "array"
           },
           "kind": {
             "title": "Kind",
@@ -3055,6 +3073,21 @@
             "title": "Expected Claim Ids",
             "type": "array"
           },
+          "expected_refusal_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "NO_MATCHING_KNOWLEDGE",
+                  "EVIDENCE_UNAVAILABLE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Refusal Reason"
+          },
           "expected_terms": {
             "default": [],
             "items": {
@@ -3208,6 +3241,17 @@
             "title": "Created By",
             "type": "string"
           },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
           "gate_passed": {
             "anyOf": [
               {
@@ -3228,6 +3272,15 @@
             "additionalProperties": true,
             "title": "Metrics",
             "type": "object"
+          },
+          "result_visibility": {
+            "default": "FULL",
+            "enum": [
+              "FULL",
+              "METADATA_ONLY"
+            ],
+            "title": "Result Visibility",
+            "type": "string"
           },
           "results": {
             "default": [],
@@ -4305,6 +4358,53 @@
           "depth"
         ],
         "title": "GraphEdgeResponse",
+        "type": "object"
+      },
+      "GraphEntityListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GraphNodeResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "GraphEntityListResponse",
+        "type": "object"
+      },
+      "GraphNodeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "normalized_key": {
+            "title": "Normalized Key",
+            "type": "string"
+          },
+          "type_key": {
+            "title": "Type Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type_key",
+          "normalized_key",
+          "display_name"
+        ],
+        "title": "GraphNodeResponse",
         "type": "object"
       },
       "GraphTraverseResponse": {
@@ -5461,6 +5561,30 @@
         "title": "ObsidianImportResponse",
         "type": "object"
       },
+      "OidcCodeExchange": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "state": {
+            "maxLength": 128,
+            "minLength": 43,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "state"
+        ],
+        "title": "OidcCodeExchange",
+        "type": "object"
+      },
       "OrganizationListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -6591,6 +6715,131 @@
         "title": "ReadinessReport",
         "type": "object"
       },
+      "RelationListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RelationResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "RelationListResponse",
+        "type": "object"
+      },
+      "RelationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {
+            "format": "uuid7",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid7",
+            "title": "Created By",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_causal": {
+            "title": "Is Causal",
+            "type": "boolean"
+          },
+          "provenance": {
+            "additionalProperties": true,
+            "title": "Provenance",
+            "type": "object"
+          },
+          "relation_type_key": {
+            "title": "Relation Type Key",
+            "type": "string"
+          },
+          "schema_version_id": {
+            "format": "uuid7",
+            "title": "Schema Version Id",
+            "type": "string"
+          },
+          "source_entity_id": {
+            "format": "uuid7",
+            "title": "Source Entity Id",
+            "type": "string"
+          },
+          "space_id": {
+            "format": "uuid7",
+            "title": "Space Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "target_entity_id": {
+            "format": "uuid7",
+            "title": "Target Entity Id",
+            "type": "string"
+          },
+          "tenant_id": {
+            "format": "uuid7",
+            "title": "Tenant Id",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "id",
+          "tenant_id",
+          "space_id",
+          "candidate_id",
+          "schema_version_id",
+          "relation_type_key",
+          "source_entity_id",
+          "target_entity_id",
+          "is_causal",
+          "status",
+          "provenance",
+          "created_at",
+          "created_by"
+        ],
+        "title": "RelationResponse",
+        "type": "object"
+      },
       "RelationTypeDeclaration": {
         "additionalProperties": false,
         "properties": {
@@ -6818,6 +7067,15 @@
           },
           "manifest_checksum": {
             "title": "Manifest Checksum",
+            "type": "string"
+          },
+          "manifest_visibility": {
+            "default": "FULL",
+            "enum": [
+              "FULL",
+              "METADATA_ONLY"
+            ],
+            "title": "Manifest Visibility",
             "type": "string"
           },
           "model_profile_id": {
@@ -7218,7 +7476,7 @@
             "type": "string"
           },
           "parser_version": {
-            "default": "1.0.0",
+            "default": "1.0.1",
             "maxLength": 64,
             "minLength": 1,
             "title": "Parser Version",
@@ -7348,7 +7606,8 @@
             "enum": [
               "CLAIM_CANDIDATE",
               "RELATION_CANDIDATE",
-              "SEMANTIC_PROPOSAL"
+              "SEMANTIC_PROPOSAL",
+              "WIKI_PAGE_VERSION"
             ],
             "title": "Target Type",
             "type": "string"
@@ -7384,6 +7643,22 @@
       "ReviewCaseResponse": {
         "additionalProperties": false,
         "properties": {
+          "actions": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "actor_labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Actor Labels",
+            "type": "object"
+          },
           "content_revisions": {
             "default": [],
             "items": {
@@ -7440,6 +7715,11 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "target_context": {
+            "additionalProperties": true,
+            "title": "Target Context",
+            "type": "object"
           },
           "target_id": {
             "format": "uuid7",
@@ -7731,6 +8011,88 @@
           "reason"
         ],
         "title": "ReviewRestartCreate",
+        "type": "object"
+      },
+      "ReviewTargetListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewTargetResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ReviewTargetListResponse",
+        "type": "object"
+      },
+      "ReviewTargetResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "additionalProperties": true,
+            "title": "Content",
+            "type": "object"
+          },
+          "entity_labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Entity Labels",
+            "type": "object"
+          },
+          "evidence": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "open_review_case_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Review Case Id"
+          },
+          "target_type": {
+            "enum": [
+              "CLAIM_CANDIDATE",
+              "RELATION_CANDIDATE",
+              "SEMANTIC_PROPOSAL",
+              "WIKI_PAGE_VERSION"
+            ],
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target_type",
+          "content"
+        ],
+        "title": "ReviewTargetResponse",
         "type": "object"
       },
       "ReviewTaskResponse": {
@@ -9781,6 +10143,93 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "WebAuthConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "login_enabled": {
+            "title": "Login Enabled",
+            "type": "boolean"
+          },
+          "login_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Login Url"
+          },
+          "logout_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logout Url"
+          },
+          "provider": {
+            "enum": [
+              "local",
+              "oidc"
+            ],
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "login_enabled"
+        ],
+        "title": "WebAuthConfig",
+        "type": "object"
+      },
+      "WebSessionResponse": {
+        "additionalProperties": false,
+        "description": "Short-lived user access token from the configured external identity provider.",
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_in": {
+            "exclusiveMinimum": 0.0,
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "principal": {
+            "$ref": "#/components/schemas/PrincipalResponse"
+          },
+          "token_type": {
+            "const": "Bearer",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in",
+          "principal"
+        ],
+        "title": "WebSessionResponse",
+        "type": "object"
+      },
       "WikiCommentCreate": {
         "additionalProperties": false,
         "properties": {
@@ -11017,9 +11466,9 @@
     }
   },
   "info": {
-    "description": "R1 trusted knowledge with M9.5 Stage D trusted-read consolidation.",
+    "description": "R1 trusted knowledge with current authorization and auditable Web operations.",
     "title": "NEXWEAVE Platform API",
-    "version": "0.9.5-r1fix-a1"
+    "version": "0.9.5-r1fix-b1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -11147,6 +11596,27 @@
         "summary": "List Audit Logs",
         "tags": [
           "administration"
+        ]
+      }
+    },
+    "/api/v1/auth/config": {
+      "get": {
+        "operationId": "configuration_api_v1_auth_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebAuthConfig"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Configuration",
+        "tags": [
+          "authentication"
         ]
       }
     },
@@ -11344,6 +11814,85 @@
         "summary": "Get Me",
         "tags": [
           "identity"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/exchange": {
+      "post": {
+        "operationId": "exchange_api_v1_auth_oidc_exchange_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OidcCodeExchange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Exchange",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/login": {
+      "get": {
+        "operationId": "start_login_api_v1_auth_oidc_login_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Start Login",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/logout": {
+      "get": {
+        "operationId": "logout_api_v1_auth_oidc_logout_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "authentication"
         ]
       }
     },
@@ -14618,6 +15167,57 @@
           }
         ],
         "summary": "Export Release",
+        "tags": [
+          "quality",
+          "releases",
+          "graph",
+          "query"
+        ]
+      }
+    },
+    "/api/v1/releases/{release_id}/graph/entities": {
+      "get": {
+        "operationId": "graph_entities_api_v1_releases__release_id__graph_entities_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "release_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Release Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphEntityListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Graph Entities",
         "tags": [
           "quality",
           "releases",
@@ -20147,6 +20747,59 @@
       }
     },
     "/api/v1/spaces/{space_id}/evaluations/runs": {
+      "get": {
+        "operationId": "list_evaluations_api_v1_spaces__space_id__evaluations_runs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EvaluationRunResponse"
+                  },
+                  "title": "Response List Evaluations Api V1 Spaces  Space Id  Evaluations Runs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "List Evaluations",
+        "tags": [
+          "quality",
+          "releases",
+          "graph",
+          "query"
+        ]
+      },
       "post": {
         "operationId": "create_evaluation_api_v1_spaces__space_id__evaluations_runs_post",
         "parameters": [
@@ -20983,6 +21636,56 @@
         ]
       }
     },
+    "/api/v1/spaces/{space_id}/relations": {
+      "get": {
+        "operationId": "list_relations_api_v1_spaces__space_id__relations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "List Relations",
+        "tags": [
+          "claims",
+          "conflicts",
+          "reviews"
+        ]
+      }
+    },
     "/api/v1/spaces/{space_id}/release-candidates": {
       "get": {
         "operationId": "list_candidates_api_v1_spaces__space_id__release_candidates_get",
@@ -21571,6 +22274,68 @@
           }
         ],
         "summary": "Review Quality",
+        "tags": [
+          "claims",
+          "conflicts",
+          "reviews"
+        ]
+      }
+    },
+    "/api/v1/spaces/{space_id}/review-targets": {
+      "get": {
+        "operationId": "review_targets_api_v1_spaces__space_id__review_targets_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewTargetListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Review Targets",
         "tags": [
           "claims",
           "conflicts",

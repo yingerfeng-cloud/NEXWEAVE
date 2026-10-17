@@ -171,3 +171,35 @@ def test_ooxml_policy_rejects_archive_path_traversal() -> None:
 
     with pytest.raises(ParserPolicyError, match="path traversal"):
         _validate_ooxml(output.getvalue(), 1_024)
+
+
+@pytest.mark.parametrize("suffix", ["\n", "\r\n", "\n  ", ""])
+async def test_text_current_parser_keeps_last_paragraph_and_raw_byte_offsets(suffix: str) -> None:
+    content = ("甲段。\n\nPump A\nPump A is operational." + suffix).encode()
+    request = _request("last.txt", "text/plain", content).model_copy(
+        update={"parser_version": "1.0.1"}
+    )
+    result = await DocumentParserRegistry().parse(request=request, content=content)
+    assert result.status is ParseJobStatus.SUCCEEDED
+    assert [segment.normalized_text for segment in result.segments] == [
+        "甲段。",
+        "Pump A Pump A is operational.",
+    ]
+    locator = next(
+        loc for loc in result.segments[-1].locators if isinstance(loc, CharacterRangeLocator)
+    )
+    assert content[locator.start : locator.end].decode() == "Pump A\nPump A is operational."
+    assert locator.start == len("甲段。\n\n".encode())
+
+
+async def test_text_single_paragraph_trailing_newline_and_legacy_replay() -> None:
+    content = b"Pump A\nPump A is operational.\n"
+    legacy = _request("single.txt", "text/plain", content)
+    previous = await DocumentParserRegistry().parse(request=legacy, content=content)
+    assert previous.status is ParseJobStatus.FAILED
+    corrected = await DocumentParserRegistry().parse(
+        request=legacy.model_copy(update={"parser_version": "1.0.1"}), content=content
+    )
+    assert corrected.status is ParseJobStatus.SUCCEEDED
+    assert len(corrected.segments) == len(corrected.anchors) == 1
+    assert corrected.segments[0].normalized_text == "Pump A Pump A is operational."

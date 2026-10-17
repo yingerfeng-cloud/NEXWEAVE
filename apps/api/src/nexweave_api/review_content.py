@@ -17,6 +17,7 @@ TABLES = {
     "CLAIM_CANDIDATE": "claim_candidates",
     "RELATION_CANDIDATE": "candidate_relations",
     "SEMANTIC_PROPOSAL": "semantic_change_proposals",
+    "WIKI_PAGE_VERSION": "wiki_page_versions",
 }
 
 

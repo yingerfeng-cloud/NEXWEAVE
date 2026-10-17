@@ -60,6 +60,28 @@ class ClaimListResponse(ContractModel):
     items: tuple[ClaimResponse, ...]
 
 
+class RelationResponse(ContractModel):
+    id: UUID7
+    tenant_id: UUID7
+    space_id: UUID7
+    candidate_id: UUID7
+    schema_version_id: UUID7
+    relation_type_key: str
+    source_entity_id: UUID7
+    target_entity_id: UUID7
+    is_causal: bool
+    valid_from: datetime | None = None
+    valid_until: datetime | None = None
+    status: str
+    provenance: dict[str, Any]
+    created_at: datetime
+    created_by: UUID7
+
+
+class RelationListResponse(ContractModel):
+    items: tuple[RelationResponse, ...]
+
+
 class EvidenceResponse(ContractModel):
     id: UUID7
     tenant_id: UUID7
@@ -82,6 +104,14 @@ class ConflictResolutionCreate(ContractModel):
     reason: str = Field(min_length=1, max_length=4000)
     conditions: dict[str, Any] = Field(default_factory=dict)
 
+    @model_validator(mode="after")
+    def substantive_resolution(self) -> "ConflictResolutionCreate":
+        if not self.reason.strip():
+            raise ValueError("a substantive resolution reason is required")
+        if self.resolution == "CONDITIONAL" and not self.conditions:
+            raise ValueError("conditional resolutions require explicit conditions")
+        return self
+
 
 class ConflictResponse(ContractModel):
     id: UUID7
@@ -96,6 +126,8 @@ class ConflictResponse(ContractModel):
     details: dict[str, Any]
     created_at: datetime
     created_by: UUID7 | None = None
+    items: tuple[dict[str, Any], ...] = ()
+    decisions: tuple[dict[str, Any], ...] = ()
 
 
 class ConflictListResponse(ContractModel):
@@ -103,7 +135,9 @@ class ConflictListResponse(ContractModel):
 
 
 class ReviewCaseCreate(ContractModel):
-    target_type: Literal["CLAIM_CANDIDATE", "RELATION_CANDIDATE", "SEMANTIC_PROPOSAL"]
+    target_type: Literal[
+        "CLAIM_CANDIDATE", "RELATION_CANDIDATE", "SEMANTIC_PROPOSAL", "WIKI_PAGE_VERSION"
+    ]
     target_id: UUID7
     policy_id: UUID7
     risk_level: Literal["LOW", "MEDIUM", "HIGH"]
@@ -151,10 +185,29 @@ class ReviewCaseResponse(ContractModel):
     tasks: tuple[ReviewTaskResponse, ...] = ()
     content_revisions: tuple[dict[str, Any], ...] = ()
     workflow_delivery_status: Literal["PENDING", "DELIVERED"] = "PENDING"
+    target_context: dict[str, Any] = Field(default_factory=dict)
+    actions: tuple[dict[str, Any], ...] = ()
+    actor_labels: dict[str, str] = Field(default_factory=dict)
 
 
 class ReviewCaseListResponse(ContractModel):
     items: tuple[ReviewCaseResponse, ...]
+
+
+class ReviewTargetResponse(ContractModel):
+    id: UUID7
+    target_type: Literal[
+        "CLAIM_CANDIDATE", "RELATION_CANDIDATE", "SEMANTIC_PROPOSAL", "WIKI_PAGE_VERSION"
+    ]
+    content: dict[str, Any]
+    entity_labels: dict[str, str] = Field(default_factory=dict)
+    evidence: tuple[dict[str, Any], ...] = ()
+    open_review_case_id: UUID7 | None = None
+
+
+class ReviewTargetListResponse(ContractModel):
+    items: tuple[ReviewTargetResponse, ...]
+    truncated: bool = False
 
 
 class ReviewQualityStats(ContractModel):
