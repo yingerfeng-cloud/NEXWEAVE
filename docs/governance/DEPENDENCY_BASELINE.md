@@ -130,3 +130,26 @@ Debian uses the official signed repository over HTTPS. Alpine uses the official 
 repositories; licenses above were checked from installed APK metadata. Base image digests,
 ClamAV version and RustFS digest remain pinned. No audit ignore or lower severity threshold
 was added. Local ARM64 scans do not substitute for CI's required amd64/arm64 scans/signatures.
+
+## R1 Review C 2026-10-17—18
+
+No new runtime library is added. Real text/embedding use the existing HTTPX adapter and
+server-side ModelProfile/secret configuration. The trusted-main real-provider baseline
+reuses the already pinned checkout/setup-python/upload-artifact actions and blocks image
+jobs without an actual 100% result. PR code receives no model key from that job.
+
+The current runtime/Node locks audit clean; seven local ARM64 images pass the unchanged
+fixable HIGH/CRITICAL policy. The complete optional forecast lock now **fails** strict audit:
+accelerate 1.12.0, PYSEC-2026-3804 / CVE-2026-69112 / GHSA-4j2p-28q2-5m79, no fixed
+version supplied by the advisory. Chronos 2.3.1 declares accelerate>=1.1,<2, so simply removing
+it breaks the declared environment. The actual optional environment was synchronized to
+the A-batch PyJWT 2.15.1, pypdf 6.21.0 and urllib3 2.8.0 pins; pip check remains required.
+
+[Upstream advisory](https://github.com/advisories/GHSA-4j2p-28q2-5m79) and
+[accelerate 1.15 source](https://raw.githubusercontent.com/huggingface/accelerate/v1.15.0/src/accelerate/utils/modeling.py)
+were checked. The latter still joins checkpoint shard paths without validation; a version
+bump that merely escapes the catalog range is not evidence of a fix. Current Chronos
+accepts only the pinned single regular safetensors file/config and rejects sharded indexes
+and bin layouts. This limits reachability; it does not close the package advisory.
+No audit exception, scan skip or lower gate is introduced. Production promotion remains
+blocked pending a verified upstream/provider replacement and rerun of the same audit/model tests.

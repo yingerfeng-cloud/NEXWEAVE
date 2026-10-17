@@ -1,0 +1,6 @@
+{
+  "status": "CONFIGURATION_BLOCKED",
+  "reason": "Configure HTTPS Model Gateway, its key, and public text/embedding model revisions.",
+  "model_calls": 0,
+  "scored_evaluation": false
+}

@@ -1,0 +1,2 @@
+Temporal worker health workflow passed
+M1 E2E passed: Web deep links -> authenticated API -> tenant/space policy -> PostgreSQL audit/outbox -> immutable RustFS object -> Temporal worker

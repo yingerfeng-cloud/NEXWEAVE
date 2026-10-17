@@ -1,0 +1,17 @@
+{
+  "pack": "equipment-rca-pack@1.0.0",
+  "signatureKeyId": "nexweave-m9-equipment-rca-2026",
+  "contentChecksum": "sha256:a760fe3a41f64b0f6f35135c29363ad275441c4e51369f50bb8089bcbe68934d",
+  "compositionChecksum": "sha256:c4bd5d761cff0a3af7349b1996611090c3fe3d08a4e0406440eea307b7b1ee33",
+  "packOrder": [
+    "core-pack",
+    "equipment-rca-pack",
+    "maintenance-pack"
+  ],
+  "typeCount": 14,
+  "causalRelationCount": 3,
+  "standardQuestionCount": 7,
+  "fixtureClassification": "SYNTHETIC",
+  "realPilotClaimed": false,
+  "gridCrewDemoClaimed": false
+}

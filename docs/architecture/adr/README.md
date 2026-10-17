@@ -44,3 +44,5 @@ ADR-0037：[R1 可信读取与流程反馈](ADR-0037-r1-trusted-read-feedback.md
 ADR-0038：[R1 Review 信任与门禁修复](ADR-0038-r1-review-remediation.md)，本轮用户授权。
 
 ADR-0039：[R1 Web 操作与 OIDC 会话](ADR-0039-r1-web-operation-closure.md)，本轮用户授权；真实 Web 质量失败保持阻断，尚未宣称完整验收。
+
+ADR-0040：[R1 文本与预测可验收边界](ADR-0040-r1-text-forecast-acceptance.md)，本轮R1授权，执行延续至2026-10-18；包含真实Provider/投影、字面关系、协变量/取消、空间配置选择与审核投递恢复。B的旧失败保留；当前完整门禁仍有外部阻塞，见C报告。

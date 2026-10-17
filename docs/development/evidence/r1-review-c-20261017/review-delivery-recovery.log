@@ -1,0 +1,23 @@
+Real HTTP/Temporal review delivery: prepare passed; synthetic technical roles.
+ Container nexweave-r1-review-temporal-1 Stopping
+ Container nexweave-r1-review-temporal-1 Stopped
+Real HTTP/Temporal review delivery: queue-start passed; synthetic technical roles.
+ Container nexweave-r1-review-postgres-1 Waiting
+ Container nexweave-r1-review-postgres-1 Healthy
+ Container nexweave-r1-review-temporal-1 Starting
+ Container nexweave-r1-review-temporal-1 Started
+Traceback (most recent call last):
+  File "<WORKSPACE>/scripts/verify_r1_review_delivery.py", line 183, in <module>
+    main()
+  File "<WORKSPACE>/scripts/verify_r1_review_delivery.py", line 138, in main
+    raise RuntimeError(
+RuntimeError: Review delivery did not recover to the expected Temporal state
+Real HTTP/Temporal review delivery: verify-start passed; synthetic technical roles.
+ Container nexweave-r1-review-temporal-1 Stopping
+ Container nexweave-r1-review-temporal-1 Stopped
+Real HTTP/Temporal review delivery: queue-decision passed; synthetic technical roles.
+ Container nexweave-r1-review-postgres-1 Waiting
+ Container nexweave-r1-review-postgres-1 Healthy
+ Container nexweave-r1-review-temporal-1 Starting
+ Container nexweave-r1-review-temporal-1 Started
+Real HTTP/Temporal review delivery: verify-decision passed; synthetic technical roles.

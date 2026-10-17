@@ -1,0 +1,15 @@
+{
+  "scope": "DISPOSABLE_CLONE_OF_SYNTHETIC_REVIEW_DATABASE",
+  "source_database_modified": false,
+  "rollback": "REFUSED_WITH_HISTORY_RETAINED",
+  "before": {
+    "revision": "0015_r1_delivery",
+    "audit_rows": 7,
+    "new_projection_rows": 978
+  },
+  "after": {
+    "revision": "0015_r1_delivery",
+    "audit_rows": 7,
+    "new_projection_rows": 978
+  }
+}

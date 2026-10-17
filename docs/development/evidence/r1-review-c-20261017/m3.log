@@ -1,0 +1,2 @@
+M3 real chain verified: TXT/DOCX/XLSX, scanned PDF OCR_REQUIRED, idempotent complete, reparse, invalidation, batch and transactional Outbox.
+Not covered by this script: real OCR (not configured), broker publication, production HA/DR, parser cancellation/crash-window recovery, replay of an archived accepted M2 history, multi-architecture image promotion and external CI.

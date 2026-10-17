@@ -1,0 +1,29 @@
+[
+  {
+    "review_case_id": "01a14a4a-a204-725f-8d12-b0e0a1431493",
+    "kind": "START",
+    "attempts": 1,
+    "last_error": null,
+    "delivered_at": "2026-10-17 14:36:07.568633+00:00",
+    "status": "APPROVED",
+    "task_status": "SUCCEEDED"
+  },
+  {
+    "review_case_id": "01a14a4a-a204-725f-8d12-b0e0a1431493",
+    "kind": "DECISION",
+    "attempts": 1817,
+    "last_error": null,
+    "delivered_at": "2026-10-17 15:38:52.905309+00:00",
+    "status": "APPROVED",
+    "task_status": "SUCCEEDED"
+  },
+  {
+    "review_case_id": "01a14a76-ec76-7bbd-9c29-851c35e63617",
+    "kind": "START",
+    "attempts": 2,
+    "last_error": null,
+    "delivered_at": "2026-10-17 15:37:52.560117+00:00",
+    "status": "OPEN",
+    "task_status": "WAITING"
+  }
+]

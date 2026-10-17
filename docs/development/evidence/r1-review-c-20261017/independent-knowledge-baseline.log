@@ -1,0 +1,1 @@
+{"status": "FAIL", "metrics": {"recall": 0.6923076923076923, "answer": 0.6923076923076923, "citation": 0.6923076923076923, "refusal": 1.0}, "cases": {"cases": 20, "failed": 4, "passed": 16, "pass_rate": 80, "pipeline_version": "r1-query-v3", "minimum_pass_rate": 100}, "published": false}

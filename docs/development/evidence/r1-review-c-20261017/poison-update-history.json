@@ -1,0 +1,20 @@
+{
+  "scope": "REAL_TEMPORAL_HISTORY_SYNTHETIC_CASE",
+  "workflow_status": "COMPLETED",
+  "result": {
+    "review_case_id": "01a14a4a-a204-725f-8d12-b0e0a1431493",
+    "status": "APPROVED"
+  },
+  "updates": [
+    {
+      "update_id": "review-final:01a14a4a-a204-725f-8d12-b0e0a1431493",
+      "outcome": "failure",
+      "failure_message": "APPROVE is not allowed while RUNNING"
+    },
+    {
+      "update_id": "review-delivery:01a14a4a-a261-7c81-bddc-490527263882:attempt:1816",
+      "outcome": "success",
+      "failure_message": null
+    }
+  ]
+}

@@ -8,7 +8,7 @@ R1 软件功能已于 2026-09-14 由用户正式验收，验收标签为 `r1-sof
 
 - Release 基线：R1 = M0—M9；
 - 当前软件验收基准：2026-09-14 R1 软件验收，包含 M9.5 与阶段 A—D 及补修，不改变 R1=M0—M9 的里程碑归属；
-- 当前迭代：2026-10-17 独立 Review 的 R1 整改 B 批，代码标识 `0.9.5-r1fix-b1` / `R1_REVIEW_B`，依据 ADR-0038/0039；[整改追踪](docs/development/reports/R1_Review_整改追踪_20261017.md)记录实际结果。Web 自然问句评估50%仍阻止发布，继续C修复；此版本没有替换验收标签；
+- 当前迭代：2026-10-17—18 独立 Review 的 R1 整改 C 批，代码标识 `0.9.5-r1fix-c1` / `R1_REVIEW_C`，依据 ADR-0038/0039/0040；[整改追踪](docs/development/reports/R1_Review_整改追踪_20261017.md)与[C报告](docs/development/reports/R1_Review_C批执行报告_20261017.md)记录实际结果。合成Web双题100%及独立发布/读取已核对；完整交付门禁仍被预测依赖审计与缺少真实文本/embedding配置阻塞，独立词面基准16/20不冒充语义验收；验收标签未替换；
 - 已实现业务边界：M1 平台、M2 Workflow、M3 Source/Parse、M4 Schema/Domain Pack、M5 Compile/Wiki、M6 Claim/Evidence/Review、M7 Quality/Release/Graph/Query、M8 Connector/Obsidian/Wiki 图谱，以及 M9 Equipment RCA Pack 技术制品；
 - 技术基线：Python 3.12/FastAPI、React/TypeScript、Temporal、PostgreSQL/pgvector、RustFS/S3、Redis；
 - 停止边界：不得自行进入 M10；GridCrew 集成按用户指令延期且未实现，公开资料准入和 Source→Compile 已完成，专家 Review/Evaluation/Release/Query 仍为 P0。

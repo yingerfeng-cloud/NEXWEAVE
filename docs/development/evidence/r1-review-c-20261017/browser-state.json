@@ -1,0 +1,534 @@
+{
+  "scope": "READ_ONLY_SERVER_CONFIRMATION_OF_WEB_CREATED_RECORDS_NOT_SCRIPTED_APPROVAL",
+  "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+  "journey": "B ingestion/review/conflict through Web; C original-suite quality/release/query/graph through Web",
+  "original_failed_candidate": {
+    "manifest_visibility": "FULL",
+    "id": "01a14a1f-47d1-7f96-b5da-8ce90d400096",
+    "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+    "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+    "version": "1.0.0",
+    "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+    "composition_checksum": "sha256:45b905614d9b854fccec335c300d9e314bde3d18441ae191d7b817afe61480bc",
+    "prompt_version_id": "01a149c4-c426-79dd-9f48-a925fb4d4184",
+    "model_profile_id": "01a149c4-802a-7242-8bc4-6416b2e97e0a",
+    "evaluation_suite_id": "01a14a0b-4c41-7ccf-8d36-ee0fe92457cd",
+    "workflow_task_id": "01a14a1f-47bc-7f11-ae35-014ae5af4223",
+    "workflow_id": "release/01a14931-b19f-7773-9872-b5494ff809d2/1.0.0:8db11a6f26f3fac4",
+    "status": "FAILED",
+    "manifest": {
+      "objects": {
+        "claim": [
+          "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3"
+        ],
+        "relation": [
+          "01a14a0a-3e61-7487-800f-b6364680a9da"
+        ],
+        "wiki_page_version": [
+          "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        ]
+      },
+      "version": "1.0.0",
+      "entity_ids": [
+        "01a149fe-0408-7346-8f00-47028c61ffb8",
+        "01a149fe-040e-7289-9e75-3307a46f18af"
+      ],
+      "pack_inputs": [],
+      "source_refs": [
+        {
+          "evidence_id": "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+        },
+        {
+          "evidence_id": "01a14a0a-3e64-7294-a563-9780ee0b8ae0",
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+        },
+        {
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373",
+          "wiki_page_version_id": "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        },
+        {
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "b2a5b88c-ab82-7e42-aae3-52eac528255b",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373",
+          "wiki_page_version_id": "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        }
+      ],
+      "evidence_ids": [
+        "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+        "01a14a0a-3e64-7294-a563-9780ee0b8ae0"
+      ],
+      "index_config": {
+        "fusion": "rrf",
+        "version": "m7-r1",
+        "vector_dimensions": 16
+      },
+      "entity_snapshots": {
+        "01a149fe-0408-7346-8f00-47028c61ffb8": {
+          "id": "01a149fe-0408-7346-8f00-47028c61ffb8",
+          "status": "DRAFT",
+          "version": 3,
+          "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+          "type_key": "r1-browser.example/equipment",
+          "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+          "created_at": "2026-10-17 13:12:26.376187+00:00",
+          "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "updated_at": "2026-10-17 13:12:57.697468+00:00",
+          "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "display_name": "Pump A",
+          "normalized_key": "pump-a-ea99e5396fb0",
+          "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+          "current_version_id": "01a149fe-040a-7fd5-8890-f660d56396aa"
+        },
+        "01a149fe-040e-7289-9e75-3307a46f18af": {
+          "id": "01a149fe-040e-7289-9e75-3307a46f18af",
+          "status": "DRAFT",
+          "version": 2,
+          "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+          "type_key": "r1-browser.example/equipment",
+          "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+          "created_at": "2026-10-17 13:12:26.376187+00:00",
+          "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "updated_at": "2026-10-17 13:12:26.376187+00:00",
+          "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "display_name": "Pump B",
+          "normalized_key": "pump-b-f138b45fa917",
+          "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+          "current_version_id": "01a149fe-040e-76d0-ac66-78c7419ab14a"
+        }
+      },
+      "model_profile_id": "01a149c4-802a-7242-8bc4-6416b2e97e0a",
+      "prompt_version_id": "01a149c4-c426-79dd-9f48-a925fb4d4184",
+      "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+      "evaluation_suite_id": "01a14a0b-4c41-7ccf-8d36-ee0fe92457cd",
+      "composition_checksum": "sha256:45b905614d9b854fccec335c300d9e314bde3d18441ae191d7b817afe61480bc"
+    },
+    "manifest_checksum": "sha256:c2122f9a8fbf2c283846437b76fee0118fec8af781a4bcdac9d9bb0162aa8928",
+    "gate_summary": {
+      "error_code": "RELEASE_EVALUATION_GATE_FAILED",
+      "evaluation_passed": false,
+      "evaluation_run_id": "01a14a1f-4953-77ed-be07-01af7c2e8c16",
+      "blocking_lint_count": 0,
+      "traceability_percent": 100,
+      "schema_compliance_percent": 100,
+      "unresolved_blocking_conflicts": 0
+    },
+    "index_config": {
+      "fusion": "rrf",
+      "version": "m7-r1",
+      "vector_dimensions": 16
+    },
+    "notes": "合成 Web 闭环核对：仅发布已独立审核的 operational Claim、原文直接 feeds 关系和 Pump B Wiki；全部为合成软件回归资料，不代表语义模型或工业验收。",
+    "created_at": "2026-10-17T13:48:46.417236Z",
+    "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+    "updated_at": "2026-10-17T13:48:46.764088Z",
+    "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+    "lint_findings": []
+  },
+  "published_candidate": {
+    "manifest_visibility": "FULL",
+    "id": "01a14a4a-63f3-72af-8e91-e348c60e8cdd",
+    "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+    "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+    "version": "1.0.1",
+    "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+    "composition_checksum": "sha256:45b905614d9b854fccec335c300d9e314bde3d18441ae191d7b817afe61480bc",
+    "prompt_version_id": "01a149c4-c426-79dd-9f48-a925fb4d4184",
+    "model_profile_id": "01a149c4-802a-7242-8bc4-6416b2e97e0a",
+    "evaluation_suite_id": "01a14a0b-4c41-7ccf-8d36-ee0fe92457cd",
+    "workflow_task_id": "01a14a4a-63ec-718a-93f4-b4099c088c54",
+    "workflow_id": "release/01a14931-b19f-7773-9872-b5494ff809d2/1.0.1:8bf0740f18600866",
+    "status": "PUBLISHED",
+    "manifest": {
+      "objects": {
+        "claim": [
+          "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3"
+        ],
+        "relation": [
+          "01a14a0a-3e61-7487-800f-b6364680a9da"
+        ],
+        "wiki_page_version": [
+          "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        ]
+      },
+      "version": "1.0.1",
+      "entity_ids": [
+        "01a149fe-0408-7346-8f00-47028c61ffb8",
+        "01a149fe-040e-7289-9e75-3307a46f18af"
+      ],
+      "pack_inputs": [],
+      "source_refs": [
+        {
+          "evidence_id": "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+        },
+        {
+          "evidence_id": "01a14a0a-3e64-7294-a563-9780ee0b8ae0",
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+        },
+        {
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373",
+          "wiki_page_version_id": "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        },
+        {
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "b2a5b88c-ab82-7e42-aae3-52eac528255b",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373",
+          "wiki_page_version_id": "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        }
+      ],
+      "evidence_ids": [
+        "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+        "01a14a0a-3e64-7294-a563-9780ee0b8ae0"
+      ],
+      "index_config": {
+        "version": "r1-query-v3",
+        "retrieval_strategy": "KEYWORD"
+      },
+      "entity_snapshots": {
+        "01a149fe-0408-7346-8f00-47028c61ffb8": {
+          "id": "01a149fe-0408-7346-8f00-47028c61ffb8",
+          "status": "DRAFT",
+          "version": 3,
+          "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+          "type_key": "r1-browser.example/equipment",
+          "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+          "created_at": "2026-10-17 13:12:26.376187+00:00",
+          "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "updated_at": "2026-10-17 13:12:57.697468+00:00",
+          "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "display_name": "Pump A",
+          "normalized_key": "pump-a-ea99e5396fb0",
+          "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+          "current_version_id": "01a149fe-040a-7fd5-8890-f660d56396aa"
+        },
+        "01a149fe-040e-7289-9e75-3307a46f18af": {
+          "id": "01a149fe-040e-7289-9e75-3307a46f18af",
+          "status": "DRAFT",
+          "version": 2,
+          "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+          "type_key": "r1-browser.example/equipment",
+          "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+          "created_at": "2026-10-17 13:12:26.376187+00:00",
+          "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "updated_at": "2026-10-17 13:12:26.376187+00:00",
+          "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "display_name": "Pump B",
+          "normalized_key": "pump-b-f138b45fa917",
+          "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+          "current_version_id": "01a149fe-040e-76d0-ac66-78c7419ab14a"
+        }
+      },
+      "model_profile_id": "01a149c4-802a-7242-8bc4-6416b2e97e0a",
+      "prompt_version_id": "01a149c4-c426-79dd-9f48-a925fb4d4184",
+      "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+      "evaluation_suite_id": "01a14a0b-4c41-7ccf-8d36-ee0fe92457cd",
+      "composition_checksum": "sha256:45b905614d9b854fccec335c300d9e314bde3d18441ae191d7b817afe61480bc"
+    },
+    "manifest_checksum": "sha256:4e9f0902b100e438319dd84ae083ffe39ef2ca3904065fc1a2d46b1aa3355f90",
+    "gate_summary": {
+      "evaluation_passed": true,
+      "evaluation_run_id": "01a14a4a-6455-785e-b1c1-b075dc024adc",
+      "blocking_lint_count": 0,
+      "traceability_percent": 100,
+      "schema_compliance_percent": 100,
+      "unresolved_blocking_conflicts": 0
+    },
+    "index_config": {
+      "version": "r1-query-v3",
+      "retrieval_strategy": "KEYWORD"
+    },
+    "notes": "C 批词面自然问句回归：保持 B 批原始双题和100%门槛；仅冻结70度运行Claim、显式feeds关系及已独立审核Pump B Wiki，不含90度停止场景。合成技术核对，不代表语义模型或工业验收。",
+    "created_at": "2026-10-17T14:35:51.667124Z",
+    "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+    "updated_at": "2026-10-17T14:48:01.457776Z",
+    "updated_by": "01a149be-4318-793e-a7e2-a9fdf1530b60",
+    "lint_findings": []
+  },
+  "release": {
+    "manifest_visibility": "FULL",
+    "id": "01a14a55-86b1-7c8b-a71d-5db35d9e9801",
+    "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+    "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+    "candidate_id": "01a14a4a-63f3-72af-8e91-e348c60e8cdd",
+    "version": "1.0.1",
+    "status": "PUBLISHED",
+    "manifest": {
+      "objects": {
+        "claim": [
+          "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3"
+        ],
+        "relation": [
+          "01a14a0a-3e61-7487-800f-b6364680a9da"
+        ],
+        "wiki_page_version": [
+          "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        ]
+      },
+      "version": "1.0.1",
+      "entity_ids": [
+        "01a149fe-0408-7346-8f00-47028c61ffb8",
+        "01a149fe-040e-7289-9e75-3307a46f18af"
+      ],
+      "pack_inputs": [],
+      "source_refs": [
+        {
+          "evidence_id": "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+        },
+        {
+          "evidence_id": "01a14a0a-3e64-7294-a563-9780ee0b8ae0",
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+        },
+        {
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373",
+          "wiki_page_version_id": "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        },
+        {
+          "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+          "source_anchor_id": "b2a5b88c-ab82-7e42-aae3-52eac528255b",
+          "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373",
+          "wiki_page_version_id": "01a149fe-040f-7c7e-8594-5cac43a6149e"
+        }
+      ],
+      "evidence_ids": [
+        "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+        "01a14a0a-3e64-7294-a563-9780ee0b8ae0"
+      ],
+      "index_config": {
+        "version": "r1-query-v3",
+        "retrieval_strategy": "KEYWORD"
+      },
+      "entity_snapshots": {
+        "01a149fe-0408-7346-8f00-47028c61ffb8": {
+          "id": "01a149fe-0408-7346-8f00-47028c61ffb8",
+          "status": "DRAFT",
+          "version": 3,
+          "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+          "type_key": "r1-browser.example/equipment",
+          "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+          "created_at": "2026-10-17 13:12:26.376187+00:00",
+          "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "updated_at": "2026-10-17 13:12:57.697468+00:00",
+          "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "display_name": "Pump A",
+          "normalized_key": "pump-a-ea99e5396fb0",
+          "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+          "current_version_id": "01a149fe-040a-7fd5-8890-f660d56396aa"
+        },
+        "01a149fe-040e-7289-9e75-3307a46f18af": {
+          "id": "01a149fe-040e-7289-9e75-3307a46f18af",
+          "status": "DRAFT",
+          "version": 2,
+          "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+          "type_key": "r1-browser.example/equipment",
+          "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+          "created_at": "2026-10-17 13:12:26.376187+00:00",
+          "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "updated_at": "2026-10-17 13:12:26.376187+00:00",
+          "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+          "display_name": "Pump B",
+          "normalized_key": "pump-b-f138b45fa917",
+          "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+          "current_version_id": "01a149fe-040e-76d0-ac66-78c7419ab14a"
+        }
+      },
+      "model_profile_id": "01a149c4-802a-7242-8bc4-6416b2e97e0a",
+      "prompt_version_id": "01a149c4-c426-79dd-9f48-a925fb4d4184",
+      "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+      "evaluation_suite_id": "01a14a0b-4c41-7ccf-8d36-ee0fe92457cd",
+      "composition_checksum": "sha256:45b905614d9b854fccec335c300d9e314bde3d18441ae191d7b817afe61480bc"
+    },
+    "manifest_checksum": "sha256:4e9f0902b100e438319dd84ae083ffe39ef2ca3904065fc1a2d46b1aa3355f90",
+    "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+    "composition_checksum": "sha256:45b905614d9b854fccec335c300d9e314bde3d18441ae191d7b817afe61480bc",
+    "prompt_version_id": "01a149c4-c426-79dd-9f48-a925fb4d4184",
+    "model_profile_id": "01a149c4-802a-7242-8bc4-6416b2e97e0a",
+    "index_config": {
+      "version": "r1-query-v3",
+      "retrieval_strategy": "KEYWORD"
+    },
+    "published_at": "2026-10-17T14:48:01.457776Z",
+    "published_by": "01a149be-4318-793e-a7e2-a9fdf1530b60",
+    "deprecated_at": null,
+    "deprecation_reason": null
+  },
+  "evaluation": {
+    "result_visibility": "FULL",
+    "id": "01a14a4a-6455-785e-b1c1-b075dc024adc",
+    "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+    "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+    "suite_id": "01a14a0b-4c41-7ccf-8d36-ee0fe92457cd",
+    "suite_version": 1,
+    "target_type": "RELEASE_CANDIDATE",
+    "target_id": "01a14a4a-63f3-72af-8e91-e348c60e8cdd",
+    "workflow_task_id": null,
+    "workflow_id": null,
+    "retrieval_strategy": "KEYWORD",
+    "retrieval_config": {},
+    "status": "SUCCEEDED",
+    "metrics": {
+      "cases": 2,
+      "failed": 0,
+      "passed": 2,
+      "pass_rate": 100,
+      "pipeline_version": "r1-query-v3",
+      "minimum_pass_rate": 100
+    },
+    "gate_passed": true,
+    "error_code": null,
+    "started_at": "2026-10-17T14:35:51.765111Z",
+    "completed_at": "2026-10-17T14:35:51.765111Z",
+    "created_at": "2026-10-17T14:35:51.765111Z",
+    "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+    "results": [
+      {
+        "case_key": "case-1",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14a4a-6486-7426-8ab9-1b6e8e6a8e58",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "0f611e68-ffdb-77b6-b41e-d60a9c1046bb"
+                    },
+                    {
+                      "end": 101,
+                      "kind": "character_range",
+                      "start": 0,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3",
+                "release_id": null,
+                "evidence_id": "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+                "relation_id": null,
+                "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+                "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+              }
+            ],
+            "key_basis": [
+              "Pump A is operational in the synthetic scenario; temperature is 70 degC. Pump A feeds Pump B."
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "Pump A is operational in the synthetic scenario; temperature is 70 degC. Pump A feeds Pump B.",
+            "retrieval_hits": [
+              {
+                "text": "Pump A is operational in the synthetic scenario; temperature is 70 degC. Pump A feeds Pump B.",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "What is the temperature of Pump A in the operational synthetic scenario?",
+          "expected_terms": [
+            "70 degC"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3"
+          ]
+        }
+      },
+      {
+        "case_key": "case-2",
+        "case_type": "COUNTERFACTUAL",
+        "passed": true,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": true,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": "NO_MATCHING_KNOWLEDGE",
+            "expected_claims_retrieved": true
+          },
+          "question": "What is the temperature of Turbine Z999?",
+          "expected_terms": [],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": []
+        }
+      }
+    ]
+  },
+  "role_kind": "ACTUAL_BUSINESS_PERMISSIONS_ON_SYNTHETIC_TECHNICAL_IDENTITIES_NOT_DOMAIN_EXPERTS",
+  "warning_conflict_not_blocking": true
+}

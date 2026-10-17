@@ -1,0 +1,1316 @@
+{
+  "scope": "REAL_HTTP_SOURCE_REVIEW_EVALUATION_SYNTHETIC_SCRIPTED_NOT_WEB_OR_INDUSTRIAL",
+  "strategy": "KEYWORD",
+  "real_semantic_model": "UNAVAILABLE_NOT_TESTED",
+  "embedding_model_profile_id": null,
+  "text_model_profile_id": "01a14ab0-1f92-7fb6-a59d-5082109ca2f5",
+  "text_extraction": "DEVELOPMENT_RULES",
+  "space_id": "01a14ab0-1dd8-7ad4-b6ac-97f7332d22bb",
+  "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db",
+  "compile_job_id": "01a14ab0-1f9e-73a2-8de8-bdf1dc0880d9",
+  "extraction_control": {
+    "affirmative_relations": [
+      {
+        "source": "Device P101",
+        "target": "Device P102",
+        "relation_type": "m5-c68cdab489.example/feeds"
+      }
+    ],
+    "negation_and_independent_listing": "NO_AFFIRMATIVE_EDGE_GENERATED"
+  },
+  "review_case_ids": [
+    "01a14ab0-2116-7000-befb-26ec22f306b5",
+    "01a14ab0-2195-7f16-a609-393d9df85316",
+    "01a14ab0-222f-78bb-b8e5-24852138ba0f",
+    "01a14ab0-22af-7ef9-b587-39f8138c2b6f",
+    "01a14ab0-2325-7ace-ba91-7602baef4082",
+    "01a14ab0-239b-77d0-8fad-95b57c581adc",
+    "01a14ab0-2411-7501-9766-11d92051e247"
+  ],
+  "candidate_id": "01a14ab0-24a3-7aac-8d29-459ef8c86f5c",
+  "candidate_status": "FAILED",
+  "dimension_metrics": {
+    "recall": 0.6923076923076923,
+    "answer": 0.6923076923076923,
+    "citation": 0.6923076923076923,
+    "refusal": 1.0
+  },
+  "evaluation": {
+    "result_visibility": "FULL",
+    "id": "01a14ab0-24cc-71ef-b82c-5fe7dd631e82",
+    "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+    "space_id": "01a14ab0-1dd8-7ad4-b6ac-97f7332d22bb",
+    "suite_id": "01a14ab0-248c-76a8-83a2-ae45d2badc5f",
+    "suite_version": 1,
+    "target_type": "RELEASE_CANDIDATE",
+    "target_id": "01a14ab0-24a3-7aac-8d29-459ef8c86f5c",
+    "workflow_task_id": null,
+    "workflow_id": null,
+    "retrieval_strategy": "KEYWORD",
+    "retrieval_config": {},
+    "status": "SUCCEEDED",
+    "metrics": {
+      "cases": 20,
+      "failed": 4,
+      "passed": 16,
+      "pass_rate": 80,
+      "pipeline_version": "r1-query-v3",
+      "minimum_pass_rate": 100
+    },
+    "gate_passed": false,
+    "error_code": null,
+    "started_at": "2026-10-17T16:27:00.172260Z",
+    "completed_at": "2026-10-17T16:27:00.172260Z",
+    "created_at": "2026-10-17T16:27:00.172260Z",
+    "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+    "results": [
+      {
+        "case_key": "chinese-temp",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-22fe-79a8-a08b-010c8bc2d185"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-24d4-79e9-886e-9e39d7e05996",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "c4bb546e-3aab-796d-ba03-963a0b9eec4a"
+                    },
+                    {
+                      "end": 205,
+                      "kind": "character_range",
+                      "start": 150,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-22fe-79a8-a08b-010c8bc2d185",
+                "release_id": null,
+                "evidence_id": "01a14ab0-22fe-7c10-9dee-e96f5e5f71b2",
+                "relation_id": null,
+                "source_anchor_id": "1460ca14-d96c-72a0-9e13-18a2b8f61be5",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "设备P201。设备P201的运行温度为65摄氏度。"
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "设备P201。设备P201的运行温度为65摄氏度。",
+            "retrieval_hits": [
+              {
+                "text": "设备P201。设备P201的运行温度为65摄氏度。",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-22fe-79a8-a08b-010c8bc2d185",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-22fe-79a8-a08b-010c8bc2d185",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "设备P201的运行温度是多少？",
+          "expected_terms": [
+            "65摄氏度"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-22fe-79a8-a08b-010c8bc2d185"
+          ]
+        }
+      },
+      {
+        "case_key": "cross-language-en",
+        "case_type": "ANSWERABLE",
+        "passed": false,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": "EVALUATION_EXPECTATION_MISSED",
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": false,
+            "terms_in_answer": false,
+            "expected_refusal": false,
+            "expected_claims_cited": false,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": false
+          },
+          "question": "What is the temperature of P201?",
+          "expected_terms": [
+            "65摄氏度"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-22fe-79a8-a08b-010c8bc2d185"
+          ]
+        }
+      },
+      {
+        "case_key": "cross-language-zh",
+        "case_type": "ANSWERABLE",
+        "passed": false,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": "EVALUATION_EXPECTATION_MISSED",
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": false,
+            "terms_in_answer": false,
+            "expected_refusal": false,
+            "expected_claims_cited": false,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": false
+          },
+          "question": "P101的温度是多少？",
+          "expected_terms": [
+            "70 degC"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-2460-7a2d-9b20-ba748cf28802"
+          ]
+        }
+      },
+      {
+        "case_key": "domain-vocabulary",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-23ea-7555-ab12-e05c68c87323"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-24e6-7173-9045-e8ef9f6fb771",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "19274000-663c-7361-adbf-68a5a884d327"
+                    },
+                    {
+                      "end": 148,
+                      "kind": "character_range",
+                      "start": 98,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-23ea-7555-ab12-e05c68c87323",
+                "release_id": null,
+                "evidence_id": "01a14ab0-23ea-7eaa-a048-5a8b2adda1a3",
+                "relation_id": null,
+                "source_anchor_id": "56e8be58-ee81-7c7a-a79f-4d66474d4962",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "Device P102. Device P102 is the standby equipment."
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "Device P102. Device P102 is the standby equipment.",
+            "retrieval_hits": [
+              {
+                "text": "Device P102. Device P102 is the standby equipment.",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-23ea-7555-ab12-e05c68c87323",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-23ea-7555-ab12-e05c68c87323",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "What is Device P102 standby duty?",
+          "expected_terms": [
+            "standby"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-23ea-7555-ab12-e05c68c87323"
+          ]
+        }
+      },
+      {
+        "case_key": "explicit-edge",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-2460-7a2d-9b20-ba748cf28802"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-24ed-79e7-b8a6-f02b57a4ac2f",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "3a573346-7420-7e8b-8c07-6b36eba6730f"
+                    },
+                    {
+                      "end": 96,
+                      "kind": "character_range",
+                      "start": 0,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "release_id": null,
+                "evidence_id": "01a14ab0-2460-7bad-9d4a-0bacb998b218",
+                "relation_id": null,
+                "source_anchor_id": "a49f1bba-25d4-7a5b-80e8-15985e4684f9",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102."
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102.",
+            "retrieval_hits": [
+              {
+                "text": "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102.",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "Does Device P101 feed Device P102?",
+          "expected_terms": [
+            "feeds Device P102"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-2460-7a2d-9b20-ba748cf28802"
+          ]
+        }
+      },
+      {
+        "case_key": "identifier-only",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-2460-7a2d-9b20-ba748cf28802"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-24f5-76e4-8f11-6fb6a53a56ff",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "3a573346-7420-7e8b-8c07-6b36eba6730f"
+                    },
+                    {
+                      "end": 96,
+                      "kind": "character_range",
+                      "start": 0,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "release_id": null,
+                "evidence_id": "01a14ab0-2460-7bad-9d4a-0bacb998b218",
+                "relation_id": null,
+                "source_anchor_id": "a49f1bba-25d4-7a5b-80e8-15985e4684f9",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102."
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102.",
+            "retrieval_hits": [
+              {
+                "text": "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102.",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "P101 temperature?",
+          "expected_terms": [
+            "70 degC"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-2460-7a2d-9b20-ba748cf28802"
+          ]
+        }
+      },
+      {
+        "case_key": "identifier-zh",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-22fe-79a8-a08b-010c8bc2d185"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-24fc-7087-8252-f114933963b6",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "c4bb546e-3aab-796d-ba03-963a0b9eec4a"
+                    },
+                    {
+                      "end": 205,
+                      "kind": "character_range",
+                      "start": 150,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-22fe-79a8-a08b-010c8bc2d185",
+                "release_id": null,
+                "evidence_id": "01a14ab0-22fe-7c10-9dee-e96f5e5f71b2",
+                "relation_id": null,
+                "source_anchor_id": "1460ca14-d96c-72a0-9e13-18a2b8f61be5",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "设备P201。设备P201的运行温度为65摄氏度。"
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "设备P201。设备P201的运行温度为65摄氏度。",
+            "retrieval_hits": [
+              {
+                "text": "设备P201。设备P201的运行温度为65摄氏度。",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-22fe-79a8-a08b-010c8bc2d185",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-22fe-79a8-a08b-010c8bc2d185",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "P201温度？",
+          "expected_terms": [
+            "65摄氏度"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-22fe-79a8-a08b-010c8bc2d185"
+          ]
+        }
+      },
+      {
+        "case_key": "independent-listing",
+        "case_type": "INSUFFICIENT_EVIDENCE",
+        "passed": true,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": true,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "Does Device P302 feed Device P101?",
+          "expected_terms": [],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": []
+        }
+      },
+      {
+        "case_key": "insufficient-certification",
+        "case_type": "INSUFFICIENT_EVIDENCE",
+        "passed": true,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": true,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "Who certified Device P101?",
+          "expected_terms": [],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": []
+        }
+      },
+      {
+        "case_key": "insufficient-pressure",
+        "case_type": "INSUFFICIENT_EVIDENCE",
+        "passed": true,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": true,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "What is the pressure of Device P101?",
+          "expected_terms": [],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": []
+        }
+      },
+      {
+        "case_key": "natural-en",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-2460-7a2d-9b20-ba748cf28802"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-2514-75b6-a6c3-2af7036113a4",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "3a573346-7420-7e8b-8c07-6b36eba6730f"
+                    },
+                    {
+                      "end": 96,
+                      "kind": "character_range",
+                      "start": 0,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "release_id": null,
+                "evidence_id": "01a14ab0-2460-7bad-9d4a-0bacb998b218",
+                "relation_id": null,
+                "source_anchor_id": "a49f1bba-25d4-7a5b-80e8-15985e4684f9",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102."
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102.",
+            "retrieval_hits": [
+              {
+                "text": "Device P101. Device P101 temperature is 70 degC during operation. Device P101 feeds Device P102.",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-2460-7a2d-9b20-ba748cf28802",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "What is the temperature of Device P101 during operation?",
+          "expected_terms": [
+            "70 degC"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-2460-7a2d-9b20-ba748cf28802"
+          ]
+        }
+      },
+      {
+        "case_key": "natural-en-state",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-23ea-7555-ab12-e05c68c87323"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-251b-7ead-b307-122bed3d72a6",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "19274000-663c-7361-adbf-68a5a884d327"
+                    },
+                    {
+                      "end": 148,
+                      "kind": "character_range",
+                      "start": 98,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-23ea-7555-ab12-e05c68c87323",
+                "release_id": null,
+                "evidence_id": "01a14ab0-23ea-7eaa-a048-5a8b2adda1a3",
+                "relation_id": null,
+                "source_anchor_id": "56e8be58-ee81-7c7a-a79f-4d66474d4962",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "Device P102. Device P102 is the standby equipment."
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "Device P102. Device P102 is the standby equipment.",
+            "retrieval_hits": [
+              {
+                "text": "Device P102. Device P102 is the standby equipment.",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-23ea-7555-ab12-e05c68c87323",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-23ea-7555-ab12-e05c68c87323",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "Is Device P102 standby equipment?",
+          "expected_terms": [
+            "standby"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-23ea-7555-ab12-e05c68c87323"
+          ]
+        }
+      },
+      {
+        "case_key": "negative-en",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-227f-7291-87fc-e4e2b8d36d0b"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-2522-7b88-9589-a63255662689",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "beef2ae3-d01b-71be-85eb-4cef281c1bb4"
+                    },
+                    {
+                      "end": 314,
+                      "kind": "character_range",
+                      "start": 263,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-227f-7291-87fc-e4e2b8d36d0b",
+                "release_id": null,
+                "evidence_id": "01a14ab0-227f-7bde-9ec9-e2f6672de2e1",
+                "relation_id": null,
+                "source_anchor_id": "93c9db85-dee7-7eae-9ca5-fa9c5a0562db",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "Device P301. Device P301 does not feed Device P302."
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "Device P301. Device P301 does not feed Device P302.",
+            "retrieval_hits": [
+              {
+                "text": "Device P301. Device P301 does not feed Device P302.",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-227f-7291-87fc-e4e2b8d36d0b",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-227f-7291-87fc-e4e2b8d36d0b",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "Does Device P301 feed Device P302?",
+          "expected_terms": [
+            "does not feed"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-227f-7291-87fc-e4e2b8d36d0b"
+          ]
+        }
+      },
+      {
+        "case_key": "negative-zh",
+        "case_type": "ANSWERABLE",
+        "passed": true,
+        "answer_status": "COMPLETED",
+        "matched_claim_ids": [
+          "01a14ab0-2374-7568-a5a1-4dd25558abdd"
+        ],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "COMPLETED",
+            "citations": [
+              {
+                "id": "01a14ab0-2529-764a-9941-ae40234c09a9",
+                "status": "VALID",
+                "excerpt": null,
+                "locator": {
+                  "locators": [
+                    {
+                      "kind": "block",
+                      "block_id": "a17ea554-03fe-7e38-aa82-dc44536876db"
+                    },
+                    {
+                      "end": 261,
+                      "kind": "character_range",
+                      "start": 207,
+                      "text_basis": "source_utf8"
+                    }
+                  ]
+                },
+                "claim_id": "01a14ab0-2374-7568-a5a1-4dd25558abdd",
+                "release_id": null,
+                "evidence_id": "01a14ab0-2375-781a-965e-fd8f580214d0",
+                "relation_id": null,
+                "source_anchor_id": "54af581e-443b-70f7-bb2b-b438416e62b9",
+                "source_version_id": "01a14ab0-1e4a-7d53-9d90-62797218a5db"
+              }
+            ],
+            "key_basis": [
+              "设备P202。设备P202未向设备P201供给介质。"
+            ],
+            "answer_reason": "SUPPORTED_EVIDENCE",
+            "direct_answer": "设备P202。设备P202未向设备P201供给介质。",
+            "retrieval_hits": [
+              {
+                "text": "设备P202。设备P202未向设备P201供给介质。",
+                "ranks": {
+                  "keyword": 1
+                },
+                "title": "已审核主张",
+                "object_id": "01a14ab0-2374-7568-a5a1-4dd25558abdd",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082
+              }
+            ],
+            "candidate_count": 1,
+            "retrieval_trace": [
+              {
+                "ranks": {
+                  "keyword": 1
+                },
+                "object_id": "01a14ab0-2374-7568-a5a1-4dd25558abdd",
+                "object_type": "CLAIM",
+                "fusion_score": 0.01639344262295082,
+                "evidence_gate": "SUPPORTED"
+              }
+            ],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": false,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "设备P202是否向设备P201供给介质？",
+          "expected_terms": [
+            "未向设备P201供给"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-2374-7568-a5a1-4dd25558abdd"
+          ]
+        }
+      },
+      {
+        "case_key": "synonym-alternate",
+        "case_type": "ANSWERABLE",
+        "passed": false,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": "EVALUATION_EXPECTATION_MISSED",
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": false,
+            "terms_in_answer": false,
+            "expected_refusal": false,
+            "expected_claims_cited": false,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": false
+          },
+          "question": "What is Device P102 alternate role?",
+          "expected_terms": [
+            "standby"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-23ea-7555-ab12-e05c68c87323"
+          ]
+        }
+      },
+      {
+        "case_key": "synonym-heat",
+        "case_type": "ANSWERABLE",
+        "passed": false,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": "EVALUATION_EXPECTATION_MISSED",
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": false,
+            "terms_in_answer": false,
+            "expected_refusal": false,
+            "expected_claims_cited": false,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": false
+          },
+          "question": "How hot is Device P101?",
+          "expected_terms": [
+            "70 degC"
+          ],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": [
+            "01a14ab0-2460-7a2d-9b20-ba748cf28802"
+          ]
+        }
+      },
+      {
+        "case_key": "wrong-id",
+        "case_type": "INSUFFICIENT_EVIDENCE",
+        "passed": true,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": true,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "What is the temperature of Device P999?",
+          "expected_terms": [],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": []
+        }
+      },
+      {
+        "case_key": "wrong-object",
+        "case_type": "INSUFFICIENT_EVIDENCE",
+        "passed": true,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": true,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "What is the temperature of an unrelated turbine?",
+          "expected_terms": [],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": []
+        }
+      },
+      {
+        "case_key": "wrong-type-id",
+        "case_type": "INSUFFICIENT_EVIDENCE",
+        "passed": true,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": true,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "What is the temperature of Turbine Z999?",
+          "expected_terms": [],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": []
+        }
+      },
+      {
+        "case_key": "wrong-zh-id",
+        "case_type": "INSUFFICIENT_EVIDENCE",
+        "passed": true,
+        "answer_status": "REFUSED",
+        "matched_claim_ids": [],
+        "error_code": null,
+        "details": {
+          "actual": {
+            "status": "REFUSED",
+            "citations": [],
+            "key_basis": [],
+            "answer_reason": "NO_MATCHING_KNOWLEDGE",
+            "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+            "retrieval_hits": [],
+            "candidate_count": 0,
+            "retrieval_trace": [],
+            "pipeline_version": "r1-query-v3",
+            "retrieval_strategy": "KEYWORD"
+          },
+          "scoring": {
+            "refusal_matches": true,
+            "terms_in_answer": true,
+            "expected_refusal": true,
+            "expected_claims_cited": true,
+            "refusal_reason_matches": true,
+            "expected_refusal_reason": null,
+            "expected_claims_retrieved": true
+          },
+          "question": "设备P999的温度是多少？",
+          "expected_terms": [],
+          "pipeline_version": "r1-query-v3",
+          "valid_expectation": true,
+          "expected_claim_ids": []
+        }
+      }
+    ]
+  },
+  "source_invalidation_control": {
+    "new_evaluation_http_status": 404,
+    "new_execution": "REJECTED_BEFORE_EXECUTION_NOT_A_SCORED_PASS",
+    "public_visibility": "METADATA_ONLY",
+    "historical_answer_hidden": true,
+    "historical_gate_passed": null,
+    "database_evidence_layer": "PRIVILEGED_READ_ONLY_COUNTS_NOT_BUSINESS_API",
+    "counts_before": {
+      "quality_tasks": 0,
+      "evaluation_runs": 1
+    },
+    "counts_after": {
+      "quality_tasks": 0,
+      "evaluation_runs": 1
+    }
+  }
+}

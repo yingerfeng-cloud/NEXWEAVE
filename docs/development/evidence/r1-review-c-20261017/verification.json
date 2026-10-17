@@ -1,0 +1,259 @@
+{
+  "schema": "nexweave.r1-review-local-verification/1",
+  "review_date": "2026-10-17",
+  "execution_dates": [
+    "2026-10-17",
+    "2026-10-18"
+  ],
+  "recorded_at": "2026-10-17T16:41:04.511170+00:00",
+  "overall_delivery_gate": "BLOCKED",
+  "scope": "AUTHORIZED_R1_REMEDIATION_NOT_M10_OR_INDUSTRIAL_ACCEPTANCE",
+  "branch": "codex/r1-review-remediation-20261017",
+  "baseline_commit": "a8436b79f3ccec084984df2595b409c12f9a47b4",
+  "code_commit": "598c4939bf63572d6fc6a67044a2b95e240163d0",
+  "code_commits": [
+    "cda95f1",
+    "d82433d",
+    "1293382",
+    "598c493"
+  ],
+  "prior_evidence_commits": [
+    "682c989",
+    "da8cd5e"
+  ],
+  "evidence_commit": "Containing commit; intentionally no circular self-hash",
+  "accepted_tag": {
+    "name": "r1-software-accepted-20260914",
+    "commit": "89b42fe1d6dd63ca4328a0f94087c9d81a7f1c4b",
+    "changed": false
+  },
+  "main_changed": false,
+  "push_performed": false,
+  "production_deployment": false,
+  "input": {
+    "evidence_zip_sha256": "a7f5571c00975ef4d36f33c54dae789be8c74dea50aeef31bd3b02ef63488efd",
+    "manifest_files_verified": 22,
+    "included_in_commit": false,
+    "observation_probes_are_repair_passes": false
+  },
+  "runtime": {
+    "implementation_version": "0.9.5-r1fix-c1",
+    "mode": "TASK_OWNED_LOCAL_ISOLATED_COMPOSE_AND_FORECAST_WORKER",
+    "state": "runtime-state.json",
+    "image_gate": "image-gate.json",
+    "api_image_source_check": {
+      "scope": "CURRENT_CHECKOUT_TO_RUNNING_API_IMAGE_PYTHON_CONTENT",
+      "files_compared": 142,
+      "mismatches": []
+    }
+  },
+  "checks": {
+    "make_check": {
+      "status": "PASS",
+      "python_nonintegration": 224,
+      "web": 53,
+      "contract_subset": 44,
+      "contract_subset_in_python_total": true,
+      "also": [
+        "Ruff format/lint",
+        "mypy",
+        "Prettier",
+        "ESLint",
+        "TypeScript",
+        "SDK",
+        "production Web build"
+      ],
+      "log": "quality.log"
+    },
+    "database_redis_object_store": {
+      "status": "PASS",
+      "tests": 26,
+      "deselected": 12,
+      "warnings": 27,
+      "evidence_layer": "Real PostgreSQL/Redis/S3 and authenticated ASGI routes; explicit SQL fixtures and substituted HTTP/Temporal/model dependencies where declared",
+      "log": "database.log"
+    },
+    "r1_real_services_chain": {
+      "status": "PASS",
+      "evidence_layer": "Real HTTP/S3/ClamAV/Parser/Temporal with synthetic data and scripted technical roles; not Web authoring",
+      "log": "r1-chain.log"
+    },
+    "review_outage": {
+      "status": "PASS",
+      "phases": 5,
+      "assertion_timeout_seconds": 45,
+      "timings": "review-delivery-timings.json",
+      "log": "review-delivery-final.log",
+      "old_failure_retained": "review-delivery-recovery.log",
+      "cached_failure_and_success_history": "poison-update-history.json",
+      "database_recovery": "review-poison-recovered.json"
+    },
+    "m1_m2_m3_m4_m9_pack": {
+      "status": "PASS",
+      "logs": [
+        "m1.log",
+        "m2.log",
+        "m3.log",
+        "m4.log",
+        "m9-pack.log"
+      ]
+    },
+    "pack_temporal_component": {
+      "status": "PASS",
+      "evidence_layer": "Real Temporal; substitute Activities",
+      "log": "temporal-component.log"
+    },
+    "migrations": {
+      "status": "PASS",
+      "head": "0015_r1_delivery",
+      "empty_database_upgrade_downgrade_reupgrade": "migrations.log",
+      "nonempty_clone_rollback_refused_without_history_loss": "migration-nonempty-guard.json"
+    },
+    "runtime_dependency_audit": {
+      "status": "PASS",
+      "known_vulnerabilities": 0,
+      "file": "runtime-audit.json"
+    },
+    "node_production_dependency_audit": {
+      "status": "PASS",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "file": "node-audit.json"
+    },
+    "forecast_dependency_audit": {
+      "status": "FAIL",
+      "package": "accelerate",
+      "version": "1.12.0",
+      "advisory": "PYSEC-2026-3804 / CVE-2026-69112 / GHSA-4j2p-28q2-5m79",
+      "reported_fix_versions": [],
+      "waiver_or_ignore_added": false,
+      "file": "forecast-audit.json"
+    },
+    "seven_arm64_images": {
+      "status": "PASS_EXISTING_FIXABLE_HIGH_CRITICAL_POLICY",
+      "images": 7,
+      "architecture": "arm64",
+      "production_promotion_performed": false,
+      "file": "image-gate.json"
+    },
+    "forecast_installed_environment": {
+      "status": "PASS_LOCK_MATCH_AND_PIP_CHECK",
+      "lock_matches": true,
+      "file": "forecast-environment.json",
+      "log": "forecast-pip-check.log"
+    },
+    "web": {
+      "status": "PASS_LISTED_SYNTHETIC_OPERATIONS",
+      "journey_spans_versions": [
+        "B",
+        "C"
+      ],
+      "browser_only_authoring_review_conflict_release": true,
+      "original_suite_questions": 2,
+      "original_minimum_pass_rate": 100,
+      "original_failed_1_0_0_preserved": true,
+      "new_1_0_1_pass_rate": 100,
+      "new_release_scope": {
+        "claim": 1,
+        "relation": 1,
+        "wiki_page_version": 1
+      },
+      "query_mode": "KEYWORD_NO_SEMANTIC_MODEL",
+      "evidence": "browser-state.json",
+      "screenshots": "web-*.png",
+      "conflict_web_evidence_is_warning_not_blocking": true
+    },
+    "independent_keyword_baseline": {
+      "status": "FAIL",
+      "cases": 20,
+      "passed": 16,
+      "minimum_pass_rate": 100,
+      "pass_rate": 80,
+      "dimension_metrics": {
+        "recall": 0.6923076923076923,
+        "answer": 0.6923076923076923,
+        "citation": 0.6923076923076923,
+        "refusal": 1.0
+      },
+      "real_semantic_model": "UNAVAILABLE_NOT_TESTED",
+      "file": "independent-knowledge-baseline.json"
+    },
+    "actual_text_embedding_baseline": {
+      "status": "CONFIGURATION_BLOCKED",
+      "model_calls": 0,
+      "scored_evaluation": false,
+      "substitute_protocol_tests_are_model_quality": false,
+      "file": "real-provider-baseline.json"
+    },
+    "chronos_rolling_origin": {
+      "status": "EXECUTED_NOT_INDUSTRIAL_ACCEPTANCE",
+      "actual_model": true,
+      "data": "SYNTHETIC",
+      "origins": 4,
+      "train_fraction": 0.6,
+      "history": 96,
+      "horizon": 12,
+      "step": 24,
+      "model_revision": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+      "file": "chronos-rolling-origin.json"
+    },
+    "forecast_cancel": {
+      "overall_all_layers_verified": false,
+      "direct_real_model_after_ready": "PROCESS_INTERRUPTED_EXIT_MINUS_15_DB_S3_NOT_APPLICABLE",
+      "real_asgi_s3_after_put": "ZERO_ARTIFACTS_AND_ZERO_EXACT_OBJECT_VERSIONS_WITH_SUBSTITUTE_NUMERICAL_PROVIDER",
+      "real_temporal_run": "DB_CANCELLED_ZERO_ARTIFACTS_S3_ZERO_VERSIONS_WORKFLOW_CANCEL_ACK",
+      "activity_cancel_ack_in_closed_history": false,
+      "same_temporal_run_model_ready_before_cancel": "NOT_OBSERVED",
+      "hard_crash_after_put_before_cleanup": "NOT_TESTED",
+      "file": "forecast-cancel-evidence.json"
+    },
+    "secret_scan": {
+      "status": "PASS_PATTERN_GATE_AND_EVIDENCE_CREDENTIAL_CHECK",
+      "log": "secret-scan.log",
+      "additional_checks": [
+        "No credential-bearing URLs",
+        "No bearer tokens",
+        "No password/API key values in copied evidence"
+      ],
+      "scope": "Deterministic repository scan and copied evidence; not comprehensive external security certification"
+    },
+    "remote_ci": {
+      "status": "NOT_RUN"
+    },
+    "official_x86_temporal_time_skipping": {
+      "status": "NOT_RUN_LOCAL_ARM64"
+    },
+    "dual_architecture_sign_and_promote": {
+      "status": "NOT_RUN"
+    },
+    "external_iam_and_connector_accounts": {
+      "status": "NOT_CONFIGURED_NOT_ACCEPTED"
+    },
+    "industrial_domain_expert_threshold_and_effectiveness": {
+      "status": "NOT_ACCEPTED_NOT_IN_SCOPE"
+    }
+  },
+  "blockers": [
+    "Strict optional forecast audit fails on accelerate; no vulnerability suppression or threshold reduction.",
+    "Actual text and embedding models/revisions/credentials absent; no semantic-quality score or fabricated calls."
+  ],
+  "remaining_validation": [
+    "External IAM and connector accounts",
+    "Actual text/embedding baseline at unchanged quality threshold",
+    "Same Temporal run cancellation after observed numerical-model readiness",
+    "Hard-crash object PUT/finally cleanup window",
+    "Remote CI, official x86 time-skipping, dual-architecture signatures/promotion",
+    "Independent industrial data, experts and approved thresholds"
+  ],
+  "evidence_handling": {
+    "local_workspace_paths_and_container_private_ips": "DISPLAY_REDACTED",
+    "assertions_scores_and_statuses": "NOT_MODIFIED",
+    "input_zip_credentials_env_weights_and_virtualenvs": "EXCLUDED",
+    "log_ANSI_and_trailing_whitespace": "NORMALIZED_FOR_REPOSITORY"
+  }
+}

@@ -220,3 +220,12 @@ OQ-LK-C-002 / DISCLOSED：本轮接口对返回支持材料重做门禁，不代
 ## 2026-09-14 R1 软件功能正式验收
 
 用户于 2026-09-14 明确“同意R1 软件功能验收，并固定当前版本为R1验收版本”。R1 软件功能正式验收通过；固定标签 `r1-software-accepted-20260914`。当前代码包含 M9.5/阶段 A—D 及后续补修，不重新定义 R1=M0—M9 的里程碑归属。Equipment RCA 专家、批准阈值、真实领域评审与工业效果仍独立开放；不授权 M10。验收记录：`docs/development/reports/R1_软件功能正式验收_20260914.md`。本条更新此前“仅本地技术验收”的当前状态，历史报告保留。
+
+## R1 Review 整改当前开放项 · 2026-10-18
+
+- OQ-R1-REMEDIATION-MODELS：真实文本/embedding配置与凭据尚未提供。适配、配置、不可变审计、真实PG/替身协议已完成；当前真实Provider基准为CONFIGURATION_BLOCKED、0调用、无分数。20题词面实测16/20，4题同义/跨语言失败不能改写成通过。可信main的正式镜像必须等同SHA真实基准通过；不会给PR代码模型secret。
+- OQ-R1-REMEDIATION-SUPPLY：accelerate 1.12.0的PYSEC-2026-3804严格审计失败，当前公告无修复版本；Chronos声明该依赖。单文件权重/哈希/拒绝分片索引只是暴露面控制。保留阻断，待核验修复版本或合规替代Provider后重跑；没有审计忽略或降门槛。
+- OQ-R1-REMEDIATION-IAM：OIDC Web/生产配置与协议、Redis路由验证已完成；外部IAM账号/客户端与登出联调未执行。开发技术角色/IdP替身不构成生产SSO验收。
+- OQ-R1-REMEDIATION-CANCEL：分别完成真实模型就绪后子进程中断、真实PG/S3晚到PUT清理、真实HTTP/Temporal取消/冻结重试核对。关闭的Temporal历史只有Activity取消请求，未见Activity确认；同一运行的数值模型就绪时点未关联观测。PUT后finally前硬崩溃未演练，也未新增自动孤儿清扫。不得将这些层级合并成“取消全部验收通过”。
+
+上述为本次新执行限制，不改写历史验收，不授权M10或生产部署。代码、分层证据和待验收条件见 `docs/development/reports/R1_Review_C批执行报告_20261017.md`。

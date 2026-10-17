@@ -1,0 +1,17 @@
+Real HTTP/Temporal review delivery: prepare passed; synthetic technical roles.
+ Container nexweave-r1-review-temporal-1 Stopping
+ Container nexweave-r1-review-temporal-1 Stopped
+Real HTTP/Temporal review delivery: queue-start passed; synthetic technical roles.
+ Container nexweave-r1-review-postgres-1 Waiting
+ Container nexweave-r1-review-postgres-1 Healthy
+ Container nexweave-r1-review-temporal-1 Starting
+ Container nexweave-r1-review-temporal-1 Started
+Real HTTP/Temporal review delivery: verify-start passed; synthetic technical roles.
+ Container nexweave-r1-review-temporal-1 Stopping
+ Container nexweave-r1-review-temporal-1 Stopped
+Real HTTP/Temporal review delivery: queue-decision passed; synthetic technical roles.
+ Container nexweave-r1-review-postgres-1 Waiting
+ Container nexweave-r1-review-postgres-1 Healthy
+ Container nexweave-r1-review-temporal-1 Starting
+ Container nexweave-r1-review-temporal-1 Started
+Real HTTP/Temporal review delivery: verify-decision passed; synthetic technical roles.

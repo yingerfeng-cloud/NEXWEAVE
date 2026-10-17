@@ -1,0 +1,4 @@
+{"run_id": "01a14a51-014b-7ed6-b246-6704e1e7cea6", "artifact_id": "01a14a51-185f-7bc7-8425-40fa4bc069f9", "checksum": "sha256:878a92c2250ecfdd9aef1ccf6ebbfc78dd5aa47712ac91b93952751caf56bc75", "scenario": "负荷保持70%", "provider": "chronos2", "p50_end": 58.183475494384766, "events": "EVALUATED_NO_MATCH"}
+{"run_id": "01a14a51-19a3-783d-95aa-13c93787616f", "artifact_id": "01a14a51-2bbb-7862-be37-429713313747", "checksum": "sha256:e5669cd1c2faad4672c864926fd5984611533d5f0687e0d2af68b275019d1cd3", "scenario": "两小时负荷70%升至95%", "provider": "chronos2", "p50_end": 61.026729583740234, "events": "MATCHED"}
+{"run_id": "01a14a51-2be3-7c66-9e0d-583eb9addba8", "artifact_id": "01a14a51-309f-7766-95c4-7cb0ab7306f8", "checksum": "sha256:14c5f7c8d7c449becc764e62ec263394900fcaa76c87bb5efc900a8084d99579", "scenario": "持久性基准（忽略协变量）", "provider": "persistence", "p50_end": 58.1848, "events": "NOT_EVALUATED"}
+M9.5 real execution succeeded with SYNTHETIC inputs; not an industrial benchmark.

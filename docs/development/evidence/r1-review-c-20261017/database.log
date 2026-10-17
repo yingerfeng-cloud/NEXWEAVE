@@ -1,0 +1,12 @@
+..........................                                               [100%]
+=============================== warnings summary ===============================
+apps/api/tests/test_r1_review_database.py: 25 warnings
+  sys:1: SAWarning: Did not recognize type 'vector' of column 'embedding'
+
+apps/api/tests/test_r1_review_database.py::test_web_review_context_conflict_decision_and_candidate_metadata_are_guarded
+apps/api/tests/test_r1_review_database.py::test_attribute_filters_execute_and_unknown_fields_fail
+  <WORKSPACE>/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:59: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    response = await handler(conn, exc)  # type: ignore[arg-type]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+26 passed, 12 deselected, 27 warnings in 14.20s

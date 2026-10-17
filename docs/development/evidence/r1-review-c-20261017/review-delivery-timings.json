@@ -1,0 +1,22 @@
+[
+  {
+    "phase": "prepare",
+    "elapsed_seconds": 1.11
+  },
+  {
+    "phase": "queue-start",
+    "elapsed_seconds": 5.19
+  },
+  {
+    "phase": "verify-start",
+    "elapsed_seconds": 6.4
+  },
+  {
+    "phase": "queue-decision",
+    "elapsed_seconds": 5.17
+  },
+  {
+    "phase": "verify-decision",
+    "elapsed_seconds": 2.26
+  }
+]

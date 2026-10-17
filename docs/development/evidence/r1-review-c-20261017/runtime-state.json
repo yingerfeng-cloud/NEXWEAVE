@@ -1,0 +1,70 @@
+{
+  "scope": "READ_ONLY_TASK_LOCAL_RUNTIME_NOT_PRODUCTION_DEPLOYMENT",
+  "recorded_at": "2026-10-17T16:40:07.509304+00:00",
+  "compose_project": "nexweave-r1-review",
+  "services": [
+    {
+      "service": "api",
+      "state": "running",
+      "health": "healthy",
+      "image": "nexweave-r1-review-api:c1-20261017",
+      "image_id": "sha256:54a71c8698dac0854356acb904cc4360fd6eeb5da9c12a1bdf937f56a57b77fe",
+      "matches_scan": true
+    },
+    {
+      "service": "web",
+      "state": "running",
+      "health": "healthy",
+      "image": "nexweave-r1-review-web:c1-20261017",
+      "image_id": "sha256:78afd47290c4e9d1d5fb894b8fb3cc2ca7f2dca65ec0571a4a706f80b842e164",
+      "matches_scan": true
+    },
+    {
+      "service": "worker-kernel",
+      "state": "running",
+      "health": "NO_DOCKER_HEALTHCHECK",
+      "image": "nexweave-r1-review-worker-kernel:c1-20261017",
+      "image_id": "sha256:0315f47771777530f6ebd65308a329b8f990f2767175a02057de27e5cc96f580",
+      "matches_scan": true
+    },
+    {
+      "service": "worker-parser",
+      "state": "running",
+      "health": "NO_DOCKER_HEALTHCHECK",
+      "image": "nexweave-r1-review-worker-parser:c1-20261017",
+      "image_id": "sha256:ad8307a7dd7645840c950da434076d5227d45d5104085195d0a3760c5ff6350d",
+      "matches_scan": true
+    },
+    {
+      "service": "worker-health",
+      "state": "running",
+      "health": "NO_DOCKER_HEALTHCHECK",
+      "image": "nexweave-r1-review-worker-health:c1-20261017",
+      "image_id": "sha256:508ab478785926a88a8e4ae3c1a95fe9860ebb265003ff1a4302f2c16b898ade",
+      "matches_scan": true
+    },
+    {
+      "service": "clamav",
+      "state": "running",
+      "health": "healthy",
+      "image": "nexweave-r1-review-clamav:20261017",
+      "image_id": "sha256:723c722e35cbfae4362fb82846fdfd946de6c51df919548eeca76865b268ae8b",
+      "matches_scan": true
+    },
+    {
+      "service": "rustfs",
+      "state": "running",
+      "health": "healthy",
+      "image": "quay.io/rustfs/rustfs:1.0.0-rc.4@sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b",
+      "image_id": "sha256:a9fbb5e5bfce09ccd0869ac9a7b0e39191c6868d75ec4c5d08ebbd5475db5d6b",
+      "matches_scan": true
+    }
+  ],
+  "forecast_worker": {
+    "ready": true,
+    "updated_at": 1792255205.271075,
+    "implementation_version": "0.9.5-r1fix-c1",
+    "error": null,
+    "process_running": true
+  }
+}

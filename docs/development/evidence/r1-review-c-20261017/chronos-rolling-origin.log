@@ -1,0 +1,1 @@
+{"status": "EXECUTED_NOT_INDUSTRIAL_ACCEPTANCE", "origins": 4, "cancellation": {"status": "PASS_PROCESS_INTERRUPTED", "database_artifacts": "NOT_APPLICABLE_DIRECT_MODEL_ENTRY", "object_storage": "NOT_APPLICABLE_DIRECT_MODEL_ENTRY", "model_ready_before_cancel": true, "interrupted": true, "process_exitcode": -15}}

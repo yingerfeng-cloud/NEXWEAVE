@@ -1,0 +1,21 @@
+services:
+  api:
+    image: nexweave-r1-review-api:c1-20261017
+    environment:
+      NEXWEAVE_BUILD_VERSION: 0.9.5-r1fix-c1
+  web:
+    image: nexweave-r1-review-web:c1-20261017
+  worker-kernel:
+    image: nexweave-r1-review-worker-kernel:c1-20261017
+    environment:
+      NEXWEAVE_BUILD_VERSION: 0.9.5-r1fix-c1
+  worker-health:
+    image: nexweave-r1-review-worker-health:c1-20261017
+  worker-parser:
+    image: nexweave-r1-review-worker-parser:c1-20261017
+    environment:
+      NEXWEAVE_BUILD_VERSION: 0.9.5-r1fix-c1
+  clamav:
+    image: nexweave-r1-review-clamav:20261017
+  parser-sandbox:
+    image: nexweave-r1-review-worker-parser:c1-20261017

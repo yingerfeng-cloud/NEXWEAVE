@@ -1,0 +1,11 @@
+ Container nexweave-r1-review-worker-kernel-1 Stopping
+ Container nexweave-r1-review-worker-kernel-1 Stopped
+ Container nexweave-r1-review-postgres-1 Waiting
+ Container nexweave-r1-review-postgres-1 Healthy
+ Container nexweave-r1-review-postgres-1 Waiting
+ Container nexweave-r1-review-temporal-1 Waiting
+ Container nexweave-r1-review-temporal-1 Healthy
+ Container nexweave-r1-review-postgres-1 Healthy
+ Container nexweave-r1-review-worker-kernel-1 Starting
+ Container nexweave-r1-review-worker-kernel-1 Started
+M2 real verification passed: seven workflows, all-type cancellation, Update idempotency, Activity and failed-run retries, approval, pause/resume, compensation, reconciliation, worker restart and replay
