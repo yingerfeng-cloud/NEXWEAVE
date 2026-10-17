@@ -1,0 +1,30 @@
+{
+  "scope": "Batch B repair; real Web release blocked at 50%; synthetic roles only",
+  "version": "0.9.5-r1fix-b1",
+  "checks": {
+    "python_nonintegration": 199,
+    "web": 52,
+    "contract_subset_already_counted": 39,
+    "real_pg_routes": 19,
+    "real_redis_substitute_idp": 1,
+    "migration_cycle": "PASS",
+    "scripted_real_r1_chain": "PASS",
+    "web_core_closure": "NOT_PASS_RELEASE_BLOCKED_50_PERCENT",
+    "external_iam": "NOT_RUN",
+    "remote_ci": "NOT_RUN_NO_PUSH"
+  },
+  "audits": {
+    "nexweave-b-python-audit.json": {
+      "sha256": "afa895965ae10b8657a93bda9a17903e28ebef68f0ad9ff3cffe12fac622c3c0",
+      "result": "PASS original vulnerability gate"
+    },
+    "nexweave-b-node-audit.json": {
+      "sha256": "57ce2f84b4c3d56f745ff3ea2b037c9679add6e166ba1cee2c3e4ad20cb5dd94",
+      "result": "PASS original vulnerability gate"
+    },
+    "b-api-image-audit.json": {
+      "sha256": "1d6d918d09d8cc7c247deba2f955ab1513de61c650303906080bc16b3c1545f3",
+      "result": "PASS original vulnerability gate"
+    }
+  }
+}

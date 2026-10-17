@@ -3,7 +3,7 @@
 > 当前验收状态（2026-09-14）：用户于 2026-09-14 明确“同意R1 软件功能验收，并固定当前版本为R1验收版本”。R1 软件功能正式验收通过；固定标签 `r1-software-accepted-20260914`。当前代码包含 M9.5/阶段 A—D 及后续补修，不重新定义 R1=M0—M9 的里程碑归属。Equipment RCA 专家、批准阈值、真实领域评审与工业效果仍独立开放；不授权 M10。验收记录：`docs/development/reports/R1_软件功能正式验收_20260914.md`。本条更新此前“仅本地技术验收”的当前状态，历史报告保留。
 
 - Current Release: R1（M0—M9）
-- Current Milestone: M9.5 Stage D trusted-read consolidation completed local technical verification on 2026-09-10 (11F / ADR-0036). Query/Graph guards, source navigation and key browser flows verified; 162 Python and 33 Web tests passed. Runtime 0.9.5-d1. M9 expert/industrial acceptance remains open; stop at D, no M10.
+- Current iteration: 2026-10-17 R1 Review remediation B (ADR-0038/0039), runtime 0.9.5-r1fix-b1. A/B code and local regressions implemented; real Web author/editor separation and Claim/Relation/Wiki review verified. Natural-question evaluation is 50%, so Web release remains blocked pending C retrieval/provider repair. External IAM/model and industrial acceptance remain open; no M10.
 - Business implementation: M1—M8 are formally accepted; M9 adds a declarative signed Equipment RCA Pack, admitted NTSB corpus and four-source Pack→Source→Compile technical pilot without claiming expert acceptance, customer applicability or GridCrew integration
 - Git repository: `https://github.com/yingerfeng-cloud/NEXWEAVE.git`, local `main` preserves the remote initial commit without force-push
 - Git baseline before the M1/M2 delivery commit: `727811f`; the user authorized and pushed the M1/M2 delivery and CI closeout on 2026-08-25. Functional gate commit `ddbcc6e` is on `origin/main` and GitHub Actions run `32808198635` passed

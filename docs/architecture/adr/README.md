@@ -40,3 +40,7 @@ ADR-0001—0018 已在 M0 冻结；ADR-0019 冻结 M1；ADR-0020 冻结 M2 Tempo
 ADR-0036：[阶段 D 固定发布读取与验收收口](ADR-0036-stage-d-trusted-read-boundary.md)，Accepted，实施与本地技术验证完成（2026-09-10）；不进入 M10。
 
 ADR-0037：[R1 可信读取与流程反馈](ADR-0037-r1-trusted-read-feedback.md)，Accepted，增量 UX/契约收口；无迁移，不进入 M10。
+
+ADR-0038：[R1 Review 信任与门禁修复](ADR-0038-r1-review-remediation.md)，本轮用户授权。
+
+ADR-0039：[R1 Web 操作与 OIDC 会话](ADR-0039-r1-web-operation-closure.md)，本轮用户授权；真实 Web 质量失败保持阻断，尚未宣称完整验收。

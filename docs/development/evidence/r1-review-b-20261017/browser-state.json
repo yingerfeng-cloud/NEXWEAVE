@@ -1,0 +1,249 @@
+{
+  "scope": "SYNTHETIC_WEB_OPERATIONS_WITH_TECHNICAL_ROLES",
+  "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+  "slug": "r1-operations-1017",
+  "reviews": [
+    {
+      "id": "01a14a01-30b5-743e-a5fd-b7321f6842db",
+      "target_type": "CLAIM_CANDIDATE",
+      "risk": "HIGH",
+      "status": "APPROVED",
+      "initiated_by": "01a149bc-5449-7214-aae1-51135c101639",
+      "revisions": 2
+    },
+    {
+      "id": "01a14a02-200c-79d3-b3a5-5a10cb74a954",
+      "target_type": "RELATION_CANDIDATE",
+      "risk": "HIGH",
+      "status": "APPROVED",
+      "initiated_by": "01a149bc-5449-7214-aae1-51135c101639",
+      "revisions": 1
+    },
+    {
+      "id": "01a14a16-0685-7d66-9aa9-f12b163733bb",
+      "target_type": "WIKI_PAGE_VERSION",
+      "risk": "HIGH",
+      "status": "APPROVED",
+      "initiated_by": "01a149bc-5449-7214-aae1-51135c101639",
+      "revisions": 1
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "01a149ff-0434-7496-9ee9-5503a1742e36",
+      "severity": "WARNING",
+      "blocking": false,
+      "status": "RESOLVED",
+      "decisions": [
+        {
+          "resolution": "UNRESOLVED",
+          "reason": "两份合成资料未注明运行工况，先保留阻断并核对原文，不能静默覆盖70与90的分歧。",
+          "conditions": {}
+        },
+        {
+          "resolution": "CONDITIONAL",
+          "reason": "核对双方原文后，70与90分别对应资料明确写出的 operational 与 stopped 合成状态，保留各自证据和适用工况。",
+          "conditions": {
+            "applicability": "仅限合成测试：A方用于 operational，B方用于 stopped；不得混为同一工况的测量结论。"
+          }
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "01a14a1f-47d1-7f96-b5da-8ce90d400096",
+      "version": "1.0.0",
+      "status": "FAILED",
+      "manifest": {
+        "objects": {
+          "claim": [
+            "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3"
+          ],
+          "relation": [
+            "01a14a0a-3e61-7487-800f-b6364680a9da"
+          ],
+          "wiki_page_version": [
+            "01a149fe-040f-7c7e-8594-5cac43a6149e"
+          ]
+        },
+        "version": "1.0.0",
+        "entity_ids": [
+          "01a149fe-0408-7346-8f00-47028c61ffb8",
+          "01a149fe-040e-7289-9e75-3307a46f18af"
+        ],
+        "pack_inputs": [],
+        "source_refs": [
+          {
+            "evidence_id": "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+            "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+            "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+            "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+          },
+          {
+            "evidence_id": "01a14a0a-3e64-7294-a563-9780ee0b8ae0",
+            "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+            "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+            "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373"
+          },
+          {
+            "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+            "source_anchor_id": "510fd18b-8c5f-7192-99ae-a91007be9f94",
+            "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373",
+            "wiki_page_version_id": "01a149fe-040f-7c7e-8594-5cac43a6149e"
+          },
+          {
+            "source_checksum": "sha256:1d82b93d298977f1e0460d6cb823dacc1fb0086c0f306510c3431710cfd3ccb5",
+            "source_anchor_id": "b2a5b88c-ab82-7e42-aae3-52eac528255b",
+            "source_version_id": "01a149fd-b038-7701-86ec-4f5427a02373",
+            "wiki_page_version_id": "01a149fe-040f-7c7e-8594-5cac43a6149e"
+          }
+        ],
+        "evidence_ids": [
+          "01a14a09-b9c5-702e-b8c6-7aff288c02be",
+          "01a14a0a-3e64-7294-a563-9780ee0b8ae0"
+        ],
+        "index_config": {
+          "fusion": "rrf",
+          "version": "m7-r1",
+          "vector_dimensions": 16
+        },
+        "entity_snapshots": {
+          "01a149fe-0408-7346-8f00-47028c61ffb8": {
+            "id": "01a149fe-0408-7346-8f00-47028c61ffb8",
+            "status": "DRAFT",
+            "version": 3,
+            "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+            "type_key": "r1-browser.example/equipment",
+            "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+            "created_at": "2026-10-17 13:12:26.376187+00:00",
+            "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+            "updated_at": "2026-10-17 13:12:57.697468+00:00",
+            "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+            "display_name": "Pump A",
+            "normalized_key": "pump-a-ea99e5396fb0",
+            "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+            "current_version_id": "01a149fe-040a-7fd5-8890-f660d56396aa"
+          },
+          "01a149fe-040e-7289-9e75-3307a46f18af": {
+            "id": "01a149fe-040e-7289-9e75-3307a46f18af",
+            "status": "DRAFT",
+            "version": 2,
+            "space_id": "01a149ae-a8ac-75e4-b978-5f338315beef",
+            "type_key": "r1-browser.example/equipment",
+            "tenant_id": "01a14931-b19f-7773-9872-b5494ff809d2",
+            "created_at": "2026-10-17 13:12:26.376187+00:00",
+            "created_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+            "updated_at": "2026-10-17 13:12:26.376187+00:00",
+            "updated_by": "01a14931-b19f-7e8a-83ac-5fa93db18fa1",
+            "display_name": "Pump B",
+            "normalized_key": "pump-b-f138b45fa917",
+            "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+            "current_version_id": "01a149fe-040e-76d0-ac66-78c7419ab14a"
+          }
+        },
+        "model_profile_id": "01a149c4-802a-7242-8bc4-6416b2e97e0a",
+        "prompt_version_id": "01a149c4-c426-79dd-9f48-a925fb4d4184",
+        "schema_version_id": "01a149c5-0c71-7f96-8dbf-87170238720f",
+        "evaluation_suite_id": "01a14a0b-4c41-7ccf-8d36-ee0fe92457cd",
+        "composition_checksum": "sha256:45b905614d9b854fccec335c300d9e314bde3d18441ae191d7b817afe61480bc"
+      },
+      "gate_summary": {
+        "error_code": "RELEASE_EVALUATION_GATE_FAILED",
+        "evaluation_passed": false,
+        "evaluation_run_id": "01a14a1f-4953-77ed-be07-01af7c2e8c16",
+        "blocking_lint_count": 0,
+        "traceability_percent": 100,
+        "schema_compliance_percent": 100,
+        "unresolved_blocking_conflicts": 0
+      }
+    }
+  ],
+  "evaluations": [
+    {
+      "id": "01a14a1f-4953-77ed-be07-01af7c2e8c16",
+      "status": "SUCCEEDED",
+      "metrics": {
+        "cases": 2,
+        "failed": 1,
+        "passed": 1,
+        "pass_rate": 50,
+        "pipeline_version": "r1-query-v2",
+        "minimum_pass_rate": 100
+      },
+      "gate_passed": false,
+      "results": [
+        {
+          "case_key": "case-1",
+          "answer_status": "REFUSED",
+          "passed": false,
+          "details": {
+            "actual": {
+              "status": "REFUSED",
+              "citations": [],
+              "key_basis": [],
+              "answer_reason": "NO_MATCHING_KNOWLEDGE",
+              "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+              "retrieval_hits": [],
+              "candidate_count": 0,
+              "retrieval_trace": [],
+              "pipeline_version": "r1-query-v2",
+              "retrieval_strategy": "HYBRID"
+            },
+            "scoring": {
+              "refusal_matches": false,
+              "terms_in_answer": false,
+              "expected_refusal": false,
+              "expected_claims_cited": false,
+              "refusal_reason_matches": true,
+              "expected_refusal_reason": null,
+              "expected_claims_retrieved": false
+            },
+            "question": "What is the temperature of Pump A in the operational synthetic scenario?",
+            "expected_terms": [
+              "70 degC"
+            ],
+            "pipeline_version": "r1-query-v2",
+            "valid_expectation": true,
+            "expected_claim_ids": [
+              "01a14a09-b9c4-7250-af2f-b0c8e5f83ff3"
+            ]
+          }
+        },
+        {
+          "case_key": "case-2",
+          "answer_status": "REFUSED",
+          "passed": true,
+          "details": {
+            "actual": {
+              "status": "REFUSED",
+              "citations": [],
+              "key_basis": [],
+              "answer_reason": "NO_MATCHING_KNOWLEDGE",
+              "direct_answer": "当前固定知识范围中没有足够的可见有效证据，无法下结论。",
+              "retrieval_hits": [],
+              "candidate_count": 0,
+              "retrieval_trace": [],
+              "pipeline_version": "r1-query-v2",
+              "retrieval_strategy": "HYBRID"
+            },
+            "scoring": {
+              "refusal_matches": true,
+              "terms_in_answer": true,
+              "expected_refusal": true,
+              "expected_claims_cited": true,
+              "refusal_reason_matches": true,
+              "expected_refusal_reason": "NO_MATCHING_KNOWLEDGE",
+              "expected_claims_retrieved": true
+            },
+            "question": "What is the temperature of Turbine Z999?",
+            "expected_terms": [],
+            "pipeline_version": "r1-query-v2",
+            "valid_expectation": true,
+            "expected_claim_ids": []
+          }
+        }
+      ]
+    }
+  ]
+}
