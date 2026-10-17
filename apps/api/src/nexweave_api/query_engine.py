@@ -1,4 +1,5 @@
 """Shared SQL retrieval and evidence-bound answer execution for Query and Evaluation."""
+# ruff: noqa: S608 - SQL fragments are static; all user values are bound parameters.
 
 import json
 from typing import Any
@@ -9,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from nexweave_api.derived_reads import DerivedReadGate
 from nexweave_api.errors import ApiProblem
+from nexweave_api.lexical_search import keyword_ranking, object_scope
 from nexweave_domain import Principal, new_uuid7, reciprocal_rank_fusion
 from nexweave_domain.access import CLASSIFICATION_LEVEL
 
@@ -51,10 +53,14 @@ async def retrieve(
             "ATTRIBUTE requires an explicit supported filter.",
         )
     params = {
-        "documents": json.dumps(documents),
+        "documents": json.dumps(
+            [{**d, "classification": CLASSIFICATION_LEVEL[d["classification"]]} for d in documents]
+        ),
         "query": keyword_query,
         "clearance": CLASSIFICATION_LEVEL[principal.clearance],
-        "embedding": "[" + ",".join(str(float(v)) for v in query_vector) + "]",
+        "embedding": "[" + ",".join(str(float(v)) for v in query_vector) + "]"
+        if query_vector
+        else None,
         "limit": int(payload["top_k"]) * 4,
         "predicate": filters.get("predicate_key"),
         "subject": filters.get("subject_entity_id"),
@@ -62,47 +68,44 @@ async def retrieve(
     base = """classification<=:clearance
         AND (CAST(:predicate AS text) IS NULL OR attributes->>'predicate_key'=:predicate)
         AND (CAST(:subject AS text) IS NULL OR attributes->>'subject_entity_id'=:subject)"""
-    keyword = (
+    eligible = (
         (
             await connection.execute(
-                text(  # noqa: S608
-                    DOCS  # noqa: S608
-                    + """
-        SELECT object_id,ROW_NUMBER() OVER (
-            ORDER BY ts_rank(search_vector,plainto_tsquery('simple',:query)) DESC,object_id) AS rank
-        FROM documents WHERE """
-                    + base
-                    + (
-                        ""
-                        if payload["strategy"] == "ATTRIBUTE"
-                        else " AND search_vector @@ plainto_tsquery('simple',:query)"
-                    )
-                    + " ORDER BY rank LIMIT :limit"
-                ),
-                params,
+                text(DOCS + "SELECT object_id FROM documents WHERE " + base),
+                params,  # noqa: S608
             )
         )
-        .mappings()
+        .scalars()
         .all()
-    )
-    semantic = (
-        (
-            await connection.execute(
-                text(  # noqa: S608
-                    DOCS  # noqa: S608
-                    + """
-        SELECT object_id,1-(embedding <=> CAST(:embedding AS vector)) AS similarity,
-            ROW_NUMBER() OVER (ORDER BY embedding <=> CAST(:embedding AS vector),object_id) AS rank
-        FROM documents WHERE """
-                    + base
-                    + " ORDER BY embedding <=> CAST(:embedding AS vector),object_id LIMIT :limit"
-                ),
-                params,
+    )  # noqa: S608
+    docs = [d for d in documents if str(d["object_id"]) in set(eligible)]
+    scoped_docs = object_scope(docs, payload["question"])
+    params["scoped_ids"] = [str(d["object_id"]) for d in scoped_docs]
+    keyword_ids = keyword_ranking(scoped_docs, payload["question"])
+    keyword = [{"object_id": value} for value in keyword_ids]
+    if payload["strategy"] == "ATTRIBUTE":
+        keyword = [{"object_id": d["object_id"]} for d in docs]
+    semantic: Any = []
+    if payload["strategy"] in {"SEMANTIC", "HYBRID"}:
+        semantic = (
+            (
+                await connection.execute(
+                    text(
+                        DOCS + "SELECT object_id,1-(embedding <=> CAST(:embedding AS vector)) "
+                        "AS similarity "
+                        "FROM documents WHERE "
+                        + base
+                        + " AND object_id=ANY(:scoped_ids) AND embedding IS NOT NULL "
+                        "ORDER BY embedding <=> "
+                        "CAST(:embedding AS vector),"
+                        "object_id LIMIT :limit"
+                    ),
+                    params,
+                )
             )
-        )
-        .mappings()
-        .all()
-    )
+            .mappings()
+            .all()
+        )  # noqa: S608
     rankings = {}
     if payload["strategy"] in {"KEYWORD", "ATTRIBUTE", "HYBRID"}:
         rankings["keyword"] = [str(item["object_id"]) for item in keyword]
@@ -113,7 +116,7 @@ async def retrieve(
     fused = [
         item
         for item in reciprocal_rank_fusion(rankings)
-        if item[0] in keywords or similarities.get(item[0], -1) >= 0.9
+        if item[0] in keywords or similarities.get(item[0], -1) >= 0.5
     ][: payload["top_k"]]
     by_id = {str(d["object_id"]): d for d in documents}
     return [

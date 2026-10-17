@@ -22,6 +22,10 @@ def validate_temporal_declarations(snapshot: Mapping[str, Any]) -> None:
         if signal["typeKey"] not in types or not signal.get("unit"):
             raise SemanticRuleViolation("SEMANTIC_MODEL_INVALID", "Signal type or unit invalid.")
     for profile in snapshot.get("forecastProfiles", []):
+        if len(profile["pastCovariates"]) + len(profile["futureCovariates"]) > 8:
+            raise SemanticRuleViolation(
+                "SEMANTIC_MODEL_INVALID", "At most eight total covariates are supported."
+            )
         keys = [profile["target"], *profile["pastCovariates"], *profile["futureCovariates"]]
         if len(keys) != len(set(keys)) or not set(keys) <= signals.keys():
             raise SemanticRuleViolation("SEMANTIC_MODEL_INVALID", "Forecast roles are invalid.")

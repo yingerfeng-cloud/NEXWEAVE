@@ -1,0 +1,27 @@
+{
+  "version": "r1-independent-questions/1",
+  "data_kind": "SYNTHETIC_BUSINESS_BASELINE_NOT_INDUSTRIAL",
+  "purpose": "Independent natural-language, Chinese, synonym, entity identifier, negation, wrong-object and insufficient-evidence questions. Do not remove failures to report overall accuracy.",
+  "cases": [
+    {"key":"natural-en","question":"What is the temperature of Device P101 during operation?","entity":"Device P101","terms":["70 degC"]},
+    {"key":"natural-en-state","question":"Is Device P102 standby equipment?","entity":"Device P102","terms":["standby"]},
+    {"key":"chinese-temp","question":"设备P201的运行温度是多少？","entity":"设备P201","terms":["65摄氏度"]},
+    {"key":"identifier-only","question":"P101 temperature?","entity":"Device P101","terms":["70 degC"]},
+    {"key":"identifier-zh","question":"P201温度？","entity":"设备P201","terms":["65摄氏度"]},
+    {"key":"negative-en","question":"Does Device P301 feed Device P302?","entity":"Device P301","terms":["does not feed"]},
+    {"key":"negative-zh","question":"设备P202是否向设备P201供给介质？","entity":"设备P202","terms":["未向设备P201供给"]},
+    {"key":"explicit-edge","question":"Does Device P101 feed Device P102?","entity":"Device P101","terms":["feeds Device P102"]},
+    {"key":"wrong-id","question":"What is the temperature of Device P999?","refuse":true},
+    {"key":"wrong-type-id","question":"What is the temperature of Turbine Z999?","refuse":true},
+    {"key":"wrong-zh-id","question":"设备P999的温度是多少？","refuse":true},
+    {"key":"wrong-object","question":"What is the temperature of an unrelated turbine?","refuse":true},
+    {"key":"insufficient-certification","question":"Who certified Device P101?","refuse":true},
+    {"key":"insufficient-pressure","question":"What is the pressure of Device P101?","refuse":true},
+    {"key":"independent-listing","question":"Does Device P302 feed Device P101?","refuse":true},
+    {"key":"domain-vocabulary","question":"What is Device P102 standby duty?","entity":"Device P102","terms":["standby"]},
+    {"key":"synonym-heat","question":"How hot is Device P101?","entity":"Device P101","terms":["70 degC"],"requires":"semantic_model_or_governed_synonym"},
+    {"key":"synonym-alternate","question":"What is Device P102 alternate role?","entity":"Device P102","terms":["standby"],"requires":"semantic_model_or_governed_synonym"},
+    {"key":"cross-language-en","question":"What is the temperature of P201?","entity":"设备P201","terms":["65摄氏度"],"requires":"semantic_model_or_governed_synonym"},
+    {"key":"cross-language-zh","question":"P101的温度是多少？","entity":"Device P101","terms":["70 degC"],"requires":"semantic_model_or_governed_synonym"}
+  ]
+}

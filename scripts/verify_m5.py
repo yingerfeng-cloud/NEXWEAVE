@@ -74,8 +74,9 @@ def _login(client: httpx.Client, subject: str) -> Api:
 
 def _create_source(api: Api, space_id: str, suffix: str, *, state: str = "operational") -> str:
     content = (
-        f"Pump A is the primary synthetic cooling pump. State: {state}.\n\n"
-        "Pump B is the synthetic standby cooling pump."
+        f"Pump A. Pump A is the primary synthetic cooling pump. State: {state}. "
+        "Pump A backs up Pump B.\n\n"
+        "Pump B. Pump B is the synthetic standby cooling pump."
     ).encode()
     checksum = _sha(content)
     session = api.request(
@@ -114,7 +115,12 @@ def _create_source(api: Api, space_id: str, suffix: str, *, state: str = "operat
 
 
 def _create_published_schema(
-    admin: Api, client: httpx.Client, space: dict[str, Any], suffix: str
+    admin: Api,
+    client: httpx.Client,
+    space: dict[str, Any],
+    suffix: str,
+    *,
+    relation_verb: str = "backs-up",
 ) -> dict[str, Any]:
     namespace = f"m5-{suffix}.example"
     created = admin.request(
@@ -152,7 +158,7 @@ def _create_published_schema(
                 ],
                 "relations": [
                     {
-                        "key": f"{namespace}/backs-up",
+                        "key": f"{namespace}/{relation_verb}",
                         "domain": f"{namespace}/equipment",
                         "range": f"{namespace}/equipment",
                         "direction": "DIRECTED",

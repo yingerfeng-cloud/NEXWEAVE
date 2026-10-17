@@ -84,6 +84,7 @@ export type AuditLog = {
 
 export type GovernanceObject = {
   id: string;
+  config?: Record<string, unknown>;
   name?: string;
   prompt_key?: string;
   model_name?: string;

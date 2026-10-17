@@ -88,12 +88,13 @@ function CompileCenterView({
     // step visibly flash while the three-second poll is in flight.
     if (!hasLoadedRef.current) setLoading(true);
     try {
+      const options = api.executionOptions(spaceId);
       const results = await Promise.allSettled([
         api.compileJobs(spaceId),
         api.schemas(spaceId),
         api.sources(spaceId, { limit: 100 }),
-        api.listGovernance("prompt-versions"),
-        api.listGovernance("model-profiles"),
+        options.then((o) => ({ items: o.prompt_versions })),
+        options.then((o) => ({ items: o.model_profiles })),
       ]);
       if (epoch !== loadEpoch.current) return;
       const [jobResult, schemaResult, sourceResult, promptResult, modelResult] =

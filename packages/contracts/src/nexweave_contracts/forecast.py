@@ -59,6 +59,8 @@ class ForecastProfile(ContractModel):
 
     @model_validator(mode="after")
     def distinct_roles(self) -> "ForecastProfile":
+        if len(self.pastCovariates) + len(self.futureCovariates) > 8:
+            raise ValueError("At most eight total covariates are supported by a binding.")
         keys = (self.target, *self.pastCovariates, *self.futureCovariates)
         if len(set(keys)) != len(keys):
             raise ValueError("Each signal must have exactly one role in this profile.")

@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     forecast_model_path: str = ".nexweave-data/models/chronos-2"
     forecast_model_revision: str = "29ec3766d36d6f73f0696f85560a422f50e8498c"
     model_gateway_endpoint: str = ""
+    model_gateway_api_key: SecretStr = SecretStr("")
+    model_gateway_externally_hosted: bool = True
     secret_provider: str = Field(default="local-env-m1-only")
     health_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
     object_upload_max_bytes: int = Field(default=104_857_600, gt=0)

@@ -59,7 +59,7 @@ function QualityView({ api, spaceId }: Props) {
   const [cases, setCases] = useState<DraftCase[]>([newCase(1)]);
   const [suiteId, setSuiteId] = useState("");
   const [target, setTarget] = useState("");
-  const [strategy, setStrategy] = useState("HYBRID");
+  const [strategy, setStrategy] = useState("KEYWORD");
   const [predicate, setPredicate] = useState("");
   const [subject, setSubject] = useState("");
   const [selectedRun, setSelectedRun] = useState("");
@@ -608,6 +608,8 @@ function ReleaseView({ api, spaceId }: Props) {
   const [suiteId, setSuiteId] = useState("");
   const [promptId, setPromptId] = useState("");
   const [modelId, setModelId] = useState("");
+  const [retrievalStrategy, setRetrievalStrategy] = useState("KEYWORD");
+  const [embeddingId, setEmbeddingId] = useState("");
   const [claimIds, setClaimIds] = useState<string[]>([]);
   const [relationIds, setRelationIds] = useState<string[]>([]);
   const [wikiIds, setWikiIds] = useState<string[]>([]);
@@ -617,20 +619,24 @@ function ReleaseView({ api, spaceId }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [configurationError, setConfigurationError] = useState("");
   const load = useCallback(async () => {
     if (!spaceId) return;
     try {
-      const [ca, re, su, sc, cl, rel, wp, pr, mo] = await Promise.all([
-        api.releaseCandidates(spaceId),
-        api.releases(spaceId),
-        api.evaluationSuites(spaceId),
-        api.schemas(spaceId),
-        api.claims(spaceId),
-        api.relations(spaceId),
-        api.wikiPages(spaceId),
-        api.listGovernance("prompt-versions"),
-        api.listGovernance("model-profiles"),
+      const [core, options] = await Promise.allSettled([
+        Promise.all([
+          api.releaseCandidates(spaceId),
+          api.releases(spaceId),
+          api.evaluationSuites(spaceId),
+          api.schemas(spaceId),
+          api.claims(spaceId),
+          api.relations(spaceId),
+          api.wikiPages(spaceId),
+        ]),
+        api.executionOptions(spaceId),
       ]);
+      if (core.status === "rejected") throw core.reason;
+      const [ca, re, su, sc, cl, rel, wp] = core.value;
       setCandidates(ca.items);
       setReleases(re.items);
       setSuites(su);
@@ -638,8 +644,17 @@ function ReleaseView({ api, spaceId }: Props) {
       setClaims(cl.items);
       setRelations(rel.items);
       setPages(wp.items);
-      setPrompts(pr.items.filter((p) => !p.space_id || p.space_id === spaceId));
-      setModels(mo.items.filter((m) => !m.space_id || m.space_id === spaceId));
+      setPrompts(
+        options.status === "fulfilled" ? options.value.prompt_versions : [],
+      );
+      setModels(
+        options.status === "fulfilled" ? options.value.model_profiles : [],
+      );
+      setConfigurationError(
+        options.status === "rejected"
+          ? `创建配置暂不可用：${messageOf(options.reason)}`
+          : "",
+      );
       setError("");
     } catch (cause) {
       setError(messageOf(cause));
@@ -684,9 +699,9 @@ function ReleaseView({ api, spaceId }: Props) {
         relation_ids: relationIds,
         wiki_page_version_ids: wikiIds,
         index_config: {
-          version: "m7-r1",
-          fusion: "rrf",
-          vector_dimensions: 16,
+          version: "r1-query-v3",
+          retrieval_strategy: retrievalStrategy,
+          ...(embeddingId ? { embedding_model_profile_id: embeddingId } : {}),
         },
         notes,
       });
@@ -725,6 +740,7 @@ function ReleaseView({ api, spaceId }: Props) {
       <GovernanceStepper current="releases" />
       {error && <ErrorState message={error} onRetry={load} />}
       {notice && <p role="status">{notice}</p>}
+      {configurationError && <p role="status">{configurationError}</p>}
       <form className="data-card m7-form" onSubmit={(e) => void create(e)}>
         <h2>创建发布候选</h2>
         <label>
@@ -805,6 +821,41 @@ function ReleaseView({ api, spaceId }: Props) {
             ))}
           </select>
         </label>
+        <label>
+          发布检索策略
+          <select
+            value={retrievalStrategy}
+            onChange={(e) => setRetrievalStrategy(e.target.value)}
+          >
+            <option value="KEYWORD">词面检索（无需模型）</option>
+            <option value="HYBRID">混合检索（需真实 embedding）</option>
+            <option value="SEMANTIC">语义检索（需真实 embedding）</option>
+          </select>
+        </label>
+        {retrievalStrategy !== "KEYWORD" && (
+          <label>
+            真实 embedding 配置
+            <select
+              required
+              value={embeddingId}
+              onChange={(e) => setEmbeddingId(e.target.value)}
+            >
+              <option value="">请选择已配置的真实 embedding 模型</option>
+              {models
+                .filter(
+                  (m) =>
+                    m.provider === "openai-compatible" &&
+                    (m.config as Record<string, unknown> | undefined)
+                      ?.capability === "embedding",
+                )
+                .map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {String(m.name)} · {String(m.model_name)}
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
         <fieldset>
           <legend>发布 Claim（默认不选）</legend>
           {claims

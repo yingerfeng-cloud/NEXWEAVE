@@ -396,6 +396,13 @@ export class NexweaveApi {
     return this.request<ListResponse<GovernanceObject>>(`/${kind}`);
   }
 
+  executionOptions(spaceId: string) {
+    return this.request<{
+      model_profiles: GovernanceObject[];
+      prompt_versions: GovernanceObject[];
+    }>(`/spaces/${spaceId}/execution-options`);
+  }
+
   createGovernance(
     kind: "model-profiles" | "prompt-versions" | "connector-definitions",
     body: Record<string, unknown>,

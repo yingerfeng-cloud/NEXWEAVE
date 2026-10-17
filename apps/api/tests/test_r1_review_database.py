@@ -368,9 +368,7 @@ async def system():
         )
         await repo._persist_release_items(c, release, candidate_row)
         docs = await repo._projection_documents(c, candidate_row)
-        vectors = await repo._model_gateway.embedding(
-            model_profile_id=str(model), texts=tuple(d["body"] for d in docs)
-        )
+        vectors = tuple(None for _ in docs)
         await repo._persist_projection(c, release, candidate_row, docs, vectors)
     app = create_app(settings, database=database, repository=repo)
     async with httpx.AsyncClient(
@@ -974,11 +972,25 @@ async def test_high_risk_real_author_stage_roles_material_edit_and_delivery(syst
             self.commands.append(kwargs)
             return {}
 
+        async def completed_review_result(self, workflow_id):
+            return None
+
+        async def inspect(self, **kwargs):
+            return {"status": "WAITING", "current_step": "wait-for-audited-final-decision"}
+
     recovered = RecoveredTemporal()
+    # Advance only this synthetic queue's retry clock; the protocol is still a
+    # substitute and is never counted as real Temporal recovery acceptance.
+    async with s.database.engine.begin() as c:
+        await c.execute(
+            text("UPDATE review_deliveries SET next_attempt_at=now() WHERE review_case_id=:id"),
+            {"id": UUID(case["id"])},
+        )
     await ReviewDelivery(s.repo, recovered).deliver(UUID(case["id"]))
     await ReviewDelivery(s.repo, recovered).deliver(UUID(case["id"]))
     assert len(recovered.starts) == len(recovered.commands) == 1
     assert recovered.commands[0]["action"] == "APPROVE"
+    assert recovered.commands[0]["command_id"].startswith("review-delivery:")
 
 
 @pytest.mark.parametrize("change", [None, "invalidate", "revoke", "archive", "conflict", "entity"])
@@ -1611,3 +1623,533 @@ async def test_manifest_entity_version_comes_from_selected_content_not_unselecte
         gate = DerivedReadGate(c, reader, s.space)
         assert not await gate.can_read("ENTITY", selected["entity"])
         assert await gate.can_read("ENTITY", selected["entity"], snapshot)
+
+
+async def test_real_provider_protocol_persists_immutable_audit_in_real_database(system):
+    from sqlalchemy.exc import DBAPIError
+
+    from nexweave_api.configured_model_gateway import ConfiguredModelGateway
+
+    s = system
+    response = await s.client.post(
+        "/api/v1/model-profiles",
+        headers=s.headers(s.admin),
+        json={
+            "space_id": str(s.space),
+            "name": "Substitute HTTP protocol only, not real model acceptance",
+            "provider": "openai-compatible",
+            "model_name": "substitute-protocol-v1",
+            "maximum_classification": "INTERNAL",
+            "config": {
+                "capability": "embedding",
+                "revision": "test-fixed-revision",
+                "dimensions": 3,
+            },
+        },
+    )
+    assert response.status_code == 200, response.text
+    profile_id = response.json()["id"]
+
+    def respond(request):
+        return httpx.Response(
+            200,
+            json={
+                "model": "substitute-protocol-v1",
+                "data": [{"index": 0, "embedding": [1.0, 0.0, 0.0]}],
+            },
+            headers={"x-request-id": "substitute-http-request"},
+        )
+
+    gateway = ConfiguredModelGateway(s.database, httpx.MockTransport(respond))
+    gateway.settings = gateway.settings.model_copy(
+        update={"model_gateway_endpoint": "http://127.0.0.1:19999/v1"}
+    )
+    result = await gateway.embedding(
+        model_profile_id=profile_id,
+        texts=("Protocol validation, not semantic evidence",),
+        classification="INTERNAL",
+    )
+    assert result == ((1.0, 0.0, 0.0),)
+    async with s.database.engine.connect() as c:
+        calls = (
+            (
+                await c.execute(
+                    text("SELECT * FROM model_gateway_calls WHERE model_profile_id=:id"),
+                    {"id": UUID(profile_id)},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        assert len(calls) == 1 and calls[0]["declared_revision"] == "test-fixed-revision"
+        assert calls[0]["response_model"] == "substitute-protocol-v1"
+        assert calls[0]["input_checksum"].startswith("sha256:")
+    with pytest.raises(DBAPIError):
+        async with s.database.engine.begin() as c:
+            await c.execute(
+                text(
+                    "UPDATE model_gateway_calls SET response_model='rewritten' "
+                    "WHERE model_profile_id=:id"
+                ),
+                {"id": UUID(profile_id)},
+            )
+
+
+async def test_business_role_reads_only_space_execution_selection_metadata(system):
+    s = system
+    publisher = await s.user(["publisher"])
+    model_id = await s.put(
+        "model_profiles",
+        name="Space selection",
+        provider="nexweave.local",
+        model_name="development",
+        credential_ref="secret://not-returned",
+        config={"capability": "embedding", "revision": "test", "private": "not-returned"},
+    )
+    async with s.database.engine.connect() as c:
+        org = await c.scalar(
+            text("SELECT organization_id FROM knowledge_spaces WHERE id=:id"), {"id": s.space}
+        )
+    other = await s.repo.create_space(
+        principal=s.admin,
+        organization_id=org,
+        slug="other-" + str(new_uuid7()),
+        display_name="Other space",
+        description="Synthetic",
+        default_classification=DataClassification.INTERNAL,
+        idempotency_key=str(new_uuid7()),
+        trace_id="test",
+    )
+    other_model = await s.put(
+        "model_profiles",
+        space_id=UUID(other["id"]),
+        name="Other space private config",
+        provider="nexweave.local",
+        model_name="development",
+    )
+    denied = await s.client.get("/api/v1/model-profiles", headers=s.headers(publisher))
+    assert denied.status_code == 403
+    response = await s.client.get(
+        f"/api/v1/spaces/{s.space}/execution-options", headers=s.headers(publisher)
+    )
+    assert response.status_code == 200, response.text
+    models = response.json()["model_profiles"]
+    selected = next(m for m in models if m["id"] == str(model_id))
+    assert selected["config"] == {"capability": "embedding", "revision": "test"}
+    assert "credential_ref" not in selected and "not-returned" not in response.text
+    assert str(other_model) not in response.text
+    assert all("content" not in p for p in response.json()["prompt_versions"])
+    forbidden = await s.client.get(
+        f"/api/v1/spaces/{other['id']}/execution-options", headers=s.headers(publisher)
+    )
+    assert forbidden.status_code == 403
+
+
+async def test_substitute_embedding_protocol_uses_real_pg_cosine_and_current_evidence(system):
+    """Substitute vectors + real SQL/anchors, never real semantic accuracy evidence."""
+    from nexweave_api.configured_model_gateway import ConfiguredModelGateway
+    from nexweave_api.errors import ApiProblem
+    from nexweave_api.query_engine import compose, ground, retrieve
+
+    s = system
+    profile = await s.put(
+        "model_profiles",
+        name="Protocol vector fixture",
+        provider="openai-compatible",
+        model_name="substitute-model",
+        maximum_classification="INTERNAL",
+        config={"capability": "embedding", "revision": "test-revision", "dimensions": 3},
+    )
+    gateway = ConfiguredModelGateway(
+        s.database,
+        httpx.MockTransport(
+            lambda request: httpx.Response(
+                200,
+                json={
+                    "model": "substitute-model",
+                    "data": [{"index": 0, "embedding": [1.0, 0.0, 0.0]}],
+                },
+            )
+        ),
+    )
+    gateway.settings = gateway.settings.model_copy(
+        update={"model_gateway_endpoint": "http://127.0.0.1:19999/v1"}
+    )
+    s.repo._model_gateway = gateway
+    vector = (
+        await gateway.embedding(
+            model_profile_id=str(profile),
+            texts=("How hot is Pump public?",),
+            classification="INTERNAL",
+        )
+    )[0]
+    async with s.database.engine.connect() as c:
+        candidate = (
+            (
+                await c.execute(
+                    text("SELECT * FROM release_candidates WHERE id=:id"), {"id": s.candidate}
+                )
+            )
+            .mappings()
+            .one()
+        )
+        documents = await s.repo._projection_documents(c, candidate)
+        document = next(
+            d
+            for d in documents
+            if d["object_type"] == "CLAIM" and d["object_id"] == str(s.objects[0]["claim"])
+        )
+        restricted = next(d for d in documents if d["classification"] == "CONFIDENTIAL")
+        base = dict(candidate)
+    task = await s.put(
+        "workflow_tasks",
+        workflow_type="KNOWLEDGE_RELEASE",
+        business_key=str(new_uuid7()),
+        display_name="Vector configuration component",
+        workflow_id="vector-config-" + str(new_uuid7()),
+    )
+    created = await s.repo.create_release_candidate(
+        principal=s.admin,
+        space_id=s.space,
+        workflow_task_id=task,
+        idempotency_key=str(new_uuid7()),
+        trace_id="test",
+        payload={
+            "version": "8.0.0",
+            "schema_version_id": str(base["schema_version_id"]),
+            "prompt_version_id": str(base["prompt_version_id"]),
+            "model_profile_id": str(base["model_profile_id"]),
+            "evaluation_suite_id": str(s.suite),
+            "claim_ids": [str(s.objects[0]["claim"])],
+            "relation_ids": [],
+            "wiki_page_version_ids": [],
+            "index_config": {
+                "version": "r1-query-v3",
+                "retrieval_strategy": "SEMANTIC",
+                "embedding_model_profile_id": str(profile),
+            },
+            "notes": "Protocol fixture, not model acceptance",
+        },
+    )
+    # A HIGHLY_RESTRICTED reader can configure INTERNAL inputs; actual
+    # CONFIDENTIAL input is still rejected by this INTERNAL model profile.
+    assert created["index_config"]["embedding_fingerprint"] == await gateway.fingerprint(
+        str(profile)
+    )
+    vectors = await s.repo._embed_documents(created, [document])
+    assert vectors == ((1.0, 0.0, 0.0),)
+    with pytest.raises(ApiProblem) as denied:
+        await s.repo._embed_documents(created, [restricted])
+    assert denied.value.code == "MODEL_CLASSIFICATION_DENIED"
+    async with s.database.engine.connect() as c:
+        document["embedding"] = str(list(vector))
+        hits = await retrieve(
+            c,
+            [document],
+            {
+                "strategy": "SEMANTIC",
+                "question": "How hot is Pump public?",
+                "top_k": 5,
+                "filters": {},
+            },
+            "How hot is Pump public?",
+            vector,
+            s.admin,
+        )
+        assert [h["object_id"] for h in hits] == [str(s.objects[0]["claim"])]
+        wrong = await retrieve(
+            c,
+            [document],
+            {
+                "strategy": "SEMANTIC",
+                "question": "Turbine Z999 temperature?",
+                "top_k": 5,
+                "filters": {},
+            },
+            "Turbine Z999 temperature?",
+            vector,
+            s.admin,
+        )
+        assert wrong == []
+        _, _, items = await s.repo._query_scope(c, s.admin, "RELEASE", s.release)
+        kept, citations = await ground(c, s.admin, s.space, s.release, "RELEASE", hits, items)
+        assert compose(kept, citations)["status"] == "COMPLETED" and citations
+    invalidated = await s.client.post(
+        f"/api/v1/source-versions/{s.objects[0]['source']}/invalidate",
+        headers={**s.headers(s.admin), "If-Match": '"v1"'},
+        json={
+            "reason_code": "TEST",
+            "reason": "Protocol fixture source withdrawn",
+            "policy_version": "test",
+        },
+    )
+    assert invalidated.status_code == 201, invalidated.text
+    async with s.database.engine.connect() as c:
+        kept, citations = await ground(c, s.admin, s.space, s.release, "RELEASE", hits, items)
+        assert compose(kept, citations)["status"] == "REFUSED" and not citations
+
+
+async def test_rejected_evaluation_admission_and_mid_admission_source_loss_are_terminal(
+    system, monkeypatch
+):
+    """Real DB/routes; timing injection only, no substituted authorization or SQL."""
+    s = system
+    original = s.repo.create_evaluation_run
+
+    async def lose_source(**kwargs):
+        invalidated = await s.client.post(
+            f"/api/v1/source-versions/{s.objects[0]['source']}/invalidate",
+            headers={**s.headers(s.admin), "If-Match": '"v1"'},
+            json={
+                "reason_code": "TEST",
+                "reason": "Source loss after task creation",
+                "policy_version": "test",
+            },
+        )
+        assert invalidated.status_code == 201, invalidated.text
+        return await original(**kwargs)
+
+    monkeypatch.setattr(s.repo, "create_evaluation_run", lose_source)
+    body = {
+        "suite_id": str(s.suite),
+        "target_type": "RELEASE",
+        "target_id": str(s.release),
+        "retrieval_strategy": "KEYWORD",
+    }
+
+    async def tasks():
+        async with s.database.engine.connect() as c:
+            return (
+                (
+                    await c.execute(
+                        text(
+                            "SELECT id,status,temporal_run_id,error_code FROM workflow_tasks "
+                            "WHERE space_id=:s AND workflow_type='QUALITY_EVALUATION' "
+                            "ORDER BY created_at"
+                        ),
+                        {"s": s.space},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+
+    rejected = await s.client.post(
+        f"/api/v1/spaces/{s.space}/evaluations/runs", headers=s.headers(s.admin), json=body
+    )
+    assert rejected.status_code == 404, rejected.text
+    recorded = await tasks()
+    assert len(recorded) == 1
+    assert recorded[0]["status"] == "FAILED" and recorded[0]["temporal_run_id"] is None
+    assert recorded[0]["error_code"] == "RESOURCE_NOT_FOUND"
+    async with s.database.engine.connect() as c:
+        assert (
+            await c.scalar(
+                text("SELECT count(*) FROM evaluation_runs WHERE workflow_task_id=:id"),
+                {"id": recorded[0]["id"]},
+            )
+            == 0
+        )
+        assert (
+            await c.scalar(
+                text(
+                    "SELECT count(*) FROM workflow_task_events WHERE task_id=:id "
+                    "AND event_type='ADMISSION_REJECTED'"
+                ),
+                {"id": recorded[0]["id"]},
+            )
+            == 1
+        )
+    # Subsequent invalid-source admission is denied before any new task exists.
+    denied = await s.client.post(
+        f"/api/v1/spaces/{s.space}/evaluations/runs", headers=s.headers(s.admin), json=body
+    )
+    assert denied.status_code == 404
+    assert len(await tasks()) == 1
+
+
+async def test_failed_review_delivery_backs_off_without_starving_another_case(system):
+    """Real PG queue/projection with a substitute Temporal protocol, not workflow acceptance."""
+    from nexweave_api.errors import ApiProblem
+    from nexweave_api.review_delivery import ReviewDelivery
+    from nexweave_api.workflow_gateway import WorkflowExecutionInfo
+
+    s = system
+    policy = await s.put(
+        "review_policies",
+        risk_level="HIGH",
+        stages=["ENGINEERING", "EXPERT", "APPROVAL"],
+        timeout_seconds=3600,
+        escalation_role="space_admin",
+        allow_batch=False,
+        batch_limit=1,
+        source_authority_rules={},
+    )
+    case_ids = []
+    for number in range(2):
+        task = await s.put(
+            "workflow_tasks",
+            workflow_type="HUMAN_REVIEW",
+            business_key=str(new_uuid7()),
+            display_name="Synthetic retry",
+            workflow_id=f"synthetic-protocol-{number}-" + str(new_uuid7()),
+        )
+        case = await s.put(
+            "review_cases",
+            workflow_task_id=task,
+            target_type="CLAIM_CANDIDATE",
+            target_id=s.objects[number]["candidate"],
+            policy_id=policy,
+            risk_level="HIGH",
+            current_stage="ENGINEERING",
+            reason="Queue isolation component test",
+        )
+        await s.put(
+            "review_deliveries",
+            review_case_id=case,
+            kind="START",
+            payload={"task_id": str(task), "actor_id": str(s.admin.actor_id), "trace_id": "test"},
+            created_at=datetime.now(UTC),
+        )
+        case_ids.append(case)
+
+    class Protocol:
+        calls = []
+
+        async def start(self, **kwargs):
+            self.calls.append(kwargs["workflow_id"])
+            if "protocol-0-" in kwargs["workflow_id"]:
+                raise ApiProblem(
+                    503, "SUBSTITUTE_UNAVAILABLE", "Unavailable", "Synthetic protocol failure"
+                )
+            return WorkflowExecutionInfo(kwargs["workflow_id"], "substitute-server-run", "RUNNING")
+
+    protocol = Protocol()
+    await ReviewDelivery(s.repo, protocol).deliver(tenant_id=s.admin.tenant_id)
+    async with s.database.engine.connect() as c:
+        rows = (
+            (
+                await c.execute(
+                    text(
+                        "SELECT review_case_id,attempts,delivered_at,last_error,next_attempt_at "
+                        "FROM review_deliveries WHERE review_case_id=ANY(:ids)"
+                    ),
+                    {"ids": case_ids},
+                )
+            )
+            .mappings()
+            .all()
+        )
+    rows = {r["review_case_id"]: r for r in rows}
+    assert rows[case_ids[0]]["delivered_at"] is None and rows[case_ids[0]]["attempts"] == 1
+    assert rows[case_ids[0]]["last_error"] == "SUBSTITUTE_UNAVAILABLE"
+    assert rows[case_ids[0]]["next_attempt_at"] > datetime.now(UTC)
+    assert rows[case_ids[1]]["delivered_at"] is not None
+    assert len(protocol.calls) == 2
+    await ReviewDelivery(s.repo, protocol).deliver(tenant_id=s.admin.tenant_id)
+    assert len(protocol.calls) == 2
+
+
+async def test_cancel_after_real_s3_put_retains_no_database_or_object_artifact(system):
+    """Real PG/S3/cancel route; frozen inputs and numerical provider are explicit substitutes."""
+    if os.environ.get("NEXWEAVE_TEST_OBJECT_STORAGE") != "1":
+        pytest.skip("Enable only against the isolated review RustFS instance")
+    import asyncio
+
+    from nexweave_api.forecast_execution import ForecastExecution
+    from nexweave_api.forecast_repository import ForecastRepository
+    from nexweave_api.object_storage import S3ObjectStorage
+    from nexweave_contracts.forecast import ForecastCreate
+
+    s = system
+    obj = s.objects[0]
+    async with s.database.engine.connect() as c:
+        schema = await c.scalar(
+            text("SELECT schema_version_id FROM knowledge_entities WHERE id=:id"),
+            {"id": obj["entity"]},
+        )
+    binding_id = await s.put(
+        "signal_bindings",
+        entity_id=obj["entity"],
+        schema_version_id=schema,
+        source_version_id=obj["source"],
+        classification="INTERNAL",
+        body={"fixture": "not binding acceptance"},
+    )
+    request = ForecastCreate(
+        binding_id=binding_id, provider_id="persistence", horizon=2, history_points=32
+    ).model_dump(mode="json")
+    context = {
+        "observations": [{"values": {"value": 70}}],
+        "prediction_timestamps": ["2026-10-17T00:01:00Z", "2026-10-17T00:02:00Z"],
+        "origin": "2026-10-17T00:00:00Z",
+        "scenario_name": "Synthetic cancellation fixture",
+        "unit": "degC",
+        "data_kind": "SYNTHETIC",
+    }
+    run_id = await s.put(
+        "forecast_runs",
+        binding_id=binding_id,
+        classification="INTERNAL",
+        request=request,
+        principal_snapshot={},
+        model_revision="persistence/1",
+        workflow_id="cancel-fixture-" + str(new_uuid7()),
+        context=context,
+    )
+    await s.put(
+        "forecast_delivery", run_id=run_id, workflow_name="nexweave.forecast.v2", trace_id="a" * 32
+    )
+    settings = s.database.settings.model_copy(
+        update={"object_store_endpoint": "http://127.0.0.1:9000"}
+    )
+    repo = ForecastRepository(s.database, s.repo, settings)
+    storage = S3ObjectStorage(settings)
+    written = []
+
+    class CancelAfterPut(S3ObjectStorage):
+        async def put_if_absent(self, **kwargs):
+            stored = await storage.put_if_absent(**kwargs)
+            written.append(stored)
+            response = await s.client.post(
+                f"/api/v1/forecast-runs/{run_id}/cancel",
+                headers=s.headers(s.admin),
+                json={"reason": "Synthetic cancel after actual S3 write"},
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["status"] == "CANCELLED"
+            return stored
+
+    class NumericalSubstitute:
+        async def forecast(self, provider, values):
+            return {
+                "quantiles": {"0.5": [70.0, 70.0]},
+                "provider_id": "persistence",
+                "model_revision": "persistence/1",
+            }
+
+    class FrozenInputSubstitute(ForecastExecution):
+        async def inputs(self, run):
+            return s.admin, {"classification": "INTERNAL"}
+
+    execution = FrozenInputSubstitute(repo, CancelAfterPut(settings), NumericalSubstitute())
+    result = await execution.execute({"run_id": str(run_id), "trace_id": "a" * 32})
+    assert result == {"status": "CANCELLED", "artifact_id": None}
+    async with s.database.engine.connect() as c:
+        assert (
+            await c.scalar(
+                text("SELECT count(*) FROM forecast_artifacts WHERE run_id=:id"), {"id": run_id}
+            )
+            == 0
+        )
+        assert (
+            await c.scalar(
+                text("SELECT artifact_id FROM forecast_runs WHERE id=:id"), {"id": run_id}
+            )
+            is None
+        )
+    assert len(written) == 1 and written[0].version_id
+    versions = await asyncio.to_thread(
+        storage._client.list_object_versions, Bucket=storage._bucket, Prefix=written[0].key
+    )
+    assert not versions.get("Versions") and not versions.get("DeleteMarkers"), versions

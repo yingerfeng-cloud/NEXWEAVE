@@ -12,9 +12,9 @@ from uuid import UUID
 from sqlalchemy import bindparam, text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from nexweave_api.configured_model_gateway import ConfiguredModelGateway
 from nexweave_api.derived_reads import DerivedReadGate
 from nexweave_api.errors import ApiProblem
-from nexweave_api.model_gateway import LocalModelGateway
 from nexweave_api.repository import JsonDict, _json_value
 from nexweave_api.semantic_repository import SemanticRepository
 from nexweave_application import ModelGatewayRequest
@@ -52,9 +52,56 @@ PAGE_VERSION_COLUMNS = (
 
 
 class KnowledgeRepository(SemanticRepository):
-    def __init__(self, database: Any, model_gateway: LocalModelGateway | None = None) -> None:
+    def __init__(self, database: Any, model_gateway: Any = None) -> None:
         super().__init__(database)
-        self._model_gateway = model_gateway or LocalModelGateway()
+        self._model_gateway = model_gateway or ConfiguredModelGateway(database)
+
+    async def execution_options(
+        self, *, principal: Principal, space_id: UUID, trace_id: str
+    ) -> JsonDict:
+        await self.authorize_space(
+            principal=principal, space_id=space_id, action="knowledge.read", trace_id=trace_id
+        )
+        params = {"tenant": principal.tenant_id, "space": space_id}
+        async with self._database.engine.connect() as c:
+            models = (
+                (
+                    await c.execute(
+                        text(
+                            "SELECT id,space_id,name,provider,model_name,version,status,maximum_classification,externally_hosted,config "
+                            "FROM model_profiles WHERE tenant_id=:tenant AND (space_id IS NULL OR space_id=:space) "
+                            "AND status IN ('DRAFT','ACTIVE') ORDER BY name,id"
+                        ),
+                        params,
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            prompts = (
+                (
+                    await c.execute(
+                        text(
+                            "SELECT id,space_id,prompt_key,revision,status,checksum FROM prompt_versions "
+                            "WHERE tenant_id=:tenant AND (space_id IS NULL OR space_id=:space) "
+                            "AND status IN ('DRAFT','ACTIVE') ORDER BY prompt_key,revision"
+                        ),
+                        params,
+                    )
+                )
+                .mappings()
+                .all()
+            )
+        projected = []
+        for row in models:
+            item = dict(row)
+            item["config"] = {
+                k: v
+                for k, v in item["config"].items()
+                if k in {"capability", "revision", "dimensions", "response_model"}
+            }
+            projected.append(_json_value(item))
+        return {"model_profiles": projected, "prompt_versions": [_json_value(p) for p in prompts]}
 
     async def create_compile_job(
         self,
@@ -359,13 +406,6 @@ class KnowledgeRepository(SemanticRepository):
 
         async with self._database.engine.connect() as connection:
             context = await self._load_compile_context(connection, compile_job_id)
-        if context["model_provider"] != "nexweave.local":
-            raise ApiProblem(
-                503,
-                "MODEL_PROVIDER_UNAVAILABLE",
-                "Model provider is unavailable",
-                "M5 only enables the governed no-network local provider; the selected external provider has no configured adapter.",
-            )
         request = ModelGatewayRequest(
             model_profile_id=str(context["job"]["model_profile_id"]),
             prompt_version_id=str(context["job"]["prompt_version_id"]),
@@ -422,8 +462,8 @@ class KnowledgeRepository(SemanticRepository):
             summary = {
                 **outputs,
                 "model_invocation_id": str(invocation_id),
-                "provider": "nexweave.local-structured/1",
-                "external_llm_called": False,
+                "provider": result.structured_output["provider"],
+                "external_llm_called": context["model_provider"] != "nexweave.local",
             }
             completed_at = datetime.now(UTC)
             await connection.execute(
@@ -444,6 +484,8 @@ class KnowledgeRepository(SemanticRepository):
                             "input_units": result.input_units,
                             "output_units": result.output_units,
                             "estimated_cost_microunits": result.estimated_cost_microunits,
+                            "cost_estimate_available": context["model_provider"]
+                            == "nexweave.local",
                         }
                     ),
                     "result": json.dumps(summary),

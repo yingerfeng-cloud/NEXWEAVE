@@ -7,6 +7,7 @@ from dataclasses import asdict
 from hashlib import sha256
 
 from nexweave_api.errors import ApiProblem
+from nexweave_api.settings import Settings
 from nexweave_application import ModelGatewayRequest, ModelGatewayResult
 from nexweave_domain import canonical_json, local_structured_compile, sha256_checksum
 
@@ -24,7 +25,17 @@ def _json_ready(value: object) -> object:
 class LocalModelGateway:
     """No-network provider for local acceptance; never claims an external LLM call."""
 
+    def __init__(self, settings: Settings | None = None) -> None:
+        self.settings = settings or Settings()
+
     async def structured_output(self, request: ModelGatewayRequest) -> ModelGatewayResult:
+        if self.settings.env not in {"development", "test"}:
+            raise ApiProblem(
+                503,
+                "MODEL_PROVIDER_UNAVAILABLE",
+                "Development provider disabled",
+                "The local rule provider cannot compile production knowledge.",
+            )
         started = time.monotonic()
         input_document = {
             "model_profile_id": request.model_profile_id,
@@ -52,7 +63,7 @@ class LocalModelGateway:
             "semantic_proposals": [
                 _json_ready(asdict(value)) for value in compiled.semantic_proposals
             ],
-            "provider": "nexweave.local-structured/1",
+            "provider": "nexweave.local-structured/2",
         }
         output_bytes = canonical_json(output)
         return ModelGatewayResult(
@@ -69,8 +80,9 @@ class LocalModelGateway:
     async def embedding(
         self, *, model_profile_id: str, texts: tuple[str, ...]
     ) -> tuple[tuple[float, ...], ...]:
-        vectors: list[tuple[float, ...]] = []
-        for text in texts:
-            digest = sha256(f"{model_profile_id}\0{text}".encode()).digest()
-            vectors.append(tuple((byte - 127.5) / 127.5 for byte in digest[:16]))
-        return tuple(vectors)
+        raise ApiProblem(
+            503,
+            "MODEL_PROVIDER_UNAVAILABLE",
+            "Embedding unavailable",
+            "The development rule provider does not implement semantic embeddings.",
+        )

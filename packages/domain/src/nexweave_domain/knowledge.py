@@ -10,6 +10,7 @@ from enum import StrEnum
 from hashlib import sha256
 from typing import Any
 
+from nexweave_domain.relation_evidence import explicit_relation_span
 from nexweave_domain.states import DataClassification
 
 
@@ -251,30 +252,40 @@ def local_structured_compile(
                 )
             )
 
-    relations: list[CandidateRelation] = []
-    by_type: dict[str, list[CandidateEntity]] = {}
-    for entity in entities:
-        by_type.setdefault(entity.type_key, []).append(entity)
-    for relation in schema_snapshot.get("relations", []):
-        sources = by_type.get(str(relation.get("domain", "")), [])
-        targets = by_type.get(str(relation.get("range", "")), [])
-        if not sources or not targets:
-            continue
-        source_entity, target_entity = sources[0], targets[-1]
-        if (
-            source_entity.type_key == target_entity.type_key
-            and source_entity.normalized_key == target_entity.normalized_key
-        ):
-            continue
-        relations.append(
-            CandidateRelation(
-                str(relation["key"]),
-                f"{source_entity.type_key}:{source_entity.normalized_key}",
-                f"{target_entity.type_key}:{target_entity.normalized_key}",
-                source_entity.segment_id,
-                source_entity.anchor_id,
-            )
+    if len(entities) > 128:
+        raise CompileRuleViolation(
+            "LOCAL_PROVIDER_BUDGET_EXCEEDED", "Use a real text provider for this input volume."
         )
+    relations: list[CandidateRelation] = []
+    for relation in schema_snapshot.get("relations", []):
+        for source in entities:
+            if source.type_key != relation.get("domain"):
+                continue
+            for target in entities:
+                if (
+                    target.type_key != relation.get("range")
+                    or source.normalized_key == target.normalized_key
+                ):
+                    continue
+                for segment in segments:
+                    if not segment.get("anchor_id"):
+                        continue
+                    if explicit_relation_span(
+                        str(segment.get("normalized_text") or ""),
+                        source.display_name,
+                        target.display_name,
+                        relation,
+                        schema_snapshot.get("terms", []),
+                    ):
+                        value = CandidateRelation(
+                            str(relation["key"]),
+                            f"{source.type_key}:{source.normalized_key}",
+                            f"{target.type_key}:{target.normalized_key}",
+                            str(segment["id"]),
+                            str(segment["anchor_id"]),
+                        )
+                        if value not in relations:
+                            relations.append(value)
     return StructuredCompileOutput(tuple(entities), tuple(claims), tuple(relations), ())
 
 

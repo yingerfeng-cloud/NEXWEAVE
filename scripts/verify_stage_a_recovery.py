@@ -17,7 +17,11 @@ import httpx
 from verify_m5 import _login
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / ".nexweave-data/stage-a-recovery.json"
+OUTPUT = Path(
+    os.environ.get(
+        "NEXWEAVE_RECOVERY_VERIFICATION_OUTPUT", str(ROOT / ".nexweave-data/stage-a-recovery.json")
+    )
+)
 
 
 def command(*args: str) -> None:
@@ -42,7 +46,10 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("drill", choices=["delivery", "crash", "cancel", "guards"])
     drill = parser.parse_args().drill
-    state = json.loads((ROOT / ".nexweave-data/m95-e2e.json").read_text())
+    state_path = Path(
+        os.environ.get("NEXWEAVE_M95_VERIFICATION_STATE", str(ROOT / ".nexweave-data/m95-e2e.json"))
+    )
+    state = json.loads(state_path.read_text())
     sid = state["space_id"]
     path = f"/spaces/{sid}/forecast-runs"
     with httpx.Client(

@@ -12,6 +12,7 @@ from fastapi import APIRouter, Query, Request, Response, status
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import AwareDatetime
 
+from nexweave_api.errors import ApiProblem
 from nexweave_api.m1_routes import (
     IdempotencyKey,
     IfMatch,
@@ -111,6 +112,9 @@ async def create_evaluation(
         principal=principal, space_id=space_id, action="quality.run", trace_id=trace_id
     )
     business_key = f"{body.target_type}:{body.target_id}:{body.suite_id}:{sha256(idempotency_key.encode()).hexdigest()[:16]}"
+    await repository.validate_evaluation_scope(
+        principal=principal, space_id=space_id, payload=body.model_dump(mode="json")
+    )
     task = await repository.create_workflow_task(
         principal=principal,
         space_id=space_id,
@@ -135,14 +139,31 @@ async def create_evaluation(
         idempotency_key=idempotency_key,
         trace_id=trace_id,
     )
-    run = await repository.create_evaluation_run(
-        principal=principal,
-        space_id=space_id,
-        payload=body.model_dump(mode="json"),
-        workflow_task_id=UUID(str(task["id"])),
-        workflow_id=str(task["workflow_id"]),
-        trace_id=trace_id,
-    )
+    try:
+        run = await repository.create_evaluation_run(
+            principal=principal,
+            space_id=space_id,
+            payload=body.model_dump(mode="json"),
+            workflow_task_id=UUID(str(task["id"])),
+            workflow_id=str(task["workflow_id"]),
+            trace_id=trace_id,
+        )
+    except ApiProblem as exc:
+        await repository.apply_projection_event(
+            {
+                "task_id": str(task["id"]),
+                "actor_id": str(principal.actor_id),
+                "event_type": "ADMISSION_REJECTED",
+                "event_key": "admission-rejected",
+                "run_id": None,
+                "trace_id": trace_id,
+                "status": "FAILED",
+                "error_code": exc.code,
+                "message": "Evaluation admission was rejected before workflow start.",
+                "details": {"origin": "API_ADMISSION", "workflow_started": False},
+            }
+        )
+        raise
     execution = await _gateway(request).start(
         workflow_name="nexweave.quality-evaluation.v2",
         workflow_id=str(task["workflow_id"]),

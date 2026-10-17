@@ -161,8 +161,8 @@ class ReleaseRepository(ReviewRepository):
             suite_id=UUID(str(candidate["evaluation_suite_id"])),
             target_type="RELEASE_CANDIDATE",
             target_id=UUID(str(candidate["id"])),
-            strategy="HYBRID",
-            config={},
+            strategy=candidate["index_config"].get("retrieval_strategy", "KEYWORD"),
+            config=candidate["index_config"].get("query_config", {}),
             actor_id=UUID(str(candidate["created_by"])),
         )
         if unresolved or any(f["blocking"] for f in findings) or not evaluation["gate_passed"]:
@@ -439,6 +439,30 @@ class ReleaseRepository(ReviewRepository):
             for kind, object_ids in item_groups.items():
                 for object_id in object_ids:
                     await gate.require(kind, object_id)
+            index_config = dict(payload["index_config"])
+            index_config.setdefault("retrieval_strategy", "KEYWORD")
+            if index_config["retrieval_strategy"] in {"SEMANTIC", "HYBRID"}:
+                profile_id = index_config.get("embedding_model_profile_id")
+                if not profile_id:
+                    raise ApiProblem(
+                        503,
+                        "MODEL_PROVIDER_UNAVAILABLE",
+                        "Embedding unavailable",
+                        "Select a real embedding profile for semantic retrieval.",
+                    )
+                profile = await self._model_gateway.profile(str(profile_id))
+                if str(profile["tenant_id"]) != str(principal.tenant_id) or profile[
+                    "space_id"
+                ] not in {None, space_id}:
+                    raise ApiProblem(
+                        404, "RESOURCE_NOT_FOUND", "Profile unavailable", "Profile unavailable."
+                    )
+                # No model input is sent at admission. Actual document labels
+                # are checked by the gateway for every embedding request.
+                self._model_gateway.configuration(profile, "embedding")
+                index_config["embedding_fingerprint"] = await self._model_gateway.fingerprint(
+                    str(profile_id)
+                )
             manifest: dict[str, Any] = {
                 "version": payload["version"],
                 "schema_version_id": str(payload["schema_version_id"]),
@@ -450,7 +474,7 @@ class ReleaseRepository(ReviewRepository):
                     key.lower(): [str(value) for value in values]
                     for key, values in item_groups.items()
                 },
-                "index_config": payload["index_config"],
+                "index_config": index_config,
             }
             pack_rows = (
                 (
@@ -501,7 +525,7 @@ class ReleaseRepository(ReviewRepository):
                         "workflow": locked["workflow_id"],
                         "manifest": json.dumps(manifest),
                         "checksum": checksum,
-                        "index": json.dumps(payload["index_config"]),
+                        "index": json.dumps(index_config),
                         "notes": payload.get("notes", ""),
                         "now": now,
                         "actor": principal.actor_id,
@@ -774,8 +798,8 @@ class ReleaseRepository(ReviewRepository):
                 suite_id=UUID(str(candidate["evaluation_suite_id"])),
                 target_type="RELEASE_CANDIDATE",
                 target_id=candidate_id,
-                strategy="HYBRID",
-                config={"source": "release-gate"},
+                strategy=candidate["index_config"].get("retrieval_strategy", "KEYWORD"),
+                config=candidate["index_config"].get("query_config", {}),
                 actor_id=UUID(str(candidate["created_by"])),
             )
             unresolved = int(
@@ -1122,7 +1146,7 @@ class ReleaseRepository(ReviewRepository):
                                     t in actual["direct_answer"].casefold() for t in terms
                                 ),
                             },
-                            "pipeline_version": "r1-query-v2",
+                            "pipeline_version": "r1-query-v3",
                         }
                     ),
                 },
@@ -1130,7 +1154,7 @@ class ReleaseRepository(ReviewRepository):
         rate = int(passed_count * 100 / len(cases)) if cases else 0
         gate_passed = bool(cases) and rate >= int(suite["minimum_pass_rate"])
         metrics = {
-            "pipeline_version": "r1-query-v2",
+            "pipeline_version": "r1-query-v3",
             "cases": len(cases),
             "passed": passed_count,
             "failed": len(cases) - passed_count,
@@ -1204,6 +1228,48 @@ class ReleaseRepository(ReviewRepository):
             )
         return [UUID(str(value)) for value in rows]
 
+    async def validate_evaluation_scope(
+        self, *, principal: Principal, space_id: UUID, payload: dict[str, Any]
+    ) -> JsonDict:
+        suite = await self.get_evaluation_suite(
+            principal=principal, suite_id=UUID(str(payload["suite_id"]))
+        )
+        if suite["status"] != "ACTIVE":
+            raise ApiProblem(
+                409,
+                "EVALUATION_SUITE_NOT_ACTIVE",
+                "Evaluation suite unavailable",
+                "An active EvaluationSuite is required.",
+            )
+        if suite["space_id"] != str(space_id):
+            raise ApiProblem(
+                409,
+                "EVALUATION_SCOPE_CONFLICT",
+                "Evaluation scope conflict",
+                "Suite and target must share a space.",
+            )
+        async with self._database.engine.connect() as connection:
+            target_table = (
+                "releases" if payload["target_type"] == "RELEASE" else "release_candidates"
+            )
+            target_schema = (
+                await connection.execute(
+                    text(
+                        f"SELECT schema_version_id FROM {target_table} WHERE id=:id AND tenant_id=:tenant AND space_id=:space"
+                    ),
+                    {"id": payload["target_id"], "tenant": principal.tenant_id, "space": space_id},
+                )
+            ).scalar_one_or_none()
+            if target_schema is None or str(target_schema) != str(suite["schema_version_id"]):
+                raise ApiProblem(
+                    409,
+                    "EVALUATION_SCOPE_CONFLICT",
+                    "Evaluation scope conflict",
+                    "Target and suite must share space and Schema.",
+                )
+
+        return suite
+
     async def create_evaluation_run(
         self,
         *,
@@ -1226,36 +1292,10 @@ class ReleaseRepository(ReviewRepository):
         if existing is not None:
             return await self.get_evaluation_run(principal=principal, run_id=UUID(str(existing)))
         run_id, now = new_uuid7(), datetime.now(UTC)
-        suite = await self.get_evaluation_suite(
-            principal=principal, suite_id=UUID(str(payload["suite_id"]))
+        suite = await self.validate_evaluation_scope(
+            principal=principal, space_id=space_id, payload=payload
         )
-        if suite["space_id"] != str(space_id):
-            raise ApiProblem(
-                409,
-                "EVALUATION_SCOPE_CONFLICT",
-                "Evaluation scope conflict",
-                "Suite and target must share a space.",
-            )
         async with self._database.engine.begin() as connection:
-            target_table = (
-                "releases" if payload["target_type"] == "RELEASE" else "release_candidates"
-            )
-            target_schema = (
-                await connection.execute(
-                    text(
-                        f"SELECT schema_version_id FROM {target_table} WHERE id=:id AND tenant_id=:tenant AND space_id=:space"
-                    ),
-                    {"id": payload["target_id"], "tenant": principal.tenant_id, "space": space_id},
-                )
-            ).scalar_one_or_none()
-            if target_schema is None or str(target_schema) != str(suite["schema_version_id"]):
-                raise ApiProblem(
-                    409,
-                    "EVALUATION_SCOPE_CONFLICT",
-                    "Evaluation scope conflict",
-                    "Target and suite must share space and Schema.",
-                )
-
             await connection.execute(
                 text(
                     "INSERT INTO evaluation_runs (id,tenant_id,space_id,suite_id,suite_version,target_type,target_id,workflow_task_id,workflow_id,retrieval_strategy,retrieval_config,status,created_at,created_by) VALUES (:id,:tenant,:space,:suite,:version,:type,:target,:task,:workflow,:strategy,CAST(:config AS jsonb),'CREATED',:now,:actor)"
@@ -1532,14 +1572,7 @@ class ReleaseRepository(ReviewRepository):
                     "The ReleaseCandidate is unavailable.",
                 )
             documents = await self._projection_documents(connection, candidate)
-        vectors = (
-            await self._model_gateway.embedding(
-                model_profile_id=str(candidate["model_profile_id"]),
-                texts=tuple(item["body"] for item in documents),
-            )
-            if documents
-            else ()
-        )
+        vectors = await self._embed_documents(candidate, documents)
         now, release_id = datetime.now(UTC), new_uuid7()
         principal = Principal(
             actor_type=self._system_actor_type(),
@@ -1778,12 +1811,17 @@ class ReleaseRepository(ReviewRepository):
     ) -> list[dict[str, Any]]:
         manifest = dict(candidate["manifest"])
         docs: list[dict[str, Any]] = []
+        schema = await connection.scalar(
+            text("SELECT normalized_snapshot FROM schema_versions WHERE id=:id"),
+            {"id": candidate["schema_version_id"]},
+        )
+        schema = schema or {}
         for value in manifest["objects"]["claim"]:
             row = (
                 (
                     await connection.execute(
                         text(
-                            "SELECT c.id,c.subject_entity_id,c.statement,c.predicate_key,c.object_value,e.display_name,CASE max(CASE sv.classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1 WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END) WHEN 0 THEN 'PUBLIC' WHEN 1 THEN 'INTERNAL' WHEN 2 THEN 'CONFIDENTIAL' ELSE 'HIGHLY_RESTRICTED' END AS classification FROM claims c JOIN knowledge_entities e ON e.id=c.subject_entity_id JOIN evidence_records er ON er.claim_id=c.id JOIN source_anchors sa ON sa.id=er.source_anchor_id JOIN source_versions sv ON sv.id=sa.source_version_id WHERE c.id=:id GROUP BY c.id,e.display_name"
+                            "SELECT c.id,c.subject_entity_id,c.statement,c.predicate_key,c.object_value,e.display_name,CASE max(CASE sv.classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1 WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END) WHEN 0 THEN 'PUBLIC' WHEN 1 THEN 'INTERNAL' WHEN 2 THEN 'CONFIDENTIAL' ELSE 'HIGHLY_RESTRICTED' END AS classification FROM claims c JOIN knowledge_entities e ON e.id=c.subject_entity_id JOIN claim_candidates cc ON cc.id=c.candidate_id JOIN compile_job_sources cs ON cs.compile_job_id=cc.compile_job_id JOIN source_versions sv ON sv.id=cs.source_version_id WHERE c.id=:id GROUP BY c.id,e.display_name"
                         ),
                         {"id": UUID(value)},
                     )
@@ -1804,6 +1842,11 @@ class ReleaseRepository(ReviewRepository):
                     "attributes": {
                         "predicate_key": row["predicate_key"],
                         "object_value": row["object_value"],
+                        "schema_terms": " ".join(
+                            str(t["term"])
+                            for t in schema.get("terms", [])
+                            if t.get("targetKey") == row["predicate_key"]
+                        ),
                     },
                     "classification": row["classification"],
                 }
@@ -1813,7 +1856,7 @@ class ReleaseRepository(ReviewRepository):
                 (
                     await connection.execute(
                         text(
-                            "SELECT wv.id,wv.markdown,wp.title,ks.default_classification AS classification FROM wiki_page_versions wv JOIN wiki_pages wp ON wp.id=wv.wiki_page_id JOIN knowledge_spaces ks ON ks.id=wv.space_id WHERE wv.id=:id"
+                            "SELECT wv.id,wv.markdown,wp.title,COALESCE((SELECT CASE max(CASE sv.classification WHEN 'PUBLIC' THEN 0 WHEN 'INTERNAL' THEN 1 WHEN 'CONFIDENTIAL' THEN 2 ELSE 3 END) WHEN 0 THEN 'PUBLIC' WHEN 1 THEN 'INTERNAL' WHEN 2 THEN 'CONFIDENTIAL' ELSE 'HIGHLY_RESTRICTED' END FROM wiki_page_versions previous JOIN compile_job_sources cs ON cs.compile_job_id=previous.compile_job_id JOIN source_versions sv ON sv.id=cs.source_version_id WHERE previous.wiki_page_id=wv.wiki_page_id AND previous.revision<=wv.revision),ks.default_classification) AS classification FROM wiki_page_versions wv JOIN wiki_pages wp ON wp.id=wv.wiki_page_id JOIN knowledge_spaces ks ON ks.id=wv.space_id WHERE wv.id=:id"
                         ),
                         {"id": UUID(value)},
                     )
@@ -1835,6 +1878,44 @@ class ReleaseRepository(ReviewRepository):
             )
         return docs
 
+    async def _embed_documents(self, scope: Any, documents: list[dict[str, Any]]) -> Any:
+        config = dict(scope["index_config"])
+        if config.get("retrieval_strategy", "KEYWORD") not in {"SEMANTIC", "HYBRID"}:
+            return tuple(None for _ in documents)
+        profile = config.get("embedding_model_profile_id")
+        if not profile:
+            raise ApiProblem(
+                503,
+                "MODEL_PROVIDER_UNAVAILABLE",
+                "Embedding unavailable",
+                "A real embedding profile is required for semantic retrieval.",
+            )
+        fingerprint = await self._model_gateway.fingerprint(str(profile))
+        if config.get("embedding_fingerprint") != fingerprint:
+            raise ApiProblem(
+                409,
+                "MODEL_PROFILE_CHANGED",
+                "Embedding profile changed",
+                "The frozen embedding profile differs from current configuration.",
+            )
+        result: list[Any] = []
+        for offset in range(0, len(documents), 64):
+            batch = documents[offset : offset + 64]
+            level = max(
+                (str(d["classification"]) for d in batch), key=lambda v: CLASSIFICATION_LEVEL[v]
+            )
+            # Query converts labels to numeric levels; projection documents retain labels.
+            result.extend(
+                await self._model_gateway.embedding(
+                    model_profile_id=str(profile),
+                    texts=tuple(d["body"] for d in batch),
+                    classification=level,
+                )
+            )
+        for d in documents:
+            d["embedding_fingerprint"] = fingerprint
+        return tuple(result)
+
     async def _persist_projection(
         self,
         connection: AsyncConnection,
@@ -1844,10 +1925,10 @@ class ReleaseRepository(ReviewRepository):
         vectors: Any,
     ) -> None:
         for item, vector in zip(documents, vectors, strict=True):
-            vector_value = "[" + ",".join(f"{float(value):.9f}" for value in vector) + "]"
+            vector_value = json.dumps(vector) if vector is not None else None
             await connection.execute(
                 text(
-                    "INSERT INTO release_search_documents (id,tenant_id,space_id,release_id,object_type,object_id,title,body,attributes,classification,search_vector,embedding,projection_version) VALUES (:id,:tenant,:space,:release,:type,:object,:title,:body,CAST(:attributes AS jsonb),:classification,to_tsvector('simple',:document),CAST(:embedding AS vector),'m7-r1')"
+                    "INSERT INTO release_search_documents (id,tenant_id,space_id,release_id,object_type,object_id,title,body,attributes,classification,search_vector,embedding,semantic_embedding,embedding_fingerprint,projection_version) VALUES (:id,:tenant,:space,:release,:type,:object,:title,:body,CAST(:attributes AS jsonb),:classification,to_tsvector('simple',:document),NULL,CAST(:embedding AS jsonb),:embedding_fingerprint,'r1-query-v3')"
                 ),
                 {
                     "id": new_uuid7(),
@@ -1862,6 +1943,7 @@ class ReleaseRepository(ReviewRepository):
                     "classification": item["classification"],
                     "document": f"{item['title']} {item['body']}",
                     "embedding": vector_value,
+                    "embedding_fingerprint": item.get("embedding_fingerprint"),
                 },
             )
 
@@ -2234,14 +2316,7 @@ class ReleaseRepository(ReviewRepository):
                         if doc["body"].splitlines()
                         else "已发布 Wiki"
                     )
-            vectors = (
-                await self._model_gateway.embedding(
-                    model_profile_id=str(candidate["model_profile_id"]),
-                    texts=tuple(item["body"] for item in documents),
-                )
-                if documents
-                else ()
-            )
+            vectors = await self._embed_documents(candidate, documents)
             await connection.execute(
                 text("DELETE FROM release_search_documents WHERE release_id=:release"),
                 {"release": release_id},
@@ -2372,7 +2447,7 @@ class ReleaseRepository(ReviewRepository):
                 (
                     await connection.execute(
                         text(
-                            "SELECT object_id,object_type,title,body,attributes,classification,embedding::text AS embedding "
+                            "SELECT object_id,object_type,title,body,attributes,classification,semantic_embedding::text AS embedding,embedding_fingerprint "
                             "FROM release_search_documents WHERE release_id=:id AND tenant_id=:tenant LIMIT 10001"
                         ),
                         {"id": target_id, "tenant": principal.tenant_id},
@@ -2410,16 +2485,8 @@ class ReleaseRepository(ReviewRepository):
                     404, "RESOURCE_NOT_FOUND", "Scope unavailable", "Scope unavailable."
                 )
             docs = await self._projection_documents(connection, scope)
-            vectors = (
-                await self._model_gateway.embedding(
-                    model_profile_id=str(scope["model_profile_id"]),
-                    texts=tuple(d["body"] for d in docs),
-                )
-                if docs
-                else ()
-            )
-            for doc, vector in zip(docs, vectors, strict=True):
-                doc["embedding"] = "[" + ",".join(str(float(v)) for v in vector) + "]"
+            for doc in docs:
+                doc["embedding"] = None
             manifest = dict(scope["manifest"])
             refs = [(key.upper(), i) for key, ids in manifest["objects"].items() for i in ids]
             refs += [("EVIDENCE", i) for i in manifest["evidence_ids"]]
@@ -2438,7 +2505,7 @@ class ReleaseRepository(ReviewRepository):
                 422, "QUERY_BUDGET_EXCEEDED", "Query budget exceeded", "Narrow the knowledge scope."
             )
         for doc in docs:
-            doc["classification"] = CLASSIFICATION_LEVEL[str(doc["classification"])]
+            doc["classification"] = str(doc["classification"])
             if doc["object_type"] == "CLAIM":
                 frozen: dict[str, Any] = next(
                     (
@@ -2468,11 +2535,57 @@ class ReleaseRepository(ReviewRepository):
         )
         if str(scope["space_id"]) != str(payload["space_id"]):
             raise ApiProblem(404, "RESOURCE_NOT_FOUND", "Scope unavailable", "Scope unavailable.")
-        vector = (
-            await self._model_gateway.embedding(
-                model_profile_id=str(scope["model_profile_id"]), texts=(payload["question"],)
-            )
-        )[0]
+        gate = DerivedReadGate(connection, principal, UUID(str(scope["space_id"])))
+        readable = []
+        for document in documents:
+            if await gate.can_read(document["object_type"], document["object_id"]):
+                readable.append(document)
+        scope_filtered = len(readable) != len(documents)
+        documents = readable
+        vector = None
+        if payload["strategy"] in {"SEMANTIC", "HYBRID"}:
+            config = dict(scope.get("index_config", {}))
+            profile_id = config.get("embedding_model_profile_id")
+            if not profile_id:
+                raise ApiProblem(
+                    503,
+                    "MODEL_PROVIDER_UNAVAILABLE",
+                    "Embedding unavailable",
+                    "Select a real embedding profile; the development hash path was removed.",
+                )
+            fingerprint = await self._model_gateway.fingerprint(str(profile_id))
+            if fingerprint != config.get("embedding_fingerprint"):
+                raise ApiProblem(
+                    409,
+                    "MODEL_PROFILE_CHANGED",
+                    "Embedding profile changed",
+                    "Recreate the candidate with an explicit fixed embedding profile.",
+                )
+            if target_type == "RELEASE_CANDIDATE":
+                vectors = await self._embed_documents(scope, documents)
+                for doc, values in zip(documents, vectors, strict=True):
+                    doc["embedding"] = json.dumps(values)
+            elif any(
+                d.get("embedding_fingerprint") != fingerprint or not d.get("embedding")
+                for d in documents
+            ):
+                raise ApiProblem(
+                    503,
+                    "MODEL_PROVIDER_UNAVAILABLE",
+                    "Projection unavailable",
+                    "Rebuild the real embedding projection for this Release before semantic retrieval.",
+                )
+            vector = (
+                await self._model_gateway.embedding(
+                    model_profile_id=str(profile_id),
+                    texts=(payload["question"],),
+                    classification=max(
+                        (str(d["classification"]) for d in documents),
+                        key=lambda v: CLASSIFICATION_LEVEL[v],
+                        default="INTERNAL",
+                    ),
+                )
+            )[0]
         recalled = await query_engine.retrieve(
             connection,
             documents,
@@ -2507,11 +2620,11 @@ class ReleaseRepository(ReviewRepository):
                 }
                 for h in recalled
             ],
-            "answer_reason": _answer_reason(
-                candidate_count=len(recalled), citation_count=len(citations)
-            ),
+            "answer_reason": "EVIDENCE_UNAVAILABLE"
+            if scope_filtered and not citations
+            else _answer_reason(candidate_count=len(recalled), citation_count=len(citations)),
             "retrieval_strategy": payload["strategy"],
-            "pipeline_version": "r1-query-v2",
+            "pipeline_version": "r1-query-v3",
         }
 
     async def query_release(

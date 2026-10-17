@@ -3,6 +3,7 @@
 # ruff: noqa: E501 - SQL adapter statements
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 from typing import Any
@@ -161,63 +162,101 @@ class ForecastExecution:
         ).encode()
         checksum = "sha256:" + hashlib.sha256(raw_artifact).hexdigest()
         object_key = f"tenants/{run['tenant_id']}/spaces/{run['space_id']}/forecasts/{run_id}/{checksum[7:]}.json"
-        await self.storage.put_if_absent(
-            key=object_key,
-            content=raw_artifact,
-            content_type="application/json",
-            checksum_sha256=checksum,
+        put_task = asyncio.create_task(
+            self.storage.put_if_absent(
+                key=object_key,
+                content=raw_artifact,
+                content_type="application/json",
+                checksum_sha256=checksum,
+            )
         )
-        principal, _ = await self.inputs(run)
-        artifact_id = new_uuid7()
-        async with repo.database.engine.begin() as c:
-            current = (
-                (
-                    await c.execute(
-                        text(
-                            "SELECT status,artifact_id FROM forecast_runs WHERE id=:id FOR UPDATE"
-                        ),
-                        {"id": run_id},
+        stored = None
+        committed = False
+        try:
+            stored = await asyncio.shield(put_task)
+            principal, _ = await self.inputs(run)
+            artifact_id = new_uuid7()
+            async with repo.database.engine.begin() as c:
+                current = (
+                    (
+                        await c.execute(
+                            text(
+                                "SELECT status,artifact_id FROM forecast_runs WHERE id=:id FOR UPDATE"
+                            ),
+                            {"id": run_id},
+                        )
                     )
+                    .mappings()
+                    .one()
                 )
-                .mappings()
-                .one()
-            )
-            if current["status"] in {"SUCCEEDED", "FAILED", "CANCELLED"}:
-                return {
-                    "status": current["status"],
-                    "artifact_id": str(current["artifact_id"]) if current["artifact_id"] else None,
-                }
-            await c.execute(
-                text("""INSERT INTO forecast_artifacts(id,tenant_id,space_id,run_id,classification,data_kind,content_checksum,object_key,content)
-                VALUES(:id,:tenant,:space,:run,:classification,:kind,:checksum,:key,CAST(:content AS jsonb))"""),
-                {
-                    "id": artifact_id,
-                    "tenant": principal.tenant_id,
-                    "space": UUID(run["space_id"]),
-                    "run": run_id,
-                    "classification": run["classification"],
-                    "kind": context["data_kind"],
-                    "checksum": checksum,
-                    "key": object_key,
-                    "content": raw_artifact.decode(),
-                },
-            )
-            await c.execute(
-                text(
-                    "UPDATE forecast_runs SET status='SUCCEEDED',artifact_id=:artifact,updated_at=now() WHERE id=:id"
-                ),
-                {"id": run_id, "artifact": artifact_id},
-            )
-            await repo.audit(
-                c,
-                principal,
-                UUID(run["space_id"]),
-                "forecast.completed",
-                run_id,
-                payload["trace_id"],
-                {"artifact_id": str(artifact_id), "content_checksum": checksum},
-            )
-        return {"status": "SUCCEEDED", "artifact_id": str(artifact_id)}
+                if current["status"] in {"SUCCEEDED", "FAILED", "CANCELLED"}:
+                    return {
+                        "status": current["status"],
+                        "artifact_id": str(current["artifact_id"])
+                        if current["artifact_id"]
+                        else None,
+                    }
+                await c.execute(
+                    text("""INSERT INTO forecast_artifacts(id,tenant_id,space_id,run_id,classification,data_kind,content_checksum,object_key,content)
+                    VALUES(:id,:tenant,:space,:run,:classification,:kind,:checksum,:key,CAST(:content AS jsonb))"""),
+                    {
+                        "id": artifact_id,
+                        "tenant": principal.tenant_id,
+                        "space": UUID(run["space_id"]),
+                        "run": run_id,
+                        "classification": run["classification"],
+                        "kind": context["data_kind"],
+                        "checksum": checksum,
+                        "key": object_key,
+                        "content": raw_artifact.decode(),
+                    },
+                )
+                await c.execute(
+                    text(
+                        "UPDATE forecast_runs SET status='SUCCEEDED',artifact_id=:artifact,updated_at=now() WHERE id=:id"
+                    ),
+                    {"id": run_id, "artifact": artifact_id},
+                )
+                await repo.audit(
+                    c,
+                    principal,
+                    UUID(run["space_id"]),
+                    "forecast.completed",
+                    run_id,
+                    payload["trace_id"],
+                    {"artifact_id": str(artifact_id), "content_checksum": checksum},
+                )
+            committed = True
+            return {"status": "SUCCEEDED", "artifact_id": str(artifact_id)}
+        finally:
+            if not committed:
+                try:
+                    if stored is None:
+                        stored = await asyncio.shield(put_task)
+                    async with repo.database.engine.connect() as c:
+                        published = await c.scalar(
+                            text(
+                                "SELECT 1 FROM forecast_artifacts WHERE run_id=:id AND object_key=:key"
+                            ),
+                            {"id": run_id, "key": object_key},
+                        )
+                    if not published:
+                        cleanup = asyncio.create_task(
+                            self.storage.discard_unpublished_forecast(
+                                key=object_key,
+                                checksum_sha256=checksum,
+                                version_id=stored.version_id,
+                            )
+                        )
+                        await asyncio.shield(cleanup)
+                except Exception:
+                    # The operation remains failed/canceled. Do not invent a
+                    # successful object cleanup; operators can inspect the exact key.
+                    import logging
+
+                    logging.getLogger(__name__).warning(
+                        "Forecast staging cleanup needs reconciliation"
+                    )
 
     async def fail(self, payload: dict[str, Any]) -> None:
         run = await self.repository.raw_run(UUID(payload["run_id"]))

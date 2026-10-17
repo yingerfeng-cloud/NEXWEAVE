@@ -70,7 +70,7 @@ class EvaluationRunCreate(ContractModel):
     suite_id: UUID7
     target_type: Literal["RELEASE_CANDIDATE", "RELEASE"]
     target_id: UUID7
-    retrieval_strategy: Literal["KEYWORD", "ATTRIBUTE", "SEMANTIC", "HYBRID"] = "HYBRID"
+    retrieval_strategy: Literal["KEYWORD", "ATTRIBUTE", "SEMANTIC", "HYBRID"] = "KEYWORD"
     retrieval_config: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="before")
@@ -134,8 +134,46 @@ class ReleaseCandidateCreate(ContractModel):
     claim_ids: tuple[UUID7, ...] = ()
     relation_ids: tuple[UUID7, ...] = ()
     wiki_page_version_ids: tuple[UUID7, ...] = ()
-    index_config: dict[str, Any] = Field(default_factory=lambda: {"version": "m7-r1"})
+    index_config: dict[str, Any] = Field(
+        default_factory=lambda: {"version": "r1-query-v3", "retrieval_strategy": "KEYWORD"}
+    )
     notes: str = Field(default="", max_length=4000)
+
+    @model_validator(mode="after")
+    def valid_index(self) -> "ReleaseCandidateCreate":
+        allowed = {
+            "version",
+            "fusion",
+            "vector_dimensions",
+            "retrieval_strategy",
+            "embedding_model_profile_id",
+            "query_config",
+        }
+        if set(self.index_config) - allowed:
+            raise ValueError("unknown release index configuration")
+        strategy = self.index_config.get("retrieval_strategy", "KEYWORD")
+        if strategy not in {"KEYWORD", "ATTRIBUTE", "SEMANTIC", "HYBRID"}:
+            raise ValueError("unsupported retrieval strategy")
+        if strategy in {"SEMANTIC", "HYBRID"} and not self.index_config.get(
+            "embedding_model_profile_id"
+        ):
+            raise ValueError("a real embedding profile is required")
+        config = self.index_config.get("query_config", {})
+        if not isinstance(config, dict) or set(config) - {"top_k", "filters"}:
+            raise ValueError("unsupported query configuration")
+        QueryCreate.model_validate(
+            {
+                "client_request_id": "validate-index-config",
+                "question": "Validate retrieval configuration",
+                "strategy": strategy,
+                **config,
+            }
+        )
+        if self.index_config.get("embedding_model_profile_id"):
+            from uuid import UUID
+
+            UUID(str(self.index_config["embedding_model_profile_id"]))
+        return self
 
     @model_validator(mode="after")
     def has_knowledge(self) -> "ReleaseCandidateCreate":
@@ -239,7 +277,7 @@ class ReleaseDeprecationCreate(ContractModel):
 
 class QueryCreate(ContractModel):
     question: str = Field(min_length=1, max_length=4000, pattern=r"\S")
-    strategy: Literal["KEYWORD", "ATTRIBUTE", "SEMANTIC", "HYBRID"] = "HYBRID"
+    strategy: Literal["KEYWORD", "ATTRIBUTE", "SEMANTIC", "HYBRID"] = "KEYWORD"
     filters: dict[str, Any] = Field(default_factory=dict)
     top_k: int = Field(default=5, ge=1, le=20, strict=True)
     client_request_id: str = Field(min_length=1, max_length=128)

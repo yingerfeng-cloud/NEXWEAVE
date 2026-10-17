@@ -281,20 +281,16 @@ test("release uses explicit non-first configuration and exact Claim, Relation an
         },
       ],
     }),
-    listGovernance: vi.fn().mockImplementation((kind) =>
-      Promise.resolve({
-        items:
-          kind === "prompt-versions"
-            ? [
-                { id: "prompt-a", prompt_key: "first" },
-                { id: "prompt-b", prompt_key: "chosen", revision: 2 },
-              ]
-            : [
-                { id: "model-a", name: "first" },
-                { id: "model-b", name: "chosen", provider: "external" },
-              ],
-      }),
-    ),
+    executionOptions: vi.fn().mockResolvedValue({
+      prompt_versions: [
+        { id: "prompt-a", prompt_key: "first" },
+        { id: "prompt-b", prompt_key: "chosen", revision: 2 },
+      ],
+      model_profiles: [
+        { id: "model-a", name: "first" },
+        { id: "model-b", name: "chosen", provider: "external" },
+      ],
+    }),
     createReleaseCandidate,
   } as unknown as NexweaveApi;
   render(<ReleaseCenter api={api} spaceId="space-b" />);
@@ -424,6 +420,44 @@ test("a space switch clears selected claim detail", async () => {
   );
   view.rerender(<ClaimCenter api={api} spaceId="new-space" />);
   expect(screen.queryByText("Pump B is 70 degrees")).not.toBeInTheDocument();
+});
+
+test("configuration failure does not hide a publisher's pending candidate", async () => {
+  const api = {
+    executionOptions: vi
+      .fn()
+      .mockRejectedValue(new Error("selection unavailable")),
+    releaseCandidates: vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: "pending",
+          version: "1.0.1",
+          status: "PENDING_APPROVAL",
+          gate_summary: {
+            evaluation_passed: true,
+            traceability_percent: 100,
+          },
+          lint_findings: [],
+          evaluation_suite_id: "suite",
+        },
+      ],
+    }),
+    releases: vi.fn().mockResolvedValue({ items: [] }),
+    evaluationSuites: vi.fn().mockResolvedValue([]),
+    schemas: vi.fn().mockResolvedValue({ items: [] }),
+    claims: vi.fn().mockResolvedValue({ items: [] }),
+    relations: vi.fn().mockResolvedValue({ items: [] }),
+    wikiPages: vi.fn().mockResolvedValue({ items: [] }),
+  } as unknown as NexweaveApi;
+  render(<ReleaseCenter api={api} spaceId="publisher-space" />);
+  expect(await screen.findByText("1.0.1")).toBeInTheDocument();
+  expect(screen.getByText(/创建配置暂不可用/)).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("独立批准的实质理由"), {
+    target: { value: "Checked the fixed candidate and actual evaluation" },
+  });
+  expect(
+    screen.getByRole("button", { name: "批准此候选并发布" }),
+  ).toBeEnabled();
 });
 
 test("connector save does not claim a connection test and sync polls to a real terminal response", async () => {

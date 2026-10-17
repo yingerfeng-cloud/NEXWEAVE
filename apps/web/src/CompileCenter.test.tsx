@@ -36,7 +36,9 @@ test("shows parsed versions returned by the source-list contract", async () => {
       items: [source],
       next_cursor: null,
     }),
-    listGovernance: vi.fn().mockResolvedValue({ items: [] }),
+    executionOptions: vi
+      .fn()
+      .mockResolvedValue({ model_profiles: [], prompt_versions: [] }),
   } as unknown as NexweaveApi;
 
   render(<CompileCenter api={api} spaceId="space-1" />);
@@ -66,7 +68,9 @@ test("keeps parsed versions visible when an unrelated compile resource fails", a
     compileJobs: vi.fn().mockRejectedValue(new TypeError("offline")),
     schemas: vi.fn().mockResolvedValue({ items: [] }),
     sources: vi.fn().mockResolvedValue({ items: [source], next_cursor: null }),
-    listGovernance: vi.fn().mockResolvedValue({ items: [] }),
+    executionOptions: vi
+      .fn()
+      .mockResolvedValue({ model_profiles: [], prompt_versions: [] }),
   } as unknown as NexweaveApi;
 
   render(<CompileCenter api={api} spaceId="space-1" />);
@@ -98,8 +102,9 @@ function readyApi() {
         },
       ],
     }),
-    listGovernance: vi.fn().mockResolvedValue({
-      items: [{ id: "config-1", name: "Config", prompt_key: "prompt" }],
+    executionOptions: vi.fn().mockResolvedValue({
+      model_profiles: [{ id: "config-1", name: "Config" }],
+      prompt_versions: [{ id: "config-1", prompt_key: "prompt" }],
     }),
     createCompileJob: vi.fn(),
   };

@@ -118,9 +118,22 @@ export function AdminPage({
           name: data.get("name"),
           provider: data.get("provider"),
           model_name: data.get("model_name"),
-          externally_hosted: false,
-          maximum_classification: "INTERNAL",
-          config: {},
+          externally_hosted: data.get("externally_hosted") === "on",
+          maximum_classification:
+            data.get("maximum_classification") || "INTERNAL",
+          credential_ref: data.get("credential_ref") || null,
+          config:
+            data.get("provider") === "nexweave.local"
+              ? { development_only: true }
+              : {
+                  capability: data.get("capability"),
+                  revision: data.get("revision"),
+                  response_model:
+                    data.get("response_model") || data.get("model_name"),
+                  ...(data.get("capability") === "embedding"
+                    ? { dimensions: Number(data.get("dimensions")) }
+                    : {}),
+                },
         });
       }
       if (tab === "prompts") {
@@ -288,12 +301,62 @@ function CreateModelForm({
         </label>
         <label>
           提供方
-          <input name="provider" required />
+          <select name="provider" required defaultValue="nexweave.local">
+            <option value="nexweave.local">
+              开发规则（仅开发，不支持语义embedding）
+            </option>
+            <option value="openai-compatible">
+              兼容HTTP真实模型（需服务端配置）
+            </option>
+          </select>
         </label>
         <label>
           模型名称
           <input name="model_name" required />
         </label>
+        <label>
+          模型能力
+          <select name="capability" defaultValue="structured_output">
+            <option value="structured_output">原文抽取</option>
+            <option value="embedding">真实embedding</option>
+          </select>
+        </label>
+        <label>
+          固定版本标识
+          <input
+            name="revision"
+            placeholder="部署版本或权重revision，真实模型必填"
+          />
+        </label>
+        <label>
+          实际响应模型名
+          <input name="response_model" placeholder="默认与模型名称一致" />
+        </label>
+        <label>
+          Embedding维度
+          <input name="dimensions" type="number" min="1" max="4096" />
+        </label>
+        <label>
+          凭据引用
+          <input
+            name="credential_ref"
+            placeholder="secret://model-gateway；不填写明文凭据"
+          />
+        </label>
+        <label>
+          最高密级
+          <select name="maximum_classification" defaultValue="INTERNAL">
+            <option value="INTERNAL">内部</option>
+            <option value="CONFIDENTIAL">机密</option>
+          </select>
+        </label>
+        <label>
+          <input name="externally_hosted" type="checkbox" />
+          外部托管模型
+        </label>
+        <p>
+          模型端点由服务端配置管理；没有可用模型会明确失败。开发规则不提供语义能力。
+        </p>
         <button className="primary" type="submit">
           登记
         </button>

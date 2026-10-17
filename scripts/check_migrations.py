@@ -276,6 +276,8 @@ async def verify_m5_schema(database_url: str, *, expected_present: bool) -> None
                 "0011_m95a",
                 "0012_r1_review",
                 "0013_r1_wiki",
+                "0014_r1_semantic",
+                "0015_r1_delivery",
             }
         ):
             raise RuntimeError(
@@ -329,6 +331,8 @@ async def verify_m6_schema(database_url: str, *, expected_present: bool) -> None
                 "0011_m95a",
                 "0012_r1_review",
                 "0013_r1_wiki",
+                "0014_r1_semantic",
+                "0015_r1_delivery",
             }
         ):
             raise RuntimeError(
@@ -380,7 +384,16 @@ async def verify_m7_schema(database_url: str, *, expected_present: bool) -> None
             tables != M7_TABLES
             or triggers != M7_TRIGGERS
             or head
-            not in {"0008_m7", "0009_m8", "0010_m95", "0011_m95a", "0012_r1_review", "0013_r1_wiki"}
+            not in {
+                "0008_m7",
+                "0009_m8",
+                "0010_m95",
+                "0011_m95a",
+                "0012_r1_review",
+                "0013_r1_wiki",
+                "0014_r1_semantic",
+                "0015_r1_delivery",
+            }
             or vector_columns != 1
         ):
             raise RuntimeError(
@@ -414,7 +427,16 @@ async def verify_m8_schema(database_url: str, *, expected_present: bool) -> None
             head = await connection.scalar(text("SELECT version_num FROM alembic_version"))
         if expected_present and (
             tables != M8_TABLES
-            or head not in {"0009_m8", "0010_m95", "0011_m95a", "0012_r1_review", "0013_r1_wiki"}
+            or head
+            not in {
+                "0009_m8",
+                "0010_m95",
+                "0011_m95a",
+                "0012_r1_review",
+                "0013_r1_wiki",
+                "0014_r1_semantic",
+                "0015_r1_delivery",
+            }
         ):
             raise RuntimeError(
                 f"M8 schema verification failed: tables={sorted(tables)}, head={head}"
@@ -577,6 +599,14 @@ async def verify_r1_review_schema(database_url: str, present: bool) -> None:
             ).scalar_one()
             if bool(trigger) != present:
                 raise RuntimeError("R1 review immutable trigger mismatch")
+            retry_column = await connection.scalar(
+                text(
+                    "SELECT count(*) FROM information_schema.columns WHERE table_schema='public' "
+                    "AND table_name='review_deliveries' AND column_name='next_attempt_at'"
+                )
+            )
+            if bool(retry_column) != present:
+                raise RuntimeError("R1 review retry scheduling column mismatch")
     finally:
         await engine.dispose()
 

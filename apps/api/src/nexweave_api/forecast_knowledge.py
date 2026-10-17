@@ -119,7 +119,7 @@ class ForecastKnowledgeService:
             release_id=body.release_id,
             payload={
                 "question": body.question,
-                "strategy": "HYBRID",
+                "strategy": "KEYWORD",
                 "top_k": 5,
                 "filters": {},
                 "client_request_id": "forecast-context:" + uuid4().hex,

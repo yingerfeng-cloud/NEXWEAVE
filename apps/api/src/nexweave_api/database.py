@@ -7,6 +7,7 @@ from nexweave_api.settings import Settings
 
 class Database:
     def __init__(self, settings: Settings) -> None:
+        self.settings = settings
         self.engine: AsyncEngine = create_async_engine(
             settings.database_url,
             pool_pre_ping=True,

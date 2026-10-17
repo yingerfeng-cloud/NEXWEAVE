@@ -160,7 +160,7 @@ def main() -> None:
                     "claim_ids": [claim["id"]],
                     "relation_ids": [],
                     "wiki_page_version_ids": [],
-                    "index_config": {"version": "m7-r1", "fusion": "rrf", "vector_dimensions": 16},
+                    "index_config": {"version": "r1-query-v3", "retrieval_strategy": "KEYWORD"},
                     "notes": "M7 real acceptance chain",
                 },
             )
@@ -190,7 +190,7 @@ def main() -> None:
             f"/releases/{first['id']}/queries",
             json={
                 "question": claim["statement"],
-                "strategy": "HYBRID",
+                "strategy": "KEYWORD",
                 "top_k": 5,
                 "client_request_id": f"m7-answer-{suffix}",
             },
@@ -200,7 +200,7 @@ def main() -> None:
             f"/releases/{first['id']}/queries",
             json={
                 "question": claim["statement"],
-                "strategy": "HYBRID",
+                "strategy": "KEYWORD",
                 "top_k": 5,
                 "client_request_id": f"m7-answer-{suffix}",
             },
@@ -218,7 +218,7 @@ def main() -> None:
             f"/releases/{first['id']}/queries",
             json={
                 "question": "What is the launch code for an unrelated satellite?",
-                "strategy": "HYBRID",
+                "strategy": "KEYWORD",
                 "top_k": 5,
                 "client_request_id": f"m7-refusal-{suffix}",
             },

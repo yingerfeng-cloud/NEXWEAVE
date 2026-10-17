@@ -87,7 +87,7 @@ export function AskCenter({
   const [releases, setReleases] = useState<KnowledgeRelease[]>([]);
   const [releaseId, setReleaseId] = useState("");
   const [question, setQuestion] = useState("");
-  const [strategy, setStrategy] = useState("HYBRID");
+  const [strategy, setStrategy] = useState("KEYWORD");
   const [predicateFilter, setPredicateFilter] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
   const [answer, setAnswer] = useState<QueryAnswer | null>(null);
@@ -204,6 +204,11 @@ export function AskCenter({
         </label>
         <span>查询范围：当前知识空间 · 已发布知识</span>
       </div>
+      <p>
+        {strategy === "KEYWORD" || strategy === "ATTRIBUTE"
+          ? "当前使用词面/属性检索，返回经审核的原文摘录；未调用语义模型。"
+          : "当前策略需要真实 embedding 模型及该发布的对应投影；模型不可用时会明确报错。"}
+      </p>
       <details className="data-card">
         <summary>检索策略与属性筛选</summary>
         <label>
@@ -218,8 +223,8 @@ export function AskCenter({
               setStrategy(e.target.value);
             }}
           >
-            <option value="HYBRID">混合检索</option>
-            <option value="KEYWORD">关键词</option>
+            <option value="HYBRID">混合检索（需真实模型配置）</option>
+            <option value="KEYWORD">词面检索（审核原文摘录）</option>
             <option value="SEMANTIC">语义检索（需真实模型配置）</option>
             <option value="ATTRIBUTE">按属性筛选（须填写至少一项）</option>
           </select>

@@ -1,7 +1,7 @@
 """Durable, retryable delivery of committed review facts to Temporal."""
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import text
@@ -15,7 +15,7 @@ class ReviewDelivery:
     def __init__(self, repository: ReviewRepository, gateway: TemporalWorkflowGateway):
         self.repository, self.gateway = repository, gateway
 
-    async def deliver(self, case_id: UUID | None = None) -> None:
+    async def deliver(self, case_id: UUID | None = None, *, tenant_id: UUID | None = None) -> None:
         async with self.repository._database.engine.begin() as connection:
             rows = (
                 (
@@ -26,10 +26,12 @@ class ReviewDelivery:
                             "JOIN review_cases rc ON rc.id=d.review_case_id "
                             "JOIN workflow_tasks wt ON wt.id=rc.workflow_task_id "
                             "WHERE d.delivered_at IS NULL "
+                            "AND d.next_attempt_at<=now() "
+                            "AND (CAST(:tenant AS uuid) IS NULL OR rc.tenant_id=:tenant) "
                             "AND (CAST(:case AS uuid) IS NULL OR d.review_case_id=:case) "
                             "ORDER BY d.created_at,d.kind DESC LIMIT 25 FOR UPDATE OF d SKIP LOCKED"
                         ),
-                        {"case": case_id},
+                        {"case": case_id, "tenant": tenant_id},
                     )
                 )
                 .mappings()
@@ -54,28 +56,53 @@ class ReviewDelivery:
                             trace_id=payload["trace_id"],
                         )
                     else:
-                        try:
-                            await asyncio.wait_for(
-                                self.gateway.command(
-                                    workflow_id=row["workflow_id"],
-                                    command_id="review-final:" + str(row["review_case_id"]),
-                                    action=payload["action"],
-                                    reason=payload["reason"],
-                                    actor_id=payload["actor_id"],
-                                ),
-                                timeout=5,
+                        expected = {
+                            "review_case_id": str(row["review_case_id"]),
+                            "status": "APPROVED" if payload["action"] == "APPROVE" else "REJECTED",
+                        }
+                        completed = await asyncio.wait_for(
+                            self.gateway.completed_review_result(row["workflow_id"]), timeout=5
+                        )
+                        if completed is not None and completed != expected:
+                            raise ApiProblem(
+                                409,
+                                "REVIEW_WORKFLOW_RESULT_MISMATCH",
+                                "Review pending",
+                                "Workflow result does not match the audited final decision.",
                             )
+                        if completed is None:
+                            state = await asyncio.wait_for(
+                                self.gateway.inspect(workflow_id=row["workflow_id"]), timeout=5
+                            )
+                            if (
+                                state.get("status") != "WAITING"
+                                or state.get("current_step") != "wait-for-audited-final-decision"
+                            ):
+                                raise ApiProblem(
+                                    503,
+                                    "REVIEW_WORKFLOW_NOT_READY",
+                                    "Review pending",
+                                    "The workflow is not ready for its audited decision.",
+                                )
+                        try:
+                            if completed is None:
+                                await asyncio.wait_for(
+                                    self.gateway.command(
+                                        workflow_id=row["workflow_id"],
+                                        command_id=f"review-delivery:{row['id']}:attempt:{row['attempts']}",
+                                        action=payload["action"],
+                                        reason=payload["reason"],
+                                        actor_id=payload["actor_id"],
+                                    ),
+                                    timeout=5,
+                                )
                         except ApiProblem:
                             # A crash after Temporal accepted the update but before
                             # this transaction committed must not poison recovery.
                             result = await asyncio.wait_for(
                                 self.gateway.completed_review_result(row["workflow_id"]), timeout=5
                             )
-                            expected = "APPROVED" if payload["action"] == "APPROVE" else "REJECTED"
-                            if result != {
-                                "review_case_id": str(row["review_case_id"]),
-                                "status": expected,
-                            }:
+                            if result != expected:
                                 raise
                     await connection.execute(
                         text(
@@ -84,20 +111,27 @@ class ReviewDelivery:
                         ),
                         {"now": datetime.now(UTC), "id": row["id"]},
                     )
-                except (ApiProblem, TimeoutError) as exc:
+                except Exception as exc:
                     await connection.execute(
                         text(
                             "UPDATE review_deliveries SET attempts=attempts+1,"
-                            "last_error=:error WHERE id=:id"
+                            "last_error=:error,next_attempt_at=:next WHERE id=:id"
                         ),
                         {
                             "id": row["id"],
-                            "error": exc.code[:64]
-                            if isinstance(exc, ApiProblem)
-                            else "WORKFLOW_DELIVERY_TIMEOUT",
+                            "error": (
+                                exc.code[:64]
+                                if isinstance(exc, ApiProblem)
+                                else "WORKFLOW_DELIVERY_TIMEOUT"
+                                if isinstance(exc, TimeoutError)
+                                else "REVIEW_DELIVERY_FAILED"
+                            ),
+                            "next": datetime.now(UTC)
+                            + timedelta(seconds=min(60, 2 ** min(int(row["attempts"]) + 1, 6))),
                         },
                     )
-                    break
+                    # One failed review must not starve other tenants/cases.
+                    continue
 
     async def run(self) -> None:
         while True:

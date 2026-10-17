@@ -1,0 +1,13 @@
+{
+  "text": {
+    "model_name": "",
+    "revision": "",
+    "response_model": ""
+  },
+  "embedding": {
+    "model_name": "",
+    "revision": "",
+    "dimensions": 1024,
+    "send_dimensions": false
+  }
+}

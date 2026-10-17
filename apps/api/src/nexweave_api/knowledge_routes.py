@@ -32,6 +32,7 @@ from nexweave_contracts import (
     WikiPageVersionListResponse,
     WikiPageVersionResponse,
 )
+from nexweave_contracts.governance import SpaceExecutionOptions
 from nexweave_domain import WorkflowType
 
 router = APIRouter(
@@ -47,6 +48,17 @@ def _repository(request: Request) -> KnowledgeRepository:
 
 def _gateway(request: Request) -> TemporalWorkflowGateway:
     return cast(TemporalWorkflowGateway, request.app.state.workflow_gateway)
+
+
+@router.get("/spaces/{space_id}/execution-options", response_model=SpaceExecutionOptions)
+async def execution_options(
+    request: Request, space_id: UUID, principal: PrincipalDependency
+) -> SpaceExecutionOptions:
+    return SpaceExecutionOptions.model_validate(
+        await _repository(request).execution_options(
+            principal=principal, space_id=space_id, trace_id=_trace_id(request)
+        )
+    )
 
 
 @router.post(

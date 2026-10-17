@@ -3179,7 +3179,7 @@
             "type": "object"
           },
           "retrieval_strategy": {
-            "default": "HYBRID",
+            "default": "KEYWORD",
             "enum": [
               "KEYWORD",
               "ATTRIBUTE",
@@ -3675,6 +3675,118 @@
           "created_by"
         ],
         "title": "EvidenceResponse",
+        "type": "object"
+      },
+      "ExecutionModelOption": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "externally_hosted": {
+            "title": "Externally Hosted",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "maximum_classification": {
+            "$ref": "#/components/schemas/DataClassification"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "space_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Space Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GovernanceStatus"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "provider",
+          "model_name",
+          "version",
+          "status",
+          "maximum_classification",
+          "externally_hosted",
+          "config"
+        ],
+        "title": "ExecutionModelOption",
+        "type": "object"
+      },
+      "ExecutionPromptOption": {
+        "additionalProperties": false,
+        "properties": {
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid7",
+            "title": "Id",
+            "type": "string"
+          },
+          "prompt_key": {
+            "title": "Prompt Key",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "space_id": {
+            "anyOf": [
+              {
+                "format": "uuid7",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Space Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GovernanceStatus"
+          }
+        },
+        "required": [
+          "id",
+          "prompt_key",
+          "revision",
+          "status",
+          "checksum"
+        ],
+        "title": "ExecutionPromptOption",
         "type": "object"
       },
       "FailureScope": {
@@ -6664,7 +6776,7 @@
             "type": "string"
           },
           "strategy": {
-            "default": "HYBRID",
+            "default": "KEYWORD",
             "enum": [
               "KEYWORD",
               "ATTRIBUTE",
@@ -9598,6 +9710,31 @@
         "title": "SpaceCreate",
         "type": "object"
       },
+      "SpaceExecutionOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "model_profiles": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionModelOption"
+            },
+            "title": "Model Profiles",
+            "type": "array"
+          },
+          "prompt_versions": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionPromptOption"
+            },
+            "title": "Prompt Versions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model_profiles",
+          "prompt_versions"
+        ],
+        "title": "SpaceExecutionOptions",
+        "type": "object"
+      },
       "SpaceListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -11468,7 +11605,7 @@
   "info": {
     "description": "R1 trusted knowledge with current authorization and auditable Web operations.",
     "title": "NEXWEAVE Platform API",
-    "version": "0.9.5-r1fix-b1"
+    "version": "0.9.5-r1fix-c1"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -20868,6 +21005,115 @@
           "releases",
           "graph",
           "query"
+        ]
+      }
+    },
+    "/api/v1/spaces/{space_id}/execution-options": {
+      "get": {
+        "operationId": "execution_options_api_v1_spaces__space_id__execution_options_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "space_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Space Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpaceExecutionOptions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "RFC 9457 problem details"
+          }
+        },
+        "security": [
+          {
+            "OIDC Bearer": []
+          }
+        ],
+        "summary": "Execution Options",
+        "tags": [
+          "compile",
+          "wiki"
         ]
       }
     },

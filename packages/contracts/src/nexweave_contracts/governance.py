@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import UUID7, Field
+from pydantic import UUID7, Field, model_validator
 
 from nexweave_contracts.base import ContractModel
 from nexweave_domain import (
@@ -9,6 +9,33 @@ from nexweave_domain import (
     DataClassification,
     GovernanceStatus,
 )
+
+
+class ExecutionModelOption(ContractModel):
+    id: UUID7
+    space_id: UUID7 | None = None
+    name: str
+    provider: str
+    model_name: str
+    version: int
+    status: GovernanceStatus
+    maximum_classification: DataClassification
+    externally_hosted: bool
+    config: dict[str, Any]
+
+
+class ExecutionPromptOption(ContractModel):
+    id: UUID7
+    space_id: UUID7 | None = None
+    prompt_key: str
+    revision: int
+    status: GovernanceStatus
+    checksum: str
+
+
+class SpaceExecutionOptions(ContractModel):
+    model_profiles: tuple[ExecutionModelOption, ...]
+    prompt_versions: tuple[ExecutionPromptOption, ...]
 
 
 class ModelProfileCreate(ContractModel):
@@ -20,6 +47,33 @@ class ModelProfileCreate(ContractModel):
     externally_hosted: bool = False
     maximum_classification: DataClassification = DataClassification.INTERNAL
     config: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def provider_configuration(self) -> "ModelProfileCreate":
+        if self.provider == "openai-compatible":
+            cfg = self.config
+            if set(cfg) - {
+                "capability",
+                "revision",
+                "response_model",
+                "dimensions",
+                "send_dimensions",
+                "max_input_units",
+            }:
+                raise ValueError(
+                    "unknown real model configuration; endpoints are server controlled"
+                )
+            if (
+                cfg.get("capability") not in {"structured_output", "embedding"}
+                or not isinstance(cfg.get("revision"), str)
+                or not cfg["revision"].strip()
+            ):
+                raise ValueError("real providers require capability and a fixed revision")
+            if cfg["capability"] == "embedding" and (
+                type(cfg.get("dimensions")) is not int or not 1 <= cfg["dimensions"] <= 4096
+            ):
+                raise ValueError("embedding dimensions must be 1..4096")
+        return self
 
 
 class ModelProfileResponse(ModelProfileCreate):

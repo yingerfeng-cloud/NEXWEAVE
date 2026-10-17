@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -20,7 +21,9 @@ from verify_m5 import _compile
 from verify_m9_public_pilot import _direct_composed_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
-STATE = ROOT / ".nexweave-data/m95-e2e.json"
+STATE = Path(
+    os.environ.get("NEXWEAVE_M95_VERIFICATION_STATE", str(ROOT / ".nexweave-data/m95-e2e.json"))
+)
 
 
 class Api(LegacyApi):
@@ -98,7 +101,11 @@ def upload(api: Api, space_id: str, name: str, mime: str, content: bytes) -> str
 
 
 def setup(api: Api, client: httpx.Client, *, fresh: bool = False) -> dict:
-    checkpoint = ROOT / ".nexweave-data/m95-binding-inputs.json"
+    checkpoint = Path(
+        os.environ.get(
+            "NEXWEAVE_M95_BINDING_INPUTS", str(ROOT / ".nexweave-data/m95-binding-inputs.json")
+        )
+    )
     if checkpoint.exists() and not fresh:
         saved = json.loads(checkpoint.read_text())
         return bind(api, saved["sid"], saved["schema"], saved["entity"], saved["csv_source"])

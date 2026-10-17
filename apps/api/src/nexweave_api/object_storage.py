@@ -110,6 +110,41 @@ class S3ObjectStorage:
             OBJECT_BYTES.record(len(content), {"operation": "put"})
             return result
 
+    async def discard_unpublished_forecast(
+        self, *, key: str, checksum_sha256: str, version_id: str | None = None
+    ) -> None:
+        """Only the numerical staging namespace; never delete Raw or Release objects."""
+        import re
+
+        if not re.fullmatch(
+            r"tenants/[0-9a-f-]{36}/spaces/[0-9a-f-]{36}/forecasts/[0-9a-f-]{36}/[0-9a-f]{64}\.json",
+            key,
+        ):
+            raise ValueError("not a forecast staging key")
+
+        def discard() -> None:
+            args: dict[str, Any] = {"Bucket": self._bucket, "Key": key}
+            if version_id:
+                args["VersionId"] = version_id
+            try:
+                item = self._client.head_object(**args)
+            except ClientError as exc:
+                if str(exc.response.get("Error", {}).get("Code")) in {
+                    "404",
+                    "NoSuchKey",
+                    "NotFound",
+                    "NoSuchVersion",
+                }:
+                    return
+                raise
+            if item.get("Metadata", {}).get("sha256") != checksum_sha256.removeprefix("sha256:"):
+                raise ValueError("forecast staging checksum mismatch")
+            if not version_id and item.get("VersionId"):
+                args["VersionId"] = item["VersionId"]
+            self._client.delete_object(**args)
+
+        await asyncio.to_thread(discard)
+
     async def create_download_url(self, *, key: str, expires_seconds: int) -> str:
         return str(
             await asyncio.to_thread(
